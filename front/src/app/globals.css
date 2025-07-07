@@ -1,26 +1,37 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* 1) 기본 텍스트 색 */
+h2, h3, h4, p, li, a {
+  @apply text-gray-800;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* 2) 다크 모드일 때 텍스트 색 */
+.dark h2,
+.dark h3,
+.dark h4,
+.dark p,
+.dark li,
+.dark a {
+  @apply text-gray-200;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Hero 전용 그림자 */
+.drop-shadow {
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.drop-shadow-lg {
+  text-shadow: 0 4px 8px rgba(0,0,0,0.5);
 }
 
+/* 스크롤 스냅 & 스크롤바 숨기기 */
+html {
+  scroll-behavior: smooth;
+}
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  overscroll-behavior: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
