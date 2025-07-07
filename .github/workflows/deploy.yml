@@ -1,0 +1,84 @@
+# .github/workflows/deploy.yml
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-web:
+    name: "→ Frontend: Next.js → S3 + CloudFront"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Install dependencies (web)
+        working-directory: apps/web
+        run: npm install
+
+      - name: Build & Export (web)
+        working-directory: apps/web
+        run: |
+          npm run build
+          npm run export
+
+      - name: Sync to S3
+        env:
+          BUCKET: ${{ secrets.S3_BUCKET_NAME }}
+        run: aws s3 sync apps/web/out/ s3://$BUCKET --delete
+
+      - name: Invalidate CloudFront
+        env:
+          DISTRO_ID: ${{ secrets.CF_DISTRIBUTION_ID }}
+        run: aws cloudfront create-invalidation --distribution-id $DISTRO_ID --paths "/*"
+
+
+  deploy-api:
+    name: "→ Backend: NestJS → Lambda (SAM)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Install dependencies (api)
+        working-directory: apps/api
+        run: npm install
+
+      - name: Build Lambda bundle
+        working-directory: apps/api
+        run: npm run build:lambda
+
+      - name: Deploy with SAM
+        env:
+          STACK: ${{ secrets.STACK_NAME }}
+        working-directory: apps/api
+        run: |
+          sam deploy \
+            --stack-name $STACK \
+            --no-confirm-changeset \
+            --capabilities CAPABILITY_IAM
