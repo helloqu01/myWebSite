@@ -36,7 +36,8 @@ jobs:
       - name: Sync to S3
         env:
           BUCKET: ${{ secrets.S3_BUCKET_NAME }}
-        run: aws s3 sync front/out/ s3://$BUCKET --delete
+        run: |
+          aws s3 sync front/out/ s3://$BUCKET --delete
 
       - name: Invalidate CloudFront
         env:
@@ -73,12 +74,19 @@ jobs:
         working-directory: back
         run: npm run build
 
+      - name: Package for SAM
+        working-directory: back
+        run: |
+          sam package \
+            --template-file template.yaml \
+            --s3-bucket ${{ secrets.SAM_ARTIFACTS_BUCKET }} \
+            --output-template-file packaged.yaml
+
       - name: Deploy with SAM
         working-directory: back
-        env:
-          STACK_NAME: ${{ secrets.STACK_NAME }}
         run: |
           sam deploy \
-            --stack-name $STACK_NAME \
+            --template-file packaged.yaml \
+            --stack-name ${{ secrets.STACK_NAME }} \
             --no-confirm-changeset \
             --capabilities CAPABILITY_IAM
