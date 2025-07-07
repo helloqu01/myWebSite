@@ -12,8 +12,8 @@ import {
 } from "@mui/material";
 import { Brightness4, Brightness7, Home } from "@mui/icons-material";
 import Link from "next/link";
-import { ColorModeContext } from "@/app/layout";
 import { useScroll, useTransform, motion } from "framer-motion";
+import { ColorModeContext } from "@/app/context/ColorModeContext";
 
 export default function Header() {
   const theme = useTheme();

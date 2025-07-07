@@ -1,16 +1,9 @@
-/* =========================
-src/app/layout.tsx
-========================= */
-
 "use client";
 
-import React, { useState, createContext, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import Header from "@/components/Header";
-
-export const ColorModeContext = createContext({
-  toggleColorMode: () => {},
-});
+import { ColorModeContext } from "./context/ColorModeContext";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useState<"light" | "dark">("light");
@@ -30,8 +23,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           secondary: { main: "#9c27b0" },
         },
         typography: {
-          fontFamily: ['"Noto Sans KR"', 'sans-serif'].join(',')
-        }
+          fontFamily: ['"Noto Sans KR"', 'sans-serif'].join(","),
+        },
       }),
     [mode]
   );
