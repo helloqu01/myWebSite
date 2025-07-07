@@ -42,9 +42,11 @@ jobs:
 
       - name: Invalidate CloudFront
         env:
-          DISTRO_ID: ${{ secrets.CF_DISTRIBUTION_ID }}
-        run: aws cloudfront create-invalidation --distribution-id $DISTRO_ID --paths "/*"
-
+          DISTRIBUTION_ID: ${{ secrets.CF_DISTRIBUTION_ID }}
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id $DISTRIBUTION_ID \
+            --paths "/*"
 
   deploy-api:
     name: "→ Backend: NestJS → Lambda (SAM)"
@@ -75,10 +77,10 @@ jobs:
 
       - name: Deploy with SAM
         env:
-          STACK: ${{ secrets.STACK_NAME }}
+          STACK_NAME: ${{ secrets.STACK_NAME }}
         working-directory: apps/api
         run: |
           sam deploy \
-            --stack-name $STACK \
+            --stack-name $STACK_NAME \
             --no-confirm-changeset \
             --capabilities CAPABILITY_IAM
