@@ -20,6 +20,7 @@ import {
   DialogContent,
   DialogActions,
   Divider,
+  useMediaQuery,
 } from "@mui/material";
 import {
   Timeline,
@@ -211,7 +212,8 @@ export default function Page() {
   const theme = useTheme();
   const isLight = theme.palette.mode === "light";
   const cardBg = isLight ? theme.palette.background.paper : theme.palette.grey[900];
-
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  
   const [expandedExp, setExpandedExp] = useState<Record<number, boolean>>({});
   const [projIndex, setProjIndex] = useState<number | null>(null);
 
@@ -223,7 +225,7 @@ export default function Page() {
   return (
     <Box sx={{ scrollBehavior: "smooth" }}>
       {/* Hero Section */}
-      <Box
+        <Box
         id="hero"
         component={motion.section}
         initial={{ opacity: 0 }}
@@ -238,14 +240,34 @@ export default function Page() {
           background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
           color: theme.palette.primary.contrastText,
           textAlign: "center",
-          px: 2,
+          px: 2
         }}
       >
-        <Typography variant="h2" sx={{ fontWeight: 800, mb: 2 }}>
-          Hi, I’m OhJ.
+        <Typography
+          variant="h2"
+          sx={{
+            fontWeight: 800,
+            mb: 2,
+            fontSize: { xs: "2rem", sm: "3rem", md: "4rem" },
+            lineHeight: 1.2
+          }}
+        >
+           {"Hi, I'm OhJ."} <br />안녕하세요, 오현지입니다.
         </Typography>
-        <Typography variant="h5" sx={{ opacity: 0.9, mb: 4 }}>
-          Full-stack Developer · Next.js · Nest.js · AWS
+
+        <Typography
+          variant="h5"
+          sx={{
+            opacity: 0.9,
+            mb: 4,
+            fontSize: { xs: "1rem", sm: "1.25rem" },
+            maxWidth: 700,
+            lineHeight: 1.6
+          }}
+        >
+          Passionate <strong>Full-stack Developer</strong> with expertise in <strong>Next.js</strong>, <strong>Nest.js</strong>, and <strong>AWS</strong> — building scalable, modern, and user-centric web applications.<br /><br />
+          사용자를 생각하는 기술을 만듭니다. <strong>최신 웹 기술</strong>과 <strong>클라우드 인프라</strong>를 활용해<br />
+          문제 해결 중심의 <strong>확장 가능한 서비스</strong>를 설계하고 구현합니다.
         </Typography>
         <IconButton sx={{ color: "inherit" }}>
           <ChevronDown size={36} />
@@ -254,9 +276,17 @@ export default function Page() {
 
       {/* Projects Section */}
       <Container id="projects" sx={{ py: 8 }}>
-        <Typography variant="h4" sx={{ mb: 4, display: "flex", alignItems: "center", gap: 1 }}>
-          <Wrench size={24} /> Projects
-        </Typography>
+         <Stack spacing={3} textAlign="center" mb={6}>
+          <Typography
+            variant="h3"
+            sx={{ fontWeight: 700, display: "flex", justifyContent: "center", alignItems: "center", gap: 1 }}
+          >
+            <Wrench size={28} /> Projects Showcase
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            지금까지 수행한 주요 프로젝트들을 소개합니다. 각각의 프로젝트는 실무에서의 문제 해결 능력과 기술 활용 역량을 보여줍니다.
+          </Typography>
+        </Stack>
 
         <Box
           display="grid"
@@ -324,111 +354,222 @@ export default function Page() {
       </Dialog>
 
       {/* Experience Section */}
-        <Container id="experience" sx={{ py: 10 }}>
-        <Typography variant="h3" sx={{ mb: 6, fontWeight: 700, textAlign: "center" }}>
-          <Calendar size={28} style={{ verticalAlign: "middle", marginRight: 8 }} />
-          Experience
-        </Typography>
-        <Timeline position="alternate">
-          {EXPERIENCES.map((exp, idx) => (
-            <TimelineItem key={idx}>
-              <TimelineSeparator>
-                <TimelineDot color="primary" />
-                {idx < EXPERIENCES.length - 1 && <TimelineConnector />}
-              </TimelineSeparator>
-              <TimelineContent>
-                <Card
-                  sx={{
-                    p: 3,
-                    bgcolor: cardBg,
-                    borderRadius: 3,
-                    boxShadow: 3,
-                    mb: 4,
-                    transition: "0.3s",
-                    '&:hover': { boxShadow: 6 },
-                  }}
-                >
-                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                      {exp.company}
-                    </Typography>
-                    <Chip label={exp.role} size="small" color="primary" />
-                    {exp.details.some(d => typeof d !== "string") && (
-                      <IconButton
-                        component="a"
-                        href={(exp.details.find(d => typeof d !== "string") as LinkDetail).url}
-                        target="_blank"
-                        rel="noreferrer"
-                        size="small"
-                        sx={{ ml: 1 }}
-                      >
-                        <Link2 size={16} />
-                      </IconButton>
-                    )}
-                  </Stack>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    {exp.period} · {exp.duration}
+     <Container id="experience" sx={{ py: 10 }}>
+           <Stack spacing={3} textAlign="center" mb={6}>
+          <Typography
+            variant="h3"
+            sx={{ fontWeight: 700, display: "flex", justifyContent: "center", alignItems: "center", gap: 1 }}
+          >
+            <Calendar size={28} /> My Career Journey
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            저의 경력은 도전을 기반으로 성장해왔습니다. 다양한 분야와 역할을 경험하며 쌓은 노하우를 공유합니다.
+          </Typography>
+        </Stack>
+
+
+        {isMobile ? (
+          <Stack spacing={4}>
+            {EXPERIENCES.map((exp, idx) => (
+              <Card
+                key={idx}
+                sx={{
+                  p: 3,
+                  bgcolor: cardBg,
+                  borderRadius: 3,
+                  boxShadow: 3,
+                  transition: "0.3s",
+                  '&:hover': { boxShadow: 6 }
+                }}
+              >
+                <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    {exp.company}
                   </Typography>
-
-                  <Box component="ul" sx={{ pl: 2, mb: 2 }}>
-                    {exp.details.map((d, i) =>
-                      typeof d === "string" ? (
-                        <Typography key={i} component="li" variant="body2" sx={{ mb: 0.5 }}>
-                          {d}
-                        </Typography>
-                      ) : null
-                    )}
-                  </Box>
-
-                  {exp.techStack && (
-                    <Typography variant="body2" sx={{ fontStyle: "italic", mb: 2 }}>
-                      📦 Tech Stack: {exp.techStack}
-                    </Typography>
+                  <Chip label={exp.role} size="small" color="primary" />
+                  {exp.details.some(d => typeof d !== "string") && (
+                    <IconButton
+                      component="a"
+                      href={(exp.details.find(d => typeof d !== "string") as LinkDetail).url}
+                      target="_blank"
+                      rel="noreferrer"
+                      size="small"
+                      sx={{ ml: 1 }}
+                    >
+                      <Link2 size={16} />
+                    </IconButton>
                   )}
+                </Stack>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  {exp.period} · {exp.duration}
+                </Typography>
 
-                  {exp.extra && (
-                    <Collapse in={expandedExp[idx]} timeout="auto" unmountOnExit>
-                      <Divider sx={{ my: 2 }} />
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        상세보기:
+                <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+                  {exp.details.map((d, i) =>
+                    typeof d === "string" ? (
+                      <Typography key={i} component="li" variant="body2" sx={{ mb: 0.5 }}>
+                        {d}
                       </Typography>
-                      <Box component="ul" sx={{ pl: 2 }}>
-                        {exp.extra.map((item, i) => (
-                          <li key={i}>
-                            <Typography variant="body2" sx={{ mb: 0.5 }}>{item}</Typography>
-                          </li>
-                        ))}
-                      </Box>
-                    </Collapse>
+                    ) : null
                   )}
+                </Box>
 
-                  <CardActions sx={{ justifyContent: "flex-end", pt: 2 }}>
-                    <Button size="small" onClick={() => toggleExp(idx)}>
-                      {expandedExp[idx] ? "접기" : "상세보기"}
-                    </Button>
-                  </CardActions>
-                </Card>
-              </TimelineContent>
-            </TimelineItem>
-          ))}
-        </Timeline>
+                {exp.techStack && (
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mb: 2 }}>
+                    📦 Tech Stack: {exp.techStack}
+                  </Typography>
+                )}
+
+                {exp.extra && (
+                  <Collapse in={expandedExp[idx]} timeout="auto" unmountOnExit>
+                    <Divider sx={{ my: 2 }} />
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      상세보기:
+                    </Typography>
+                    <Box component="ul" sx={{ pl: 2 }}>
+                      {exp.extra.map((item, i) => (
+                        <li key={i}>
+                          <Typography variant="body2" sx={{ mb: 0.5 }}>{item}</Typography>
+                        </li>
+                      ))}
+                    </Box>
+                  </Collapse>
+                )}
+
+                <CardActions sx={{ justifyContent: "flex-end", pt: 2 }}>
+                  <Button size="small" onClick={() => toggleExp(idx)}>
+                    {expandedExp[idx] ? "접기" : "상세보기"}
+                  </Button>
+                </CardActions>
+              </Card>
+            ))}
+          </Stack>
+        ) : (
+          <Timeline position="alternate">
+            {EXPERIENCES.map((exp, idx) => (
+              <TimelineItem key={idx}>
+                <TimelineSeparator>
+                  <TimelineDot color="primary" />
+                  {idx < EXPERIENCES.length - 1 && <TimelineConnector />}
+                </TimelineSeparator>
+                <TimelineContent sx={{ py: { xs: 2, sm: 3 } }}>
+                  <Card
+                    sx={{
+                      p: 3,
+                      bgcolor: cardBg,
+                      borderRadius: 3,
+                      boxShadow: 3,
+                      transition: "0.3s",
+                      '&:hover': { boxShadow: 6 }
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                      <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        {exp.company}
+                      </Typography>
+                      <Chip label={exp.role} size="small" color="primary" />
+                      {exp.details.some(d => typeof d !== "string") && (
+                        <IconButton
+                          component="a"
+                          href={(exp.details.find(d => typeof d !== "string") as LinkDetail).url}
+                          target="_blank"
+                          rel="noreferrer"
+                          size="small"
+                          sx={{ ml: 1 }}
+                        >
+                          <Link2 size={16} />
+                        </IconButton>
+                      )}
+                    </Stack>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      {exp.period} · {exp.duration}
+                    </Typography>
+
+                    <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+                      {exp.details.map((d, i) =>
+                        typeof d === "string" ? (
+                          <Typography key={i} component="li" variant="body2" sx={{ mb: 0.5 }}>
+                            {d}
+                          </Typography>
+                        ) : null
+                      )}
+                    </Box>
+
+                    {exp.techStack && (
+                      <Typography variant="body2" sx={{ fontStyle: "italic", mb: 2 }}>
+                        📦 Tech Stack: {exp.techStack}
+                      </Typography>
+                    )}
+
+                    {exp.extra && (
+                      <Collapse in={expandedExp[idx]} timeout="auto" unmountOnExit>
+                        <Divider sx={{ my: 2 }} />
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          상세보기:
+                        </Typography>
+                        <Box component="ul" sx={{ pl: 2 }}>
+                          {exp.extra.map((item, i) => (
+                            <li key={i}>
+                              <Typography variant="body2" sx={{ mb: 0.5 }}>{item}</Typography>
+                            </li>
+                          ))}
+                        </Box>
+                      </Collapse>
+                    )}
+
+                    <CardActions sx={{ justifyContent: "flex-end", pt: 2 }}>
+                      <Button size="small" onClick={() => toggleExp(idx)}>
+                        {expandedExp[idx] ? "접기" : "상세보기"}
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </TimelineContent>
+              </TimelineItem>
+            ))}
+          </Timeline>
+        )}
       </Container>
-
       {/* Contact Section */}
-      <Container id="contact" sx={{ py: 8 }}>
-        <Typography variant="h4" sx={{ mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
-          <Mail size={24} /> Contact
-        </Typography>
-        <Stack direction="row" spacing={2}>
-          <IconButton component="a" href="mailto:helloqu@naver.com" target="_blank">
-            <Mail size={20} />
-          </IconButton>
-          <IconButton component="a" href="https://www.linkedin.com/in/hyunji-oh-13949233a/" target="_blank">
-            <Linkedin size={20} />
-          </IconButton>
-          <IconButton component="a" href="https://github.com/helloqu01" target="_blank">
-            <Github size={20} />
-          </IconButton>
+      <Container id="contact" sx={{ py: 10 }}>
+        <Stack spacing={4} alignItems="center" textAlign="center">
+          <Typography
+            variant="h4"
+            sx={{ display: "flex", alignItems: "center", gap: 1, fontWeight: 600 }}
+          >
+            <Mail size={24} /> {"Let's Connect"}
+          </Typography>
+
+          <Typography variant="body1" sx={{ maxWidth: 500, color: "text.secondary" }}>
+            언제든지 연락주세요. 아래 아이콘을 클릭하여 이메일을 보내거나,
+            LinkedIn 및 GitHub에서 저의 작업을 확인해보세요.
+          </Typography>
+
+          <Stack direction="row" spacing={2} justifyContent="center">
+            <IconButton
+              component="a"
+              href="mailto:helloqu@naver.com"
+              target="_blank"
+              sx={{ border: "1px solid", borderRadius: 2, p: 1.5 }}
+            >
+              <Mail size={20} />
+            </IconButton>
+            <IconButton
+              component="a"
+              href="https://www.linkedin.com/in/hyunji-oh-13949233a/"
+              target="_blank"
+              sx={{ border: "1px solid", borderRadius: 2, p: 1.5 }}
+            >
+              <Linkedin size={20} />
+            </IconButton>
+            <IconButton
+              component="a"
+              href="https://github.com/helloqu01"
+              target="_blank"
+              sx={{ border: "1px solid", borderRadius: 2, p: 1.5 }}
+            >
+              <Github size={20} />
+            </IconButton>
+          </Stack>
         </Stack>
       </Container>
     </Box>
