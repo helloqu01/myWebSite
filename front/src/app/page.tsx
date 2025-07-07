@@ -257,14 +257,18 @@ export default function Page() {
         <Typography variant="h4" sx={{ mb: 4, display: "flex", alignItems: "center", gap: 1 }}>
           <Wrench size={24} /> Projects
         </Typography>
-        <Stack direction="row" spacing={4} flexWrap="wrap" justifyContent="center">
+
+        <Box
+          display="grid"
+          gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" }}
+          gap={4}
+        >
           {PROJECTS.map((proj, idx) => (
             <Card
               key={idx}
               component={motion.div}
               whileHover={{ y: -5 }}
               sx={{
-                width: { xs: "100%", sm: "45%", md: "30%" },
                 bgcolor: cardBg,
                 borderRadius: 3,
                 boxShadow: 4,
@@ -293,8 +297,9 @@ export default function Page() {
               </CardActions>
             </Card>
           ))}
-        </Stack>
+        </Box>
       </Container>
+
 
       {/* Project Detail Dialog */}
       <Dialog open={projIndex !== null} onClose={closeProj} maxWidth="md" fullWidth>
