@@ -36,8 +36,7 @@ jobs:
       - name: Sync to S3
         env:
           BUCKET: ${{ secrets.S3_BUCKET_NAME }}
-        run: |
-          aws s3 sync front/out/ s3://$BUCKET --delete
+        run: aws s3 sync front/out/ s3://$BUCKET --delete
 
       - name: Invalidate CloudFront
         env:
@@ -59,7 +58,7 @@ jobs:
         with:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region:            ${{ secrets.AWS_REGION }}    
+          aws-region:            ${{ secrets.AWS_REGION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -81,6 +80,15 @@ jobs:
             --template-file template.yaml \
             --s3-bucket ${{ secrets.SAM_ARTIFACTS_BUCKET }} \
             --output-template-file packaged.yaml
+
+      - name: Delete old CloudFormation stack (if exists)
+        run: |
+          aws cloudformation delete-stack \
+            --stack-name ${{ secrets.STACK_NAME }} \
+            --region ${{ secrets.AWS_REGION }} || true
+          aws cloudformation wait stack-delete-complete \
+            --stack-name ${{ secrets.STACK_NAME }} \
+            --region ${{ secrets.AWS_REGION }} || true
 
       - name: Deploy with SAM
         working-directory: back
