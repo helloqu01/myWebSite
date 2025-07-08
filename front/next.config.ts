@@ -1,6 +1,4 @@
 /** @type {import('next').NextConfig} */
-const { i18n } = require('./next-i18next.config');
-
 const nextConfig = {
   // 1) 완전 정적 내보내기 모드
   output: 'export',
@@ -10,7 +8,7 @@ const nextConfig = {
 
   // 3) React Strict Mode 활성화
   reactStrictMode: true,
-  i18n,
+
 
 
   // 5) 정적 export 할 때 이미지 최적화 비활성화
