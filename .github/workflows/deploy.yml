@@ -31,7 +31,7 @@ jobs:
 
       - name: Build (web)
         working-directory: front
-        run: npm run build
+        run: npm run export
 
       - name: Sync to S3
         env:
