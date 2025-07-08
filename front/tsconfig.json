@@ -20,9 +20,9 @@
 
     // 2) paths 수정
     "paths": {
-      "@/*": ["src/*"],
-      "@/components/*": ["src/components/*"]
-    },
+    "@/*": ["src/*"],
+    "@/components/*": ["src/components/*"],
+  },
 
     "plugins": [
       { "name": "next" }

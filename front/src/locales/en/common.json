@@ -1,0 +1,158 @@
+{
+  "greeting": "Hi, I'm OhJ.",
+  "subtitle": "Passionate Full-stack Developer with expertise in Next.js, Nest.js, and AWS — building scalable, modern, and user-centric web applications.",
+  "nav": {
+    "about": "About",
+    "projects": "Projects",
+    "experience": "Experience",
+    "contact": "Contact"
+  },
+  "projectsHeader": "Projects Showcase",
+  "projectsSubtitle": "Here are some of my key projects demonstrating problem-solving and technical skills.",
+  "projectsView": "View",
+  "projectData": [
+    {
+      "title": "MyPortfolio",
+      "description": "Personal portfolio site. Built with Next.js, MUI, and Framer Motion animations.",
+      "image": "https://picsum.photos/seed/portfolio/800/600",
+      "link": "#",
+      "detailImage": "https://picsum.photos/seed/portfolio-detail/800/400",
+      "detailText": "Detail: This portfolio uses Next.js' SSG and MUI components to deliver a fully responsive design."
+    },
+    {
+      "title": "E-Commerce Platform",
+      "description": "GraphQL API backend + React SPA, configured with AWS Lambda and RDS.",
+      "image": "https://picsum.photos/seed/ecommerce/800/600",
+      "link": "#",
+      "detailImage": "https://picsum.photos/seed/ecommerce-detail/800/400",
+      "detailText": "Detail: Implemented efficient data fetching with GraphQL and Apollo Client, deployed serverlessly via AWS Lambda."
+    },
+    {
+      "title": "Real-time Chat App",
+      "description": "Real-time chat server built on WebSocket, Redis, and Bull Queue.",
+      "image": "https://picsum.photos/seed/chat/800/600",
+      "link": "#",
+      "detailImage": "https://picsum.photos/seed/chat-detail/800/400",
+      "detailText": "Detail: Uses Socket.io & Redis PUB/SUB for reliable messaging and Bull Queue for message logging."
+    }
+  ],
+
+  "experienceData": [
+    {
+      "period": "2025.06 ~ 2025.06",
+      "duration": "2 weeks",
+      "company": "Queen's Smile",
+      "role": "Contractor",
+      "details": [
+        "Developed kiosk payment integration system and set up production environment",
+        "Built HTTP plugin for tPayDaemon in C#/.NET",
+        "Optimized HttpClient settings, implemented SSL and JSON binding",
+        "Stabilized payment requests on /Auth and /Cancel endpoints",
+        "Embedded Chromium (CefSharp.WinForms) and bound JS↔C#",
+        "Configured JavascriptObjectRepository and handled Chrome API communication",
+        "Integrated EMV card terminal via serial port with ACK logic",
+        "Implemented auto POS data filling, debugging logs, and fallback handling"
+      ],
+      "techStack": "C#, .NET Framework, CefSharp, HttpClient, JSON, WinForms, SerialPort, Windows Registry",
+      "extra": [
+        "Debugged ACK flow after POS terminal integration, solving issues",
+        "Led design of message structure for JS<C# communication synchronization",
+        "Handled various production exceptions with fallback logic"
+      ]
+    },
+    {
+      "period": "2022.04 ~ 2025.05",
+      "duration": "3 years 2 months",
+      "company": "Inno3D",
+      "role": "Platform Team Senior Researcher",
+      "details": [
+        "Designed and developed real-time ordering, 3D file viewer, login persistence, and partner network platform",
+        "Deployed high-availability platform on AWS EC2, RDS, and load balancers",
+        "Implemented JWT login with OTP, Nest.js Guards for RDS protection",
+        "Used Redis for session sharing and restart-persistent sessions, RDS replication for backend scaling",
+        "Built 1:N real-time group chat with WebSocket + Bull Queue for high traffic",
+        "Automated AWS IAM and Git environment setup",
+        "Improved bug resolution efficiency by 40% with Jest-based testing"
+      ],
+      "techStack": "AWS, Nest.js, React, Redis, WebSocket, Bull Queue, PostgreSQL, Jest",
+      "extra": [
+        "Achieved zero-downtime CI/CD deployments, ensured system stability under load",
+        "Analyzed and resolved memory leaks and session loss in production",
+        "Collaborated with PM for full lifecycle development from requirements to deployment"
+      ]
+    },
+    {
+      "period": "2021.08 ~ 2022.01",
+      "duration": "6 months",
+      "company": "HappyMade",
+      "role": "Dev Team Lead",
+      "details": [
+        "Developed admin and user pages for in-house exchange service in PHP",
+        "Integrated MySQL-based data and fixed bugs"
+      ],
+      "techStack": "PHP, MySQL, HTML, CSS, JavaScript",
+      "extra": [
+        "Enhanced stability by analyzing user logs and improving exception handling",
+        "Refactored code and optimized SQL queries for faster page loads"
+      ]
+    },
+    {
+      "period": "2021.05 ~ 2021.08",
+      "duration": "4 months",
+      "company": "Han Communication",
+      "role": "Developer",
+      "details": [
+        "Maintained client websites and created storyboards",
+        "Developed full-stack client sites on Cafe24",
+        "https://hanleeon02.cafe24.com/main/"
+      ],
+      "techStack": "HTML, CSS, JavaScript",
+      "extra": [
+        "Authored and refined storyboards based on planning docs",
+        "Improved maintainability by modernizing legacy JS and HTML structure"
+      ]
+    },
+    {
+      "period": "2020.09 ~ 2020.11",
+      "duration": "3 months",
+      "company": "BeFle (BusinessPlus)",
+      "role": "Corporate Researcher",
+      "details": [
+        "Redeveloped company website and built admin panel",
+        "Implemented backend in PHP/MariaDB and frontend in JS/HTML/CSS3",
+        "Created notice, gallery, and video boards",
+        "Handled web publishing",
+        "http://www.businessplus.co.kr/"
+      ],
+      "techStack": "PHP, MariaDB, HTML, CSS, JavaScript",
+      "extra": [
+        "Repeated feature additions and maintenance based on client requests",
+        "Ensured compatibility with web standards and cross-browser support"
+      ]
+    },
+    {
+      "period": "2017.01 ~ 2018.07",
+      "duration": "1 year 7 months",
+      "company": "Hanil Networks",
+      "role": "Business Support Staff",
+      "details": [
+        "Managed department costs, budgets, marketing, and planning",
+        "Supported general affairs, accounting, document management, procurement, and ERP operations"
+      ],
+      "techStack": "ERP, MS Excel, Office",
+      "extra": [
+        "Proficient in cost/contract management via ERP",
+        "Improved communication skills through cross-functional coordination"
+      ]
+    }
+  ],
+
+  "experienceHeader": "My Career Journey",
+  "experienceSubtitle": "My career has grown through challenges. Here are the roles and skills I've built along the way.",
+  "experienceMore": "More details",
+  "experienceLess": "Less details",
+
+  "contactHeader": "Let's Connect",
+  "contactSubtitle": "Feel free to reach out anytime via email, or check out my work on LinkedIn and GitHub."
+
+}
