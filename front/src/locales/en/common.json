@@ -12,28 +12,58 @@
   "projectsView": "View",
   "projectData": [
     {
-      "title": "MyPortfolio",
-      "description": "Personal portfolio site. Built with Next.js, MUI, and Framer Motion animations.",
-      "image": "https://picsum.photos/seed/portfolio/800/600",
-      "link": "#",
-      "detailImage": "https://picsum.photos/seed/portfolio-detail/800/400",
-      "detailText": "Detail: This portfolio uses Next.js' SSG and MUI components to deliver a fully responsive design."
+      "title": "BusinessPlus CRM",
+      "description": "Redesigned main site for B2B IT consulting firm BusinessPlus",
+      "images": ["/projects/businessplus.png"],
+      "link": "http://www.businessplus.co.kr/",
+      "detailImage": "/projects/businessplus.png",
+      "detailText": "Completely revamped the homepage with modern UI/UX trends."
     },
     {
-      "title": "E-Commerce Platform",
-      "description": "GraphQL API backend + React SPA, configured with AWS Lambda and RDS.",
-      "image": "https://picsum.photos/seed/ecommerce/800/600",
-      "link": "#",
-      "detailImage": "https://picsum.photos/seed/ecommerce-detail/800/400",
-      "detailText": "Detail: Implemented efficient data fetching with GraphQL and Apollo Client, deployed serverlessly via AWS Lambda."
+      "title": "Hanleeon Patent Consulting",
+      "description": "Refreshed Cafe24-based website for a patent law firm",
+      "images": ["/projects/hanleeon-cafe24.png"],
+      "link": "https://hanleeon02.cafe24.com/main/",
+      "detailImage": "/projects/hanleeon-cafe24.png",
+      "detailText": "Added service guides and online consultation features."
     },
     {
-      "title": "Real-time Chat App",
-      "description": "Real-time chat server built on WebSocket, Redis, and Bull Queue.",
-      "image": "https://picsum.photos/seed/chat/800/600",
-      "link": "#",
-      "detailImage": "https://picsum.photos/seed/chat-detail/800/400",
-      "detailText": "Detail: Uses Socket.io & Redis PUB/SUB for reliable messaging and Bull Queue for message logging."
+      "title": "Inno3Dental Chat",
+      "description": "Real-time group chat feature within the partner network platform",
+      "images": ["/projects/innodental-chat.png"],
+      "link": "https://dev.inno3dental.com/",
+      "detailImage": "/projects/innodental-chat.png",
+      "detailText": "Implemented robust chat using Socket.io and Redis PUB/SUB."
+    },
+    {
+      "title": "Inno3Dental Dashboard",
+      "description": "Admin dashboard with report lists, storage metrics, and charts",
+      "images": ["/projects/innodental-dashboard.png"],
+      "link": "https://dev.inno3dental.com/",
+      "detailImage": "/projects/innodental-dashboard.png",
+      "detailText": "Built data visualizations with Chart.js and Recharts."
+    },
+    {
+      "title": "Report Management",
+      "description": "Report list and detail view with date/keyword filters",
+      "images": [
+        "/projects/report-list-1.png",
+        "/projects/report-list-2.png"
+      ],
+      "link": "https://dev.inno3dental.com/",
+      "detailImage": "/projects/report-detail.png",
+      "detailText": "Implemented date range and keyword filters plus export/print actions."
+    },
+    {
+      "title": "Account & Profile",
+      "description": "Account settings (General, Security, Scanner) and user profile screens",
+      "images": [
+        "/projects/account-general-1.png",
+        "/projects/account-general-2.png"
+      ],
+      "link": "https://dev.inno3dental.com/",
+      "detailImage": "/projects/profile.png",
+      "detailText": "Completed full account management UI including profile uploads, language selection, and security."
     }
   ],
 
@@ -154,5 +184,4 @@
 
   "contactHeader": "Let's Connect",
   "contactSubtitle": "Feel free to reach out anytime via email, or check out my work on LinkedIn and GitHub."
-
 }
