@@ -65,6 +65,18 @@
       "link": "https://dev.inno3dental.com/",
       "detailImage": "/projects/profile.png",
       "detailText": "계정 정보 수정, 프로필 업로드, 언어 선택 등 전반적인 사용자 계정 관리 UI를 완성했습니다."
+    },
+    {
+      "title": "키오스크 결제 연동 시스템",
+      "description": "키오스크 결제 연동 시스템 개발 및 운영 환경 구축",
+      "images": [
+        "/projects/kioskPayment.png"
+      ],
+      "video": "/videos/kioskPayment.mp4",
+      "videoDescription": "키오스크 결제 연동 시스템의 실제 동작을 보여주는 데모 영상입니다.",
+      "link": "https://dev.inno3dental.com/",
+      "detailImage": "/projects/profile.png",
+      "detailText": "키오스크 결제 연동 시스템 개발 및 운영 환경 구축을 통해 안정적인 결제 시스템을 구현했습니다."
     }
   ],
 

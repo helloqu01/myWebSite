@@ -64,7 +64,20 @@
       "link": "https://dev.inno3dental.com/",
       "detailImage": "/projects/profile.png",
       "detailText": "Completed full account management UI including profile uploads, language selection, and security."
+    },
+    {
+      "title": "Kiosk Payment Integration System",
+      "description": "Development and deployment of a kiosk payment integration system",
+      "images": [
+        "/projects/kioskPayment.png"
+      ],
+      "video": "/videos/kioskPayment.mp4",
+      "videoDescription": "A demo video showcasing the actual operation of the kiosk payment integration system.",
+      "link": "https://dev.inno3dental.com/",
+      "detailImage": "/projects/profile.png",
+      "detailText": "By developing and deploying the kiosk payment integration system, we implemented a reliable payment solution."
     }
+
   ],
 
   "experienceData": [

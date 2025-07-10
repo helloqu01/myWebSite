@@ -19,6 +19,8 @@ interface Project {
   title: string;
   description: string;
   images?: string | string[];
+  video?: string;
+  videoDescription?: string;
   link: string;
   detailImage: string;
   detailText: string;
@@ -75,7 +77,7 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
               sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
             />
             {rawImages.length > 1 && (
-              <> 
+              <>
                 <IconButton
                   onClick={e => { e.stopPropagation(); handlePrev(); }}
                   sx={{
@@ -106,21 +108,43 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
             )}
           </Box>
 
+          {/* Video preview */}
+          {project.video && (
+            <Box sx={{ mb: 2 }}>
+              <Box
+                component="video"
+                controls
+                src={project.video}
+                sx={{
+                  width: '100%',
+                  height: 'auto',
+                  borderRadius: 1,
+                  boxShadow: theme.shadows[1],
+                }}
+              />
+              {project.videoDescription && (
+                <Typography variant="caption" color="text.secondary">
+                  {project.videoDescription}
+                </Typography>
+              )}
+            </Box>
+          )}
+
           <Typography variant="body1" gutterBottom>
             {project.detailText}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'flex-end' }}>
-  <Button
-    component="a"
-    href={project.link}
-    target="_blank"
-    rel="noopener noreferrer"
-    startIcon={<LinkIcon />}
-  >
-    {viewLabel}
-  </Button>
-</DialogActions>
+          <Button
+            component="a"
+            href={project.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            startIcon={<LinkIcon />}
+          >
+            {viewLabel}
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Fullscreen Preview */}
