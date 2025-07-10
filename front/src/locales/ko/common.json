@@ -74,7 +74,7 @@
       ],
       "video": "/videos/kioskPayment.mp4",
       "videoDescription": "키오스크 결제 연동 시스템의 실제 동작을 보여주는 데모 영상입니다.",
-      "link": "https://dev.inno3dental.com/",
+      "link": "#",
       "detailImage": "/projects/profile.png",
       "detailText": "키오스크 결제 연동 시스템 개발 및 운영 환경 구축을 통해 안정적인 결제 시스템을 구현했습니다."
     }
