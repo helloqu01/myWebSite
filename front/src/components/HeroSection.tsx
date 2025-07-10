@@ -13,8 +13,16 @@ import { useLocale } from "@/context/LocaleContext";
 
 export default function HeroSection() {
   const theme = useTheme();
-  const { lang } = useLocale();              // 'en' or 'ko'
-  const t = lang === "en" ? en : ko;         // select the correct JSON
+  const { lang } = useLocale();
+  const t = lang === "en" ? en : ko;
+
+  // ↓ 여기에 onClick 핸들러를 추가
+  const scrollToNext = () => {
+    const next = document.getElementById("experience");  
+    if (next) {
+      next.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <Box
@@ -58,7 +66,9 @@ export default function HeroSection() {
       >
         {t.subtitle}
       </Typography>
-      <IconButton sx={{ color: "inherit" }}>
+
+      {/* onClick으로 scrollToNext 호출 */}
+      <IconButton onClick={scrollToNext} sx={{ color: "inherit" }}>
         <ChevronDown size={36} />
       </IconButton>
     </Box>
