@@ -14,7 +14,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="ko">
-      <head />
       <body>
         <LocaleProvider>
           <ColorModeContext.Provider value={colorMode}>
