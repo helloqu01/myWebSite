@@ -9,7 +9,7 @@ export const metadata = {
     url: 'https://codingbyohj.com',
     images: [
       {
-        url: '/images/businesscard.png',
+        url: 'https://codingbyohj.com/images/businesscard.webp',
         width: 1200,
         height: 630,
         alt: 'Hyunji Oh Business Card',
@@ -19,7 +19,7 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    images: ['/images/businesscard.webp'],
+    images: ['https://codingbyohj.com/images/businesscard.webp'],
   },
 };
 
