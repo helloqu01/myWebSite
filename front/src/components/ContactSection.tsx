@@ -1,11 +1,14 @@
 "use client";
 import React from "react";
-import { Container, Stack, Typography, IconButton } from "@mui/material";
+import { Container, Stack, Typography, IconButton, Box } from "@mui/material";
 import { Mail, Linkedin, Github } from "lucide-react";
 
 import en from "@/locales/en/common.json";
 import ko from "@/locales/ko/common.json";
 import { useLocale } from "@/context/LocaleContext";
+
+// ★ 추가: 썸네일 컴포넌트 import
+import BusinessCardThumbnail from "@/components/BusinessCardThumbnail";
 
 export default function ContactSection() {
   const { lang } = useLocale();
@@ -26,9 +29,16 @@ export default function ContactSection() {
           <Mail size={24} /> {t.contactHeader}
         </Typography>
 
-        <Typography variant="body1" sx={{ maxWidth: 500, color: "text.secondary" }}>
+        <Typography
+          variant="body1"
+          sx={{ maxWidth: 500, color: "text.secondary" }}
+        >
           {t.contactSubtitle}
         </Typography>
+         {/* 썸네일 추가 */}
+       <Box sx={{ width: '100%', px: 2 }}>
+         <BusinessCardThumbnail />
+       </Box>
 
         <Stack direction="row" spacing={2} justifyContent="center">
           <IconButton
@@ -39,7 +49,6 @@ export default function ContactSection() {
           >
             <Mail size={20} />
           </IconButton>
-
           <IconButton
             component="a"
             href="https://www.linkedin.com/in/hyunji-oh-13949233a/"
@@ -48,7 +57,6 @@ export default function ContactSection() {
           >
             <Linkedin size={20} />
           </IconButton>
-
           <IconButton
             component="a"
             href="https://github.com/helloqu01"
@@ -58,6 +66,8 @@ export default function ContactSection() {
             <Github size={20} />
           </IconButton>
         </Stack>
+
+      
       </Stack>
     </Container>
   );
