@@ -1,9 +1,7 @@
-// app/layout.tsx
+// src/app/layout.tsx
 import React from "react";
-import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
-import Header from "@/components/Header";
-import { ColorModeContext } from "./context/ColorModeContext";
-import { LocaleProvider } from "@/context/LocaleContext";
+import Providers from "./Providers";
+
 export const metadata = {
   title: 'Oh Hyunji – FullStack Web Developer',
   description: 'Hyunji Oh 의 포트폴리오 사이트입니다.',
@@ -32,23 +30,13 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  // ...컬러 모드 설정은 그대로 유지...
-  const [mode, setMode] = React.useState<"light"|"dark">("light");
-  const colorMode = React.useMemo(()=>({ toggleColorMode: ()=>setMode(m=>m==='light'?'dark':'light') }), []);
-  const theme = React.useMemo(()=>createTheme({ palette:{mode, primary:{main:"#1976d2"}, secondary:{main:"#9c27b0"} } }), [mode]);
-
   return (
     <html lang="ko">
+      <head />  {/* Next.js가 metadata를 자동으로 삽입합니다 */}
       <body>
-        <LocaleProvider>
-          <ColorModeContext.Provider value={colorMode}>
-            <ThemeProvider theme={theme}>
-              <CssBaseline />
-              <Header />
-              {children}
-            </ThemeProvider>
-          </ColorModeContext.Provider>
-        </LocaleProvider>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
