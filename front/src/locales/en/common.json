@@ -109,7 +109,7 @@
       "company": "Inno3D",
       "role": "Platform Team Senior Researcher",
       "details": [
-        "Designed and developed real-time ordering, 3D file viewer, login persistence, and partner network platform",
+        "Designed and developed real-time ordering, 3D file viewer(three.JS), login persistence, and partner network platform",
         "Deployed high-availability platform on AWS EC2, RDS, and load balancers",
         "Implemented JWT login with OTP, Nest.js Guards for RDS protection",
         "Used Redis for session sharing and restart-persistent sessions, RDS replication for backend scaling",
