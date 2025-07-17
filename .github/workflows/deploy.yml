@@ -72,7 +72,12 @@ jobs:
 
       - name: Build (api)
         working-directory: back
-        run: npm run build
+        run: |
+          # 1) Nest 컴파일
+          npm run build
+          # 2) production 의존성 복사
+          cp -R node_modules dist/
+      
 
       - name: Package for SAM
         working-directory: back
