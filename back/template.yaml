@@ -1,9 +1,20 @@
 # back/template.yaml
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: NestJS Lambda via SAM
+
+Globals:
+  Function:
+    # 람다에 공통 적용할 설정 (타임아웃, 메모리 등)
+    Timeout: 10
+    MemorySize: 256
+
 Resources:
   ApiFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: my-profile-api
+      # 빌드된 JS가 들어있는 폴더
       CodeUri: dist/
       Handler: src/main.lambda.handler
       Runtime: nodejs18.x
