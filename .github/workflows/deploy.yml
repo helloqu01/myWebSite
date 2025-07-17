@@ -68,6 +68,11 @@ jobs:
         working-directory: back
         run: npm ci
 
+      - name: Build NestJS (api)
+        working-directory: back
+        run: npm run build    # ← dist/ 에 JS 파일이 생성됩니다.
+
+
       - name: Build & Deploy with SAM
         working-directory: back
         run: |
