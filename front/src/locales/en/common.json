@@ -81,6 +81,27 @@
   ],
 
   "experienceData": [
+        {
+      "period": "2025.07 ~ 2025.07",
+      "duration": "1 weeks",
+      "company": "Queen's Smile",
+      "role": "Contract Developer",
+      "details": [
+        "Implemented QR code and barcode scanner integration functionality",
+        "Handled RS232 serial communication using SerialPort and managed data receive events",
+        "Developed prefix-based logic for data length recognition and byte string parsing",
+        "Applied regular expression filters and validation for scanned data",
+        "Integrated scanner input with React-based Kiosk UI via asynchronous communication",
+        "Processed scanned data through HTTP requests and reflected responses in the UI",
+        "Implemented fallback alerts and error handling for disconnected or malfunctioning devices"
+      ],
+      "techStack": "C#, WinForms, SerialPort, Regex, JavaScript, React, HTTP",
+      "extra": [
+        "Debugged issues related to data loss and delays depending on scanner device environments",
+        "Improved parsing logic for better scan accuracy based on real-time user feedback",
+        "Designed a unified logic structure to support both QR and barcode readers simultaneously"
+      ]
+    },
     {
       "period": "2025.06 ~ 2025.06",
       "duration": "2 weeks",

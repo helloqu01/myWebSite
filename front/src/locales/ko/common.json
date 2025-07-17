@@ -86,6 +86,27 @@
   "experienceLess": "접기",
   "experienceData": [
     {
+      "period": "2025.07 ~ 2025.07",
+      "duration": "1주",
+      "company": "퀸즈스마일",
+      "role": "용역 외주",
+      "details": [
+        "QR 코드 및 바코드 리더기 연동 기능 구현",
+        "SerialPort를 이용한 RS232 시리얼 통신 처리 및 수신 이벤트 핸들링",
+        "데이터 길이 기반 prefix 분기 처리 및 바이트 문자열 파싱 로직 개발",
+        "스캔 결과 정규표현식 필터링 및 유효성 검증",
+        "프론트 React Kiosk UI와 비동기 연동 처리",
+        "스캔된 데이터의 HTTP 전송 및 응답값에 따른 UI 상태 반영",
+        "장치 미연결 시 fallback 경고 처리 및 예외 대응"
+      ],
+      "techStack": "C#, WinForms, SerialPort, Regex, JavaScript, React, HTTP",
+      "extra": [
+        "스캐너 장치 환경에 따라 발생하는 데이터 유실/지연 문제 직접 디버깅",
+        "스캔 정확도 향상을 위한 데이터 파싱 개선 및 사용자 피드백 반영",
+        "바코드/QR 리더기 동시 지원을 위한 공통 처리 구조 설계 경험"
+      ]
+    },
+    {
       "period": "2025.06 ~ 2025.06",
       "duration": "2주",
       "company": "퀸즈스마일",
