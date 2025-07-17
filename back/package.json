@@ -27,6 +27,7 @@
     "@nestjs/platform-express": "^11.0.1",
     "@vendia/serverless-express": "^4.12.6",
     "aws-lambda": "^1.0.7",
+    "aws-serverless-express": "^3.4.0",
     "nodemailer": "^7.0.5",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
