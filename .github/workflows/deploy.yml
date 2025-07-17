@@ -96,4 +96,5 @@ jobs:
             --template-file packaged.yaml \
             --stack-name ${{ secrets.STACK_NAME }} \
             --no-confirm-changeset \
+            --no-fail-on-empty-changeset \ 
             --capabilities CAPABILITY_IAM
