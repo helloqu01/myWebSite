@@ -68,20 +68,28 @@ jobs:
         working-directory: back
         run: npm ci
 
-      - name: Build NestJS (api)
+      - name: Build (api)
         working-directory: back
-        run: npm run build    # ← dist/ 에 JS 파일이 생성됩니다.
+        run: npm run build
 
-
-      - name: Build & Deploy with SAM
+      - name: Build & Package with SAM
         working-directory: back
         run: |
-          # 1. sam build: 컴파일 + production 의존성 설치
+          # 1) SAM build: 컴파일된 코드 + production deps 설치
           sam build --use-container
-          # 2. sam deploy: CloudFormation으로 Lambda/API Gateway 업데이트
+
+          # 2) SAM package: 아티팩트를 S3에 업로드하고 packaged.yaml 생성
+          sam package \
+            --template-file .aws-sam/build/template.yaml \
+            --s3-bucket ${{ secrets.SAM_ARTIFACTS_BUCKET }} \
+            --output-template-file packaged.yaml
+
+      - name: Deploy with SAM
+        working-directory: back
+        run: |
+          # 3) SAM deploy: packaged.yaml 로 스택 업데이트
           sam deploy \
-           --template-file .aws-sam/build/template.yaml \
-           --stack-name ${{ secrets.STACK_NAME }} \
-           --s3-bucket ${{ secrets.SAM_ARTIFACTS_BUCKET }} \
-           --no-confirm-changeset \
-           --capabilities CAPABILITY_IAM
+            --template-file packaged.yaml \
+            --stack-name ${{ secrets.STACK_NAME }} \
+            --no-confirm-changeset \
+            --capabilities CAPABILITY_IAM
