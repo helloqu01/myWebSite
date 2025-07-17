@@ -74,10 +74,11 @@ jobs:
         working-directory: back
         run: |
           # 1) Nest 컴파일
+          npm ci
           npm run build
           # 2) production 의존성 복사
+          npm prune --production
           cp -R node_modules dist/
-      
 
       - name: Package for SAM
         working-directory: back
