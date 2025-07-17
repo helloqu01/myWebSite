@@ -87,14 +87,6 @@ jobs:
             --s3-bucket ${{ secrets.SAM_ARTIFACTS_BUCKET }} \
             --output-template-file packaged.yaml
 
-      - name: Delete old CloudFormation stack (if exists)
-        run: |
-          aws cloudformation delete-stack \
-            --stack-name ${{ secrets.STACK_NAME }} \
-            --region ${{ secrets.AWS_REGION }} || true
-          aws cloudformation wait stack-delete-complete \
-            --stack-name ${{ secrets.STACK_NAME }} \
-            --region ${{ secrets.AWS_REGION }} || true
 
       - name: Deploy with SAM
         working-directory: back
