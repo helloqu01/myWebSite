@@ -75,6 +75,8 @@ jobs:
           sam build --use-container
           # 2. sam deploy: CloudFormation으로 Lambda/API Gateway 업데이트
           sam deploy \
-            --stack-name ${{ secrets.STACK_NAME }} \
-            --no-confirm-changeset \
-            --capabilities CAPABILITY_IAM
+           --template-file .aws-sam/build/template.yaml \
+           --stack-name ${{ secrets.STACK_NAME }} \
+           --s3-bucket ${{ secrets.SAM_ARTIFACTS_BUCKET }} \
+           --no-confirm-changeset \
+           --capabilities CAPABILITY_IAM
