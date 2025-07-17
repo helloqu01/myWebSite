@@ -22,17 +22,17 @@ export default function ContactSection() {
   const { lang } = useLocale();
   const t = lang === 'en' ? en : ko;
 
-    const vCard = [
-  'BEGIN:VCARD',
-  'VERSION:3.0',
-  'N:Oh;Hyunji;;;',
-  'FN:Hyunji Oh',
-  'TITLE:Fullstack Web Developer',
-  'EMAIL;TYPE=WORK:ddaaadd01@gmail.com',
-  'TEL;TYPE=CELL:+821090677472',
-  'URL:https://codingbyohj.com/',
-  'END:VCARD',
-].join('\r\n');  // <-- CRLF 로 join
+  const vCard = [
+    'BEGIN:VCARD',
+    'VERSION:3.0',
+    'N:Oh;Hyunji;;;',
+    'FN:Hyunji Oh',
+    'TITLE:Fullstack Web Developer',
+    'EMAIL;TYPE=WORK:ddaaadd01@gmail.com',
+    'TEL;TYPE=CELL:+821090677472',
+    'URL:https://codingbyohj.com/',
+    'END:VCARD',
+  ].join('\r\n');
 
   // 폼 상태 관리
   const [name, setName] = useState('');
@@ -56,6 +56,9 @@ export default function ContactSection() {
       setStatus('error');
     }
   };
+
+  // data URI 로 vCard 다운로드 링크 생성
+  const vCardDataUri = `data:text/vcard;charset=utf-8,${encodeURIComponent(vCard)}`;
 
   return (
     <Container id="contact" sx={{ py: 10 }}>
@@ -138,8 +141,7 @@ export default function ContactSection() {
           </IconButton>
         </Stack>
 
-        {/* QR 코드 */}
-          {/* 연락처 저장용 QR 코드 */}
+        {/* QR 코드 및 vCard 다운로드 */}
         <Box sx={{ mt: 4, textAlign: 'center' }}>
           <QRCodeSVG
             value={vCard}
@@ -152,6 +154,17 @@ export default function ContactSection() {
               ? 'Scan to add contact'
               : '스캔해서 연락처 저장'}
           </Typography>
+
+          {/* 다운로드 버튼 */}
+          <Button
+            variant="outlined"
+            component="a"
+            href={vCardDataUri}
+            download="HyunjiOh.vcf"
+            sx={{ mt: 2 }}
+          >
+            {lang === 'en' ? 'Download vCard' : 'vCard 다운로드'}
+          </Button>
         </Box>
       </Stack>
     </Container>
