@@ -1,31 +1,42 @@
-# back/template.yaml
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: NestJS Lambda via SAM
 
 Globals:
   Function:
-    # 람다에 공통 적용할 설정 (타임아웃, 메모리 등)
     Timeout: 10
     MemorySize: 256
 
 Resources:
+  ## 1) HTTP API(v2) 리소스 + CORS 설정
+  MyHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins: 
+          - "*"                       # 모든 도메인 허용
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+          - X-Amz-Date
+          - X-Api-Key
+          - X-Amz-Security-Token
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+          - PUT
+          - DELETE
+        MaxAge: 600                   # 프리플라이트 캐시 (초)
+
+  ## 2) Lambda 함수
   ApiFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: my-profile-api
-      # 빌드된 JS가 들어있는 폴더
       CodeUri: dist/
       Handler: lambda.handler
       Runtime: nodejs18.x
-      Events:
-        ProxyApi:
-          Type: Api
-          Properties:
-            Path: /{proxy+}
-            Method: ANY
-      Policies:
-        - AWSLambdaBasicExecutionRole
       Environment:
         Variables:
           SMTP_HOST:   "smtp.gmail.com"
@@ -34,3 +45,15 @@ Resources:
           SMTP_PASS:   "cccg oert paam gych"
           EMAIL_FROM:  "Hyunji Oh <ddaaadd01@gmail.com>"
           EMAIL_TO:    "ddaaadd01@gmail.com"
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Events:
+        ProxyApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /{proxy+}
+            Method: ANY
+
+
+       
