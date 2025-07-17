@@ -16,7 +16,7 @@ Resources:
       FunctionName: my-profile-api
       # 빌드된 JS가 들어있는 폴더
       CodeUri: dist/
-      Handler: src/main.lambda.handler
+      Handler: lambda.handler
       Runtime: nodejs18.x
       Events:
         ProxyApi:

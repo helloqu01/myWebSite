@@ -1,4 +1,6 @@
 {
   "extends": "./tsconfig.json",
+  // 컴파일할 파일을 명시적으로 지정
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
 }
