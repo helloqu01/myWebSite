@@ -9,19 +9,15 @@ Globals:
 
 Resources:
   # 1) HTTP API(v2) 정의 & CORS 열기
-  MyHttpApi:
-    Type: AWS::Serverless::HttpApi
+  MyRestApi:
+    Type: AWS::Serverless::Api
     Properties:
-      CorsConfiguration:
-        AllowOrigins:
-          - "*"
-        AllowHeaders:
-          - Content-Type
-          - Authorization
-        AllowMethods:
-          - GET
-          - POST
-          - OPTIONS
+      Name: MyProfileRestApi
+      StageName: prod
+      Cors:
+        AllowOrigins: "'*'"
+        AllowMethods: "'OPTIONS,GET,POST,PUT,DELETE,PATCH'"
+        AllowHeaders: "'Content-Type,Authorization'"
         MaxAge: 600
 
   # 2) Lambda 함수
