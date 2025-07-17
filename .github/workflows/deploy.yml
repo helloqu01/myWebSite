@@ -1,4 +1,3 @@
-# .github/workflows/deploy.yml
 name: Deploy to AWS
 
 on:
@@ -32,7 +31,6 @@ jobs:
       - name: Build (web)
         working-directory: front
         run: npm run build
-        
 
       - name: Sync to S3
         env:
@@ -70,32 +68,13 @@ jobs:
         working-directory: back
         run: npm ci
 
-      - name: Build (api)
-        working-directory: back
-        run: npm run build
-
-      - name: Package for SAM
+      - name: Build & Deploy with SAM
         working-directory: back
         run: |
-          sam package \
-            --template-file template.yaml \
-            --s3-bucket ${{ secrets.SAM_ARTIFACTS_BUCKET }} \
-            --output-template-file packaged.yaml
-
-      - name: Delete old CloudFormation stack (if exists)
-        run: |
-          aws cloudformation delete-stack \
-            --stack-name ${{ secrets.STACK_NAME }} \
-            --region ${{ secrets.AWS_REGION }} || true
-          aws cloudformation wait stack-delete-complete \
-            --stack-name ${{ secrets.STACK_NAME }} \
-            --region ${{ secrets.AWS_REGION }} || true
-
-      - name: Deploy with SAM
-        working-directory: back
-        run: |
+          # 1. sam build: 컴파일 + production 의존성 설치
+          sam build --use-container
+          # 2. sam deploy: CloudFormation으로 Lambda/API Gateway 업데이트
           sam deploy \
-            --template-file packaged.yaml \
             --stack-name ${{ secrets.STACK_NAME }} \
             --no-confirm-changeset \
             --capabilities CAPABILITY_IAM
