@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: NestJS Lambda via SAM
+Description: NestJS + Express on Lambda with HTTP API(v2) & CORS
 
 Globals:
   Function:
@@ -8,28 +8,23 @@ Globals:
     MemorySize: 256
 
 Resources:
-  ## 1) HTTP API(v2) 리소스 + CORS 설정
+  # 1) HTTP API(v2) 정의 & CORS 열기
   MyHttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
       CorsConfiguration:
-        AllowOrigins: 
-          - "*"                       # 모든 도메인 허용
+        AllowOrigins:
+          - "*"
         AllowHeaders:
           - Content-Type
           - Authorization
-          - X-Amz-Date
-          - X-Api-Key
-          - X-Amz-Security-Token
         AllowMethods:
           - GET
           - POST
           - OPTIONS
-          - PUT
-          - DELETE
-        MaxAge: 600                   # 프리플라이트 캐시 (초)
+        MaxAge: 600
 
-  ## 2) Lambda 함수
+  # 2) Lambda 함수
   ApiFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -51,9 +46,13 @@ Resources:
         ProxyApi:
           Type: HttpApi
           Properties:
-            ApiId: !Ref MyHttpApi
-            Path: /{proxy+}
+            ApiId: !Ref MyHttpApi    # 반드시 CORS 연 MyHttpApi를 참조
+            Path: /api/{proxy+}      # /api/* 전부를 처리
             Method: ANY
 
+Outputs:
+  HttpApiUrl:
+    Description: "Invoke URL for HTTP API"
+    Value: !Sub "https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
 
-       
+         
