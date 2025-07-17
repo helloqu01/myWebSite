@@ -20,7 +20,7 @@ Resources:
       Runtime: nodejs18.x
       Events:
         ProxyApi:
-          Type: HttpApi
+          Type: Api
           Properties:
             Path: /{proxy+}
             Method: ANY
