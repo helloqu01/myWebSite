@@ -217,5 +217,11 @@
   "experienceLess": "Less details",
 
   "contactHeader": "Let's Connect",
-  "contactSubtitle": "Feel free to reach out anytime via email, or check out my work on LinkedIn and GitHub."
+  "contactSubtitle": "Feel free to reach out anytime via email, or check out my work on LinkedIn and GitHub.",
+   "contactNameLabel": "Name",
+  "contactEmailLabel": "Email",
+  "contactMessageLabel": "Message",
+  "contactSubmit": "Send Message",
+  "contactSuccess": "Your message has been sent!",
+  "contactError": "Something went wrong. Please try again."
 }

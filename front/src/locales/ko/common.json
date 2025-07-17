@@ -200,6 +200,12 @@
     }
   ],
    "contactHeader": "연락하기",
-  "contactSubtitle": "언제든지 이메일로 문의해주시거나, LinkedIn 및 GitHub에서 제 작업을 확인해보세요."
+  "contactSubtitle": "언제든지 이메일로 문의해주시거나, LinkedIn 및 GitHub에서 제 작업을 확인해보세요.",
+  "contactNameLabel": "이름",
+  "contactEmailLabel": "이메일",
+  "contactMessageLabel": "메시지",
+  "contactSubmit": "전송하기",
+  "contactSuccess": "메시지가 성공적으로 전송되었습니다!",
+  "contactError": "전송 중 오류가 발생했습니다. 다시 시도해주세요."
 
 }
