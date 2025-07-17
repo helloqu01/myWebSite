@@ -44,7 +44,7 @@ Resources:
         - AWSLambdaBasicExecutionRole
       Events:
         ProxyApi:
-          Type: HttpApi
+          Type: Api
           Properties:
             ApiId: !Ref MyHttpApi    # 반드시 CORS 연 MyHttpApi를 참조
             Path: /{proxy+}      # /api/* 전부를 처리
