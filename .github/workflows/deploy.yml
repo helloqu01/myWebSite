@@ -1,3 +1,4 @@
+# .github/workflows/deploy.yml
 name: Deploy to AWS
 
 on:
@@ -31,6 +32,7 @@ jobs:
       - name: Build (web)
         working-directory: front
         run: npm run build
+        
 
       - name: Sync to S3
         env:
@@ -72,22 +74,26 @@ jobs:
         working-directory: back
         run: npm run build
 
-      - name: Build & Package with SAM
+      - name: Package for SAM
         working-directory: back
         run: |
-          # 1) SAM build: 컴파일된 코드 + production deps 설치
-          sam build --use-container
-
-          # 2) SAM package: 아티팩트를 S3에 업로드하고 packaged.yaml 생성
           sam package \
-            --template-file .aws-sam/build/template.yaml \
+            --template-file template.yaml \
             --s3-bucket ${{ secrets.SAM_ARTIFACTS_BUCKET }} \
             --output-template-file packaged.yaml
+
+      - name: Delete old CloudFormation stack (if exists)
+        run: |
+          aws cloudformation delete-stack \
+            --stack-name ${{ secrets.STACK_NAME }} \
+            --region ${{ secrets.AWS_REGION }} || true
+          aws cloudformation wait stack-delete-complete \
+            --stack-name ${{ secrets.STACK_NAME }} \
+            --region ${{ secrets.AWS_REGION }} || true
 
       - name: Deploy with SAM
         working-directory: back
         run: |
-          # 3) SAM deploy: packaged.yaml 로 스택 업데이트
           sam deploy \
             --template-file packaged.yaml \
             --stack-name ${{ secrets.STACK_NAME }} \
