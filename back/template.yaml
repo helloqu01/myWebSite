@@ -47,8 +47,6 @@ Resources:
             Method: ANY
 
 Outputs:
-  HttpApiUrl:
-    Description: "Invoke URL for HTTP API"
-    Value: !Sub "https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
-
-         
+  RestApiInvokeUrl:
+    Description: "Invoke URL for REST API"
+    Value: !Sub "https://${MyRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod"     
