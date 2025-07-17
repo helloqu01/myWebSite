@@ -15,7 +15,7 @@ Resources:
       Name: MyProfileRestApi
       StageName: prod
       Cors:
-        AllowOrigins: "'*'"
+        AllowOrigin: "'*'"
         AllowMethods: "'OPTIONS,GET,POST,PUT,DELETE,PATCH'"
         AllowHeaders: "'Content-Type,Authorization'"
         MaxAge: 600
