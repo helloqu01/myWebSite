@@ -47,7 +47,7 @@ Resources:
           Type: HttpApi
           Properties:
             ApiId: !Ref MyHttpApi    # 반드시 CORS 연 MyHttpApi를 참조
-            Path: /api/{proxy+}      # /api/* 전부를 처리
+            Path: /{proxy+}      # /api/* 전부를 처리
             Method: ANY
 
 Outputs:
