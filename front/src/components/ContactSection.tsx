@@ -44,7 +44,7 @@ export default function ContactSection() {
     e.preventDefault();
     setStatus('sending');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/email`, {
+      const res = await fetch(`/api/email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, message }),
