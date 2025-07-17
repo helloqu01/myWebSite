@@ -7,6 +7,7 @@ loadEnv();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('api');
 
   // ➋ 프론트(예: http://localhost:3000)에서 호출할 수 있도록 CORS 허용
   app.enableCors({
