@@ -48,6 +48,7 @@ interface ExperienceItem {
 
 export default function ExperienceSection() {
   const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { lang } = useLocale();
   const t = lang === "en" ? en : ko;
@@ -61,37 +62,61 @@ export default function ExperienceSection() {
       key={idx}
       sx={{
         p: 3,
-        bgcolor: theme.palette.background.paper,
+        bgcolor: isDark ? "rgba(255,255,255,0.05)" : theme.palette.background.paper,
+        backdropFilter: isDark ? "blur(6px)" : "none",
+        border: isDark ? "1px solid rgba(255,255,255,0.1)" : "none",
+        boxShadow: isDark
+          ? "0 8px 32px rgba(0,0,0,0.7)"
+          : theme.shadows[3],
         borderRadius: 3,
-        boxShadow: 3,
-        '&:hover': { boxShadow: 6 },
+        transition: "box-shadow 0.3s ease",
+        "&:hover": {
+          boxShadow: isDark
+            ? "0 12px 40px rgba(0,0,0,0.8)"
+            : theme.shadows[6],
+        },
       }}
     >
       <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>{exp.company}</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+          {exp.company}
+        </Typography>
         <Chip label={exp.role} size="small" color="primary" />
-        {exp.details.some(d => typeof d !== 'string') && (
+        {exp.details.some(d => typeof d !== "string") && (
           <IconButton
             component="a"
-            href={(exp.details.find(d => typeof d !== 'string') as LinkDetail).url}
+            href={(exp.details.find(d => typeof d !== "string") as LinkDetail).url}
             target="_blank"
             rel="noreferrer"
             size="small"
-            sx={{ ml: 1 }}
+            sx={{
+              color: theme.palette.text.secondary,
+              "&:hover": { color: theme.palette.primary.main },
+            }}
           >
             <Link2 size={16} />
           </IconButton>
         )}
       </Stack>
 
-      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+      <Typography
+        variant="subtitle2"
+        color="text.secondary"
+        gutterBottom
+        sx={{ mb: 2 }}
+      >
         {exp.period} · {exp.duration}
       </Typography>
 
       <Box component="ul" sx={{ pl: 2, mb: 2 }}>
         {exp.details.map((d, i) =>
-          typeof d === 'string' ? (
-            <Typography key={i} component="li" variant="body2" sx={{ mb: 0.5 }}>
+          typeof d === "string" ? (
+            <Typography
+              key={i}
+              component="li"
+              variant="body2"
+              sx={{ mb: 0.5, color: theme.palette.text.primary }}
+            >
               {d}
             </Typography>
           ) : null
@@ -99,7 +124,10 @@ export default function ExperienceSection() {
       </Box>
 
       {exp.techStack && (
-        <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 2 }}>
+        <Typography
+          variant="body2"
+          sx={{ fontStyle: "italic", mb: 2, color: theme.palette.text.primary }}
+        >
           📦 Tech Stack: {exp.techStack}
         </Typography>
       )}
@@ -107,20 +135,23 @@ export default function ExperienceSection() {
       {exp.extra && (
         <>
           <Collapse in={expanded[idx]} timeout="auto" unmountOnExit>
-            <Divider sx={{ my: 2 }} />
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              {expanded[idx] ? t.experienceLess : t.experienceMore}
-            </Typography>
-            <Box component="ul" sx={{ pl: 2 }}>
+            <Divider sx={{ my: 2, borderColor: theme.palette.divider }} />
+            <Box component="ul" sx={{ pl: 2, mb: 1 }}>
               {exp.extra.map((item, i) => (
                 <li key={i}>
-                  <Typography variant="body2" sx={{ mb: 0.5 }}>{item}</Typography>
+                  <Typography variant="body2" sx={{ mb: 0.5, color: theme.palette.text.secondary }}>
+                    {item}
+                  </Typography>
                 </li>
               ))}
             </Box>
           </Collapse>
-          <CardActions sx={{ justifyContent: 'flex-end', pt: 2 }}>
-            <Button size="small" onClick={() => toggle(idx)}>
+          <CardActions sx={{ justifyContent: "flex-end", pt: 2 }}>
+            <Button
+              size="small"
+              onClick={() => toggle(idx)}
+              sx={{ color: theme.palette.primary.main }}
+            >
               {expanded[idx] ? t.experienceLess : t.experienceMore}
             </Button>
           </CardActions>
@@ -134,7 +165,14 @@ export default function ExperienceSection() {
       <Stack spacing={3} textAlign="center" mb={6}>
         <Typography
           variant="h3"
-          sx={{ fontWeight: 700, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}
+          sx={{
+            fontWeight: 700,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 1,
+            color: theme.palette.text.primary,
+          }}
         >
           <Calendar size={28} /> {t.experienceHeader}
         </Typography>

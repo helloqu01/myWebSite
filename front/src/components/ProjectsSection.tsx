@@ -27,44 +27,32 @@ export default function ProjectsSection() {
   const t = lang === "en" ? en : ko;
   const projects = t.projectData;
 
-  // 각 카드별 현재 이미지 인덱스 상태
   const [imgIndex, setImgIndex] = useState<Record<number, number>>({});
-
-  // 이전 이미지로 이동
   const handlePrev = (idx: number) => {
-    setImgIndex((prev) => {
-      const rawImages = projects[idx].images
+    setImgIndex(prev => {
+      const raw = Array.isArray(projects[idx].images)
         ? projects[idx].images
         : projects[idx].images
         ? [projects[idx].images]
         : [];
-      const current = prev[idx] ?? 0;
-      const prevIdx = rawImages.length
-        ? (current - 1 + rawImages.length) % rawImages.length
-        : 0;
-      return { ...prev, [idx]: prevIdx };
+      const curr = prev[idx] ?? 0;
+      return { ...prev, [idx]: raw.length ? (curr - 1 + raw.length) % raw.length : 0 };
     });
   };
-
-  // 다음 이미지로 이동
   const handleNext = (idx: number) => {
-    setImgIndex((prev) => {
-      const rawImages = projects[idx].images
+    setImgIndex(prev => {
+      const raw = Array.isArray(projects[idx].images)
         ? projects[idx].images
         : projects[idx].images
         ? [projects[idx].images]
         : [];
-      const current = prev[idx] ?? 0;
-      const nextIdx = rawImages.length
-        ? (current + 1) % rawImages.length
-        : 0;
-      return { ...prev, [idx]: nextIdx };
+      const curr = prev[idx] ?? 0;
+      return { ...prev, [idx]: raw.length ? (curr + 1) % raw.length : 0 };
     });
   };
 
-  // 프로젝트 다이얼로그 상태
   const [projIndex, setProjIndex] = useState<number | null>(null);
-  const openProj = (idx: number) => setProjIndex(idx);
+  const openProj = (i: number) => setProjIndex(i);
   const closeProj = () => setProjIndex(null);
 
   return (
@@ -93,7 +81,7 @@ export default function ProjectsSection() {
         gap={4}
       >
         {projects.map((proj, idx) => {
-          const rawImages = proj.images
+          const imgs = Array.isArray(proj.images)
             ? proj.images
             : proj.images
             ? [proj.images]
@@ -105,27 +93,42 @@ export default function ProjectsSection() {
               key={idx}
               component={motion.div}
               whileHover={{ y: -5 }}
-              sx={{ display: "flex", flexDirection: "column" }}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                backgroundColor:
+                  theme.palette.mode === "dark" ? "rgba(255,255,255,0.03)" : "#fff",
+                backdropFilter:
+                  theme.palette.mode === "dark" ? "blur(8px)" : "none",
+                border:
+                  theme.palette.mode === "dark"
+                    ? "1px solid rgba(255,255,255,0.1)"
+                    : "none",
+                boxShadow:
+                  theme.palette.mode === "dark"
+                    ? "0 8px 32px rgba(0,0,0,0.7)"
+                    : theme.shadows[4],
+                borderRadius: 2,
+              }}
             >
-              {/* 이미지 슬라이더 영역 */}
-              <Box position="relative" sx={{ height: 160, overflow: 'hidden' }}>
+              <Box position="relative" sx={{ height: 160, overflow: "hidden" }}>
                 <Box
                   component="img"
-                  src={rawImages[current] ?? ''}
+                  src={imgs[current] || ""}
                   alt={`${proj.title} image ${current + 1}`}
-                  sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  sx={{ width: "100%", height: "100%", objectFit: "cover" }}
                 />
-                {rawImages.length > 1 && (
-                  <>  {/* 좌/우 화살표 */}
+                {imgs.length > 1 && (
+                  <>
                     <IconButton
                       onClick={() => handlePrev(idx)}
                       sx={{
-                        position: 'absolute',
-                        top: '50%',
+                        position: "absolute",
+                        top: "50%",
                         left: 8,
-                        transform: 'translateY(-50%)',
+                        transform: "translateY(-50%)",
                         backgroundColor: theme.palette.background.paper,
-                        '&:hover': { backgroundColor: theme.palette.background.paper },
+                        "&:hover": { backgroundColor: theme.palette.background.paper },
                       }}
                     >
                       <ChevronLeft />
@@ -133,12 +136,12 @@ export default function ProjectsSection() {
                     <IconButton
                       onClick={() => handleNext(idx)}
                       sx={{
-                        position: 'absolute',
-                        top: '50%',
+                        position: "absolute",
+                        top: "50%",
                         right: 8,
-                        transform: 'translateY(-50%)',
+                        transform: "translateY(-50%)",
                         backgroundColor: theme.palette.background.paper,
-                        '&:hover': { backgroundColor: theme.palette.background.paper },
+                        "&:hover": { backgroundColor: theme.palette.background.paper },
                       }}
                     >
                       <ChevronRight />
@@ -157,7 +160,25 @@ export default function ProjectsSection() {
               </CardContent>
 
               <CardActions sx={{ justifyContent: "flex-end", p: 2 }}>
-                <Button onClick={() => openProj(idx)} variant="contained" color="primary">
+                <Button
+                  onClick={() => openProj(idx)}
+                  variant="outlined"
+                  sx={{
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                    color: "#fff",
+                    textTransform: "none",
+                    borderRadius: 2,
+                    boxShadow: theme.shadows[2],
+                    fontWeight: 600,
+                    px: 3,
+                    py: 1,
+                    transition: "all 0.25s ease",
+                    "&:hover": {
+                      boxShadow: theme.shadows[6],
+                      transform: "scale(1.05)",
+                    },
+                  }}
+                >
                   {t.projectsView}
                 </Button>
               </CardActions>
