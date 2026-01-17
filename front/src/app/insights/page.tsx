@@ -33,6 +33,51 @@ const articles = [
     summaryKo:
       "승인에 필요한 콘텐츠 깊이, 정책, 크롤링 접근성을 정리했습니다.",
   },
+  {
+    slug: "api-reliability",
+    titleEn: "API Reliability: Guardrails That Prevent Incidents",
+    titleKo: "API 안정성: 장애를 줄이는 가드레일",
+    summaryEn:
+      "A practical checklist for timeouts, retries, idempotency, and rate limits.",
+    summaryKo:
+      "타임아웃, 재시도, 멱등성, 레이트리밋을 포함한 체크리스트입니다.",
+  },
+  {
+    slug: "design-systems",
+    titleEn: "Design Systems That Scale With Teams",
+    titleKo: "팀과 함께 커지는 디자인 시스템",
+    summaryEn:
+      "How to standardize components without slowing down product delivery.",
+    summaryKo:
+      "컴포넌트 표준화와 딜리버리를 함께 잡는 방법을 정리했습니다.",
+  },
+  {
+    slug: "cloud-costs",
+    titleEn: "Cloud Costs: Reduce Waste Without Breaking Systems",
+    titleKo: "클라우드 비용 최적화: 낭비 줄이기",
+    summaryEn:
+      "Identify hot spots in storage, compute, and CDN with quick wins.",
+    summaryKo:
+      "스토리지, 컴퓨트, CDN 비용을 빠르게 줄이는 방법입니다.",
+  },
+  {
+    slug: "testing-strategy",
+    titleEn: "Testing Strategy: Coverage That Matters",
+    titleKo: "테스트 전략: 의미 있는 커버리지",
+    summaryEn:
+      "Focus on integration, critical flows, and stable contracts.",
+    summaryKo:
+      "핵심 플로우와 통합 테스트 중심으로 정리했습니다.",
+  },
+  {
+    slug: "security-basics",
+    titleEn: "Security Basics for Product Teams",
+    titleKo: "제품팀을 위한 보안 기초",
+    summaryEn:
+      "Practical steps: secrets, headers, dependency hygiene, and access control.",
+    summaryKo:
+      "시크릿 관리, 보안 헤더, 의존성 점검, 접근 제어를 다룹니다.",
+  },
 ];
 
 export default function InsightsPage() {

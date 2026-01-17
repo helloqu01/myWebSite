@@ -6,26 +6,26 @@ import { Box, Container, Stack, Typography, Link } from "@mui/material";
 import { useLocale } from "@/context/LocaleContext";
 import AdUnit from "@/components/AdUnit";
 
-export default function SitePerformancePage() {
+export default function CloudCostsPage() {
   const { lang } = useLocale();
   const content =
     lang === "en"
       ? {
-          title: "Shipping Fast: Practical Web Performance Checks",
+          title: "Cloud Costs: Reduce Waste Without Breaking Systems",
           body: [
-            "Performance is easiest to keep stable when you set a few simple guardrails early.",
-            "Start with image budgets, code-splitting on heavy widgets, and avoiding layout shifts on hero sections.",
-            "Measure with real devices and network throttling, then tighten the largest contentful paint (LCP) and total blocking time (TBT).",
-            "A quick win is to preload critical fonts, defer non-critical scripts, and keep above-the-fold markup lean.",
+            "Start by tagging resources so cost reports have clear ownership.",
+            "Right-size compute, turn off idle environments, and add CDN caching rules.",
+            "Move cold data to cheaper storage tiers and delete unused snapshots.",
+            "Track unit costs per request to prevent hidden regressions.",
           ],
         }
       : {
-          title: "빠르게 여는 사이트: 실전 성능 점검 포인트",
+          title: "클라우드 비용 최적화: 낭비 줄이기",
           body: [
-            "성능은 초기에 몇 가지 기준을 잡아두면 안정적으로 유지됩니다.",
-            "이미지 용량 제한, 무거운 위젯의 코드 분할, 히어로 섹션의 레이아웃 시프트 방지가 핵심입니다.",
-            "실제 기기와 느린 네트워크 기준으로 측정한 뒤 LCP와 TBT를 줄이는 개선을 진행합니다.",
-            "폰트 프리로드, 비핵심 스크립트 지연, 상단 영역 마크업 최소화가 효과적입니다.",
+            "태그를 정리해 비용 리포트의 소유권을 명확히 합니다.",
+            "컴퓨트 리사이징, 유휴 환경 종료, CDN 캐시 규칙 추가가 빠른 효과를 냅니다.",
+            "콜드 데이터는 저렴한 스토리지로 이전하고 불필요한 스냅샷을 삭제합니다.",
+            "요청당 비용 지표를 관리해 숨은 비용 증가를 막습니다.",
           ],
         };
 

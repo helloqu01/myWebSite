@@ -6,26 +6,26 @@ import { Box, Container, Stack, Typography, Link } from "@mui/material";
 import { useLocale } from "@/context/LocaleContext";
 import AdUnit from "@/components/AdUnit";
 
-export default function SitePerformancePage() {
+export default function SecurityBasicsPage() {
   const { lang } = useLocale();
   const content =
     lang === "en"
       ? {
-          title: "Shipping Fast: Practical Web Performance Checks",
+          title: "Security Basics for Product Teams",
           body: [
-            "Performance is easiest to keep stable when you set a few simple guardrails early.",
-            "Start with image budgets, code-splitting on heavy widgets, and avoiding layout shifts on hero sections.",
-            "Measure with real devices and network throttling, then tighten the largest contentful paint (LCP) and total blocking time (TBT).",
-            "A quick win is to preload critical fonts, defer non-critical scripts, and keep above-the-fold markup lean.",
+            "Start with secrets management and avoid committing keys to repositories.",
+            "Add security headers, enforce HTTPS, and limit third-party scripts.",
+            "Keep dependencies updated and monitor for known vulnerabilities.",
+            "Use least-privilege access and review permissions regularly.",
           ],
         }
       : {
-          title: "빠르게 여는 사이트: 실전 성능 점검 포인트",
+          title: "제품팀을 위한 보안 기초",
           body: [
-            "성능은 초기에 몇 가지 기준을 잡아두면 안정적으로 유지됩니다.",
-            "이미지 용량 제한, 무거운 위젯의 코드 분할, 히어로 섹션의 레이아웃 시프트 방지가 핵심입니다.",
-            "실제 기기와 느린 네트워크 기준으로 측정한 뒤 LCP와 TBT를 줄이는 개선을 진행합니다.",
-            "폰트 프리로드, 비핵심 스크립트 지연, 상단 영역 마크업 최소화가 효과적입니다.",
+            "시크릿 관리부터 시작해 키가 저장소에 남지 않도록 합니다.",
+            "보안 헤더 적용, HTTPS 강제, 외부 스크립트 최소화를 권장합니다.",
+            "의존성을 최신으로 유지하고 취약점 알림을 모니터링하세요.",
+            "최소 권한 원칙을 적용하고 권한을 주기적으로 점검합니다.",
           ],
         };
 

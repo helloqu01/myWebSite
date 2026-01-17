@@ -4,6 +4,7 @@ import React from "react";
 import NextLink from "next/link";
 import { Box, Container, Stack, Typography, Link } from "@mui/material";
 import { useLocale } from "@/context/LocaleContext";
+import AdUnit from "@/components/AdUnit";
 
 export default function AdsenseReadinessPage() {
   const { lang } = useLocale();
@@ -35,11 +36,11 @@ export default function AdsenseReadinessPage() {
           <Typography variant="h3" sx={{ fontWeight: 700 }}>
             {content.title}
           </Typography>
-          {content.body.map((text, idx) => (
-            <Typography key={idx} variant="body1">
-              {text}
-            </Typography>
-          ))}
+          <Typography variant="body1">{content.body[0]}</Typography>
+          <Typography variant="body1">{content.body[1]}</Typography>
+          <AdUnit />
+          <Typography variant="body1">{content.body[2]}</Typography>
+          <Typography variant="body1">{content.body[3]}</Typography>
           <Link component={NextLink} href="/insights" underline="hover" color="primary">
             {lang === "en" ? "Back to Insights" : "인사이트로 돌아가기"}
           </Link>

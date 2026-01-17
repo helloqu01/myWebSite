@@ -69,6 +69,9 @@ export default function ConsentScripts() {
         strategy="afterInteractive"
         src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1115617071874827"
         crossOrigin="anonymous"
+        onLoad={() => {
+          window.dispatchEvent(new Event("adsense-ready"));
+        }}
       />
     </>
   );

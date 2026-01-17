@@ -6,26 +6,26 @@ import { Box, Container, Stack, Typography, Link } from "@mui/material";
 import { useLocale } from "@/context/LocaleContext";
 import AdUnit from "@/components/AdUnit";
 
-export default function SitePerformancePage() {
+export default function ApiReliabilityPage() {
   const { lang } = useLocale();
   const content =
     lang === "en"
       ? {
-          title: "Shipping Fast: Practical Web Performance Checks",
+          title: "API Reliability: Guardrails That Prevent Incidents",
           body: [
-            "Performance is easiest to keep stable when you set a few simple guardrails early.",
-            "Start with image budgets, code-splitting on heavy widgets, and avoiding layout shifts on hero sections.",
-            "Measure with real devices and network throttling, then tighten the largest contentful paint (LCP) and total blocking time (TBT).",
-            "A quick win is to preload critical fonts, defer non-critical scripts, and keep above-the-fold markup lean.",
+            "Reliable APIs come from small guardrails that prevent cascading failures.",
+            "Start with timeouts, retries with backoff, and idempotency keys on write operations.",
+            "Add circuit breakers, clear error codes, and service-level objectives that teams can monitor.",
+            "Rate limits protect core services and keep traffic spikes from becoming outages.",
           ],
         }
       : {
-          title: "빠르게 여는 사이트: 실전 성능 점검 포인트",
+          title: "API 안정성: 장애를 줄이는 가드레일",
           body: [
-            "성능은 초기에 몇 가지 기준을 잡아두면 안정적으로 유지됩니다.",
-            "이미지 용량 제한, 무거운 위젯의 코드 분할, 히어로 섹션의 레이아웃 시프트 방지가 핵심입니다.",
-            "실제 기기와 느린 네트워크 기준으로 측정한 뒤 LCP와 TBT를 줄이는 개선을 진행합니다.",
-            "폰트 프리로드, 비핵심 스크립트 지연, 상단 영역 마크업 최소화가 효과적입니다.",
+            "안정적인 API는 작은 가드레일에서 시작합니다.",
+            "타임아웃, 지수 백오프 재시도, 쓰기 요청의 멱등성 키를 먼저 적용하세요.",
+            "서킷 브레이커, 명확한 에러 코드, SLO 모니터링을 함께 준비합니다.",
+            "레이트리밋은 핵심 서비스를 보호해 트래픽 급증이 장애로 번지는 것을 막습니다.",
           ],
         };
 

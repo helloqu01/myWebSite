@@ -6,26 +6,26 @@ import { Box, Container, Stack, Typography, Link } from "@mui/material";
 import { useLocale } from "@/context/LocaleContext";
 import AdUnit from "@/components/AdUnit";
 
-export default function SitePerformancePage() {
+export default function TestingStrategyPage() {
   const { lang } = useLocale();
   const content =
     lang === "en"
       ? {
-          title: "Shipping Fast: Practical Web Performance Checks",
+          title: "Testing Strategy: Coverage That Matters",
           body: [
-            "Performance is easiest to keep stable when you set a few simple guardrails early.",
-            "Start with image budgets, code-splitting on heavy widgets, and avoiding layout shifts on hero sections.",
-            "Measure with real devices and network throttling, then tighten the largest contentful paint (LCP) and total blocking time (TBT).",
-            "A quick win is to preload critical fonts, defer non-critical scripts, and keep above-the-fold markup lean.",
+            "High-value tests focus on user-critical flows and integration points.",
+            "Keep unit tests fast, but invest more in integration and smoke tests.",
+            "Use contract tests for API boundaries to prevent breaking changes.",
+            "Stabilize CI with deterministic data and clear teardown steps.",
           ],
         }
       : {
-          title: "빠르게 여는 사이트: 실전 성능 점검 포인트",
+          title: "테스트 전략: 의미 있는 커버리지",
           body: [
-            "성능은 초기에 몇 가지 기준을 잡아두면 안정적으로 유지됩니다.",
-            "이미지 용량 제한, 무거운 위젯의 코드 분할, 히어로 섹션의 레이아웃 시프트 방지가 핵심입니다.",
-            "실제 기기와 느린 네트워크 기준으로 측정한 뒤 LCP와 TBT를 줄이는 개선을 진행합니다.",
-            "폰트 프리로드, 비핵심 스크립트 지연, 상단 영역 마크업 최소화가 효과적입니다.",
+            "사용자 핵심 플로우와 통합 지점을 중심으로 테스트를 설계합니다.",
+            "유닛 테스트는 빠르게, 통합/스모크 테스트에 더 투자하세요.",
+            "API 경계는 컨트랙트 테스트로 변경 리스크를 줄입니다.",
+            "CI 안정화를 위해 테스트 데이터와 정리 절차를 표준화합니다.",
           ],
         };
 
