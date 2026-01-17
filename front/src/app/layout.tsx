@@ -62,6 +62,12 @@ export default function RootLayout({
           }}
         />
         {/* End Google tag (gtag.js) */}
+        {/* Google AdSense */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1115617071874827"
+          crossOrigin="anonymous"
+        />
         <Script
           id="clarity-init"
           strategy="afterInteractive"
