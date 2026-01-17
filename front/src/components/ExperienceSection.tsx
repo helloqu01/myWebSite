@@ -87,7 +87,6 @@ export default function ExperienceSection() {
         />
         {exp.details.some(d => typeof d !== "string") && (
           <IconButton
-            component="a"
             href={(exp.details.find(d => typeof d !== "string") as LinkDetail).url}
             target="_blank"
             rel="noreferrer"

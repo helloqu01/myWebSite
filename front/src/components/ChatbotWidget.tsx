@@ -1,7 +1,7 @@
 // File: components/ChatbotWidget.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Stack,
@@ -74,10 +74,7 @@ export default function ChatbotWidget() {
     setInput("");
   };
 
-  const suggestionsToShow = useMemo(
-    () => suggestions.slice(0, 4),
-    [suggestions]
-  );
+  const suggestionsToShow = suggestions.slice(0, 4);
 
   return (
     <>

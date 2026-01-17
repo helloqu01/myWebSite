@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import {
   Dialog,
   DialogTitle,
@@ -91,16 +92,20 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
             }}
             onClick={handlePreviewOpen}
           >
-            <Box
-              component="img"
+            <Image
               src={rawImages[idx]}
               alt={`${project.title} slide ${idx + 1}`}
-              sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+              fill
+              sizes="(max-width: 768px) 100vw, 800px"
+              style={{ objectFit: "contain" }}
             />
             {rawImages.length > 1 && (
               <>
                 <IconButton
-                  onClick={e => { e.stopPropagation(); handlePrev(); }}
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                    e.stopPropagation();
+                    handlePrev();
+                  }}
                   sx={{
                     position: 'absolute',
                     top: '50%',
@@ -113,7 +118,10 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
                   <ChevronLeft />
                 </IconButton>
                 <IconButton
-                  onClick={e => { e.stopPropagation(); handleNext(); }}
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                    e.stopPropagation();
+                    handleNext();
+                  }}
                   sx={{
                     position: 'absolute',
                     top: '50%',
@@ -132,14 +140,13 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
           {/* Video preview */}
           {project.video && (
             <Box sx={{ mb: 2 }}>
-              <Box
-                component="video"
+              <video
                 controls
                 src={project.video}
-                sx={{
-                  width: '100%',
-                  height: 'auto',
-                  borderRadius: 1,
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  borderRadius: 4,
                   boxShadow: theme.shadows[1],
                 }}
               />
@@ -157,7 +164,6 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'flex-end' }}>
           <Button
-            component="a"
             href={project.link}
             target="_blank"
             rel="noopener noreferrer"
@@ -191,16 +197,21 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
           <CloseIcon size={24} />
         </IconButton>
         <Box
-          component="img"
-          src={rawImages[idx]}
-          alt={`${project.title} full preview`}
           sx={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'contain',
-            bgcolor: 'rgba(0,0,0,0.9)',
+            width: "100%",
+            height: "100%",
+            bgcolor: "rgba(0,0,0,0.9)",
+            position: "relative",
           }}
-        />
+        >
+          <Image
+            src={rawImages[idx]}
+            alt={`${project.title} full preview`}
+            fill
+            sizes="100vw"
+            style={{ objectFit: "contain" }}
+          />
+        </Box>
       </Dialog>
     </>
   );

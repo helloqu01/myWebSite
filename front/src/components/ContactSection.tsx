@@ -179,8 +179,6 @@ export default function ContactSection() {
 
           {/* 문의 폼 */}
           <Box
-            component="form"
-            onSubmit={handleSubmit}
             sx={{
               width: '100%',
               maxWidth: 600,
@@ -193,56 +191,58 @@ export default function ContactSection() {
               boxShadow: 'var(--shadow-soft)',
             }}
           >
-            <Stack spacing={2}>
-              <TextField
-                label={t.contactNameLabel}
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Your name"
-                fullWidth
-                required
-                sx={inputSx}
-              />
-              <TextField
-                label={t.contactEmailLabel}
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                fullWidth
-                required
-                sx={inputSx}
-              />
-              <TextField
-                label={t.contactMessageLabel}
-                value={message}
-                onChange={e => setMessage(e.target.value)}
-                placeholder="Write your message"
-                fullWidth
-                required
-                multiline
-                rows={4}
-                sx={inputSx}
-              />
+            <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+              <Stack spacing={2}>
+                <TextField
+                  label={t.contactNameLabel}
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="Your name"
+                  fullWidth
+                  required
+                  sx={inputSx}
+                />
+                <TextField
+                  label={t.contactEmailLabel}
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  fullWidth
+                  required
+                  sx={inputSx}
+                />
+                <TextField
+                  label={t.contactMessageLabel}
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  placeholder="Write your message"
+                  fullWidth
+                  required
+                  multiline
+                  rows={4}
+                  sx={inputSx}
+                />
 
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={status === 'sending'}
-                sx={{
-                  mt: 1,
-                  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                  '&:hover': {
-                    background: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
-                  },
-                }}
-              >
-                {status === 'sending' ? '…' : t.contactSubmit}
-              </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={status === 'sending'}
+                  sx={{
+                    mt: 1,
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                    '&:hover': {
+                      background: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
+                    },
+                  }}
+                >
+                  {status === 'sending' ? '…' : t.contactSubmit}
+                </Button>
 
-              {status === 'success' && <Alert severity="success">{t.contactSuccess}</Alert>}
-              {status === 'error' && <Alert severity="error">{t.contactError}</Alert>}
-            </Stack>
+                {status === 'success' && <Alert severity="success">{t.contactSuccess}</Alert>}
+                {status === 'error' && <Alert severity="error">{t.contactError}</Alert>}
+              </Stack>
+            </form>
           </Box>
 
           {/* 소셜 아이콘 */}
@@ -254,9 +254,9 @@ export default function ContactSection() {
             ].map((s, i) => (
               <motion.div key={i} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} transition={{ type: 'spring', stiffness: 300 }}>
                 <IconButton
-                  component="a"
                   href={s.href}
                   target="_blank"
+                  rel="noreferrer"
                   sx={{
                     border: '1px solid var(--card-border)',
                     color: theme.palette.text.primary,
@@ -315,7 +315,6 @@ export default function ContactSection() {
           <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} transition={{ type: 'spring', stiffness: 300 }} style={{ marginTop: 16 }}>
             <Button
               variant="outlined"
-              component="a"
               href={vCardDataUri}
               download="HyunjiOh.vcf"
               sx={{

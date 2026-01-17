@@ -14,6 +14,7 @@ import {
   IconButton,
   useTheme,
 } from "@mui/material";
+import Image from "next/image";
 import { Wrench, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import ProjectDialog from "./ProjectDialog";
@@ -108,17 +109,17 @@ export default function ProjectsSection() {
               }}
             >
               <Box position="relative" sx={{ height: 160, overflow: "hidden" }}>
-                <Box
-                  component="img"
-                  src={imgs[current] || ""}
-                  alt={`${proj.title} image ${current + 1}`}
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    transform: "scale(1.02)",
-                  }}
-                />
+                {imgs[current] ? (
+                  <Image
+                    src={imgs[current]}
+                    alt={`${proj.title} image ${current + 1}`}
+                    fill
+                    sizes="(max-width: 900px) 100vw, 33vw"
+                    style={{ objectFit: "cover", transform: "scale(1.02)" }}
+                  />
+                ) : (
+                  <Box sx={{ width: "100%", height: "100%", backgroundColor: "var(--surface-strong)" }} />
+                )}
                 {imgs.length > 1 && (
                   <>
                     <IconButton

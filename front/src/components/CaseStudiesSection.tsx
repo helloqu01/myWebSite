@@ -84,7 +84,6 @@ export default function CaseStudiesSection() {
               {item.link && item.link !== "#" && (
                 <Box>
                   <Button
-                    component="a"
                     href={item.link}
                     target="_blank"
                     rel="noreferrer"

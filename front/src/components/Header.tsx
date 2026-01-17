@@ -161,7 +161,7 @@ export default function Header() {
                   </Button>
                 ))}
                 <Button
-                  onClick={e => setMoreAnchor(e.currentTarget)}
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => setMoreAnchor(e.currentTarget)}
                   sx={linkSx}
                 >
                   More
