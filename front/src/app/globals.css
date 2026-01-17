@@ -2,39 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 1) 기본 텍스트 색 */
-h2, h3, h4, p, li, a {
-  @apply text-gray-800;
-}
-
-/* 2) 다크 모드일 때 텍스트 색 */
-.dark h2,
-.dark h3,
-.dark h4,
-.dark p,
-.dark li,
-.dark a {
-  @apply text-gray-200;
-}
-
-/* Hero 전용 그림자 */
-.drop-shadow {
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-.drop-shadow-lg {
-  text-shadow: 0 4px 8px rgba(0,0,0,0.5);
-}
-
-/* 스크롤 스냅 & 스크롤바 숨기기 */
 html {
   scroll-behavior: smooth;
+  color-scheme: light dark;
 }
+
 body {
   overscroll-behavior: none;
+  min-height: 100%;
+  font-family: var(--font-sans), "Space Grotesk", sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  isolation: isolate;
 }
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: var(--page-pattern);
+  opacity: var(--page-pattern-opacity, 0.2);
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: multiply;
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
-html {
-  scroll-behavior: smooth;
+
+.drop-shadow {
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+.drop-shadow-lg {
+  text-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
 }

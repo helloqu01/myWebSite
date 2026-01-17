@@ -56,7 +56,7 @@ export default function ProjectsSection() {
   const closeProj = () => setProjIndex(null);
 
   return (
-    <Container id="projects" sx={{ py: 8 }}>
+    <Container id="projects" sx={{ py: { xs: 8, md: 12 } }}>
       <Stack spacing={3} textAlign="center" mb={6}>
         <Typography
           variant="h3"
@@ -66,6 +66,7 @@ export default function ProjectsSection() {
             justifyContent: "center",
             alignItems: "center",
             gap: 1,
+            letterSpacing: "-0.02em",
           }}
         >
           <Wrench size={28} /> {t.projectsHeader}
@@ -96,19 +97,14 @@ export default function ProjectsSection() {
               sx={{
                 display: "flex",
                 flexDirection: "column",
-                backgroundColor:
-                  theme.palette.mode === "dark" ? "rgba(255,255,255,0.03)" : "#fff",
-                backdropFilter:
-                  theme.palette.mode === "dark" ? "blur(8px)" : "none",
-                border:
-                  theme.palette.mode === "dark"
-                    ? "1px solid rgba(255,255,255,0.1)"
-                    : "none",
-                boxShadow:
-                  theme.palette.mode === "dark"
-                    ? "0 8px 32px rgba(0,0,0,0.7)"
-                    : theme.shadows[4],
-                borderRadius: 2,
+                backgroundColor: "var(--surface)",
+                border: "1px solid var(--card-border)",
+                boxShadow: "var(--shadow-soft)",
+                borderRadius: 3,
+                transition: "transform 0.25s ease, box-shadow 0.25s ease",
+                "&:hover": {
+                  boxShadow: "var(--shadow-strong)",
+                },
               }}
             >
               <Box position="relative" sx={{ height: 160, overflow: "hidden" }}>
@@ -116,7 +112,12 @@ export default function ProjectsSection() {
                   component="img"
                   src={imgs[current] || ""}
                   alt={`${proj.title} image ${current + 1}`}
-                  sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    transform: "scale(1.02)",
+                  }}
                 />
                 {imgs.length > 1 && (
                   <>
@@ -127,8 +128,8 @@ export default function ProjectsSection() {
                         top: "50%",
                         left: 8,
                         transform: "translateY(-50%)",
-                        backgroundColor: theme.palette.background.paper,
-                        "&:hover": { backgroundColor: theme.palette.background.paper },
+                        backgroundColor: "var(--surface-strong)",
+                        "&:hover": { backgroundColor: "var(--surface-strong)" },
                       }}
                     >
                       <ChevronLeft />
@@ -140,8 +141,8 @@ export default function ProjectsSection() {
                         top: "50%",
                         right: 8,
                         transform: "translateY(-50%)",
-                        backgroundColor: theme.palette.background.paper,
-                        "&:hover": { backgroundColor: theme.palette.background.paper },
+                        backgroundColor: "var(--surface-strong)",
+                        "&:hover": { backgroundColor: "var(--surface-strong)" },
                       }}
                     >
                       <ChevronRight />
@@ -165,17 +166,17 @@ export default function ProjectsSection() {
                   variant="outlined"
                   sx={{
                     background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                    color: "#fff",
+                    color: theme.palette.common.white,
                     textTransform: "none",
                     borderRadius: 2,
-                    boxShadow: theme.shadows[2],
+                    boxShadow: "var(--shadow-soft)",
                     fontWeight: 600,
                     px: 3,
                     py: 1,
                     transition: "all 0.25s ease",
                     "&:hover": {
-                      boxShadow: theme.shadows[6],
-                      transform: "scale(1.05)",
+                      boxShadow: "var(--shadow-strong)",
+                      transform: "translateY(-1px) scale(1.02)",
                     },
                   }}
                 >

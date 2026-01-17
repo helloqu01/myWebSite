@@ -52,8 +52,27 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-        <DialogTitle>{project.title}</DialogTitle>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: "var(--surface-strong)",
+            border: "1px solid var(--card-border)",
+            boxShadow: "var(--shadow-strong)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontFamily: "var(--font-display), 'Fraunces', serif",
+            fontWeight: 600,
+          }}
+        >
+          {project.title}
+        </DialogTitle>
         <DialogContent>
           {/* Image slider */}
           <Box
@@ -62,7 +81,9 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
               width: '100%',
               height: 300,
               mb: 2,
-              bgcolor: theme.palette.background.default,
+              bgcolor: 'var(--surface-strong)',
+              borderRadius: 2,
+              border: '1px solid var(--card-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -85,8 +106,8 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
                     top: '50%',
                     left: 8,
                     transform: 'translateY(-50%)',
-                    backgroundColor: theme.palette.background.paper,
-                    '&:hover': { backgroundColor: theme.palette.background.paper },
+                    backgroundColor: 'var(--surface-strong)',
+                    '&:hover': { backgroundColor: 'var(--surface-strong)' },
                   }}
                 >
                   <ChevronLeft />
@@ -98,8 +119,8 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
                     top: '50%',
                     right: 8,
                     transform: 'translateY(-50%)',
-                    backgroundColor: theme.palette.background.paper,
-                    '&:hover': { backgroundColor: theme.palette.background.paper },
+                    backgroundColor: 'var(--surface-strong)',
+                    '&:hover': { backgroundColor: 'var(--surface-strong)' },
                   }}
                 >
                   <ChevronRight />
@@ -141,6 +162,14 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
             target="_blank"
             rel="noopener noreferrer"
             startIcon={<LinkIcon />}
+            sx={{
+              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+              color: theme.palette.common.white,
+              px: 3,
+              "&:hover": {
+                background: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
+              },
+            }}
           >
             {viewLabel}
           </Button>

@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useContext, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   AppBar,
   Toolbar,
@@ -18,6 +19,8 @@ import {
   Typography,
   ToggleButton,
   ToggleButtonGroup,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import {
   Brightness4,
@@ -40,6 +43,8 @@ export default function Header() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const colorMode = useContext(ColorModeContext);
+  const router = useRouter();
+  const pathname = usePathname();
 
   const { lang, setLang } = useLocale();
   const t = lang === "en" ? en : ko;
@@ -47,46 +52,63 @@ export default function Header() {
   const { scrollY } = useScroll();
   const opacity = useTransform(scrollY, [0, 100], [1, 0.85]);
 
-  const navItems = [
-    { label: t.nav.about, href: "#hero",      icon: <Info fontSize="small" /> },
+  const primaryNavItems = [
+    { label: t.nav.about, href: "#hero", icon: <Info fontSize="small" /> },
     { label: t.nav.projects, href: "#projects", icon: <Code fontSize="small" /> },
     { label: t.nav.experience, href: "#experience", icon: <Work fontSize="small" /> },
-    { label: t.nav.contact, href: "#contact",   icon: <Mail fontSize="small" /> },
+    { label: t.nav.contact, href: "#contact", icon: <Mail fontSize="small" /> },
+  ];
+  const moreNavItems = [
+    { label: t.nav.metrics, href: "#metrics", icon: <Info fontSize="small" /> },
+    { label: t.nav.caseStudies, href: "#case-studies", icon: <Code fontSize="small" /> },
+    { label: t.nav.skills, href: "#skills", icon: <Code fontSize="small" /> },
+    { label: t.nav.summary, href: "#summary", icon: <Info fontSize="small" /> },
+    { label: t.nav.resume, href: "/resume", icon: <Info fontSize="small" /> },
   ];
 
   const handleNavClick = (href: string) => {
-    const id = href.replace("#", "");
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: "smooth" });
+    if (href.startsWith("#")) {
+      if (pathname !== "/") {
+        router.push(`/${href}`);
+        return;
+      }
+      const id = href.replace("#", "");
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+    router.push(href);
   };
 
   const [openDrawer, setOpenDrawer] = useState(false);
+  const [moreAnchor, setMoreAnchor] = useState<null | HTMLElement>(null);
+  const moreOpen = Boolean(moreAnchor);
 
   const linkSx = {
     fontWeight: 600,
     textTransform: "none",
     fontSize: "0.95rem",
-    color: theme.palette.mode === "dark" ? "#e0e0e0" : "inherit",
-    borderRadius: 1,
+    color: theme.palette.text.primary,
+    borderRadius: 999,
     position: "relative" as const,
     "&:hover": {
-      backgroundColor:
-        theme.palette.mode === "dark"
-          ? "rgba(255,255,255,0.1)"
-          : "rgba(0,0,0,0.04)",
+      backgroundColor: theme.palette.mode === "dark"
+        ? "rgba(255,255,255,0.08)"
+        : "rgba(30,58,138,0.08)",
     },
     "&::after": {
       content: '""',
       position: "absolute" as const,
-      bottom: 0,
-      left: 0,
+      bottom: 4,
+      left: "18%",
       width: 0,
       height: 2,
+      borderRadius: 999,
       background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
       transition: "width 0.3s ease",
     },
     "&:hover::after": {
-      width: "100%",
+      width: "64%",
     },
   };
 
@@ -98,27 +120,24 @@ export default function Header() {
         left: 0,
         right: 0,
         zIndex: 1100,
-        backgroundColor:
-          theme.palette.mode === "dark"
-            ? "rgba(16,16,20,0.85)"
-            : theme.palette.background.paper,
-        backdropFilter: "blur(12px)",
-        borderBottom:
-          theme.palette.mode === "dark"
-            ? "1px solid rgba(255,255,255,0.1)"
-            : "1px solid rgba(0,0,0,0.1)",
+        backgroundColor: "var(--surface-strong)",
+        backdropFilter: "blur(18px)",
+        borderBottom: "1px solid var(--card-border)",
+        boxShadow: "var(--shadow-soft)",
         opacity,
       }}
     >
       <AppBar position="static" color="transparent" elevation={0}>
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Stack direction="row" spacing={2} alignItems="center">
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: "wrap", rowGap: 1 }}>
             <Button
               onClick={() => handleNavClick("#hero")}
               sx={{
-                fontWeight: 900,
+                fontWeight: 700,
                 fontSize: "1.2rem",
-                color: theme.palette.mode === "dark" ? "#fff" : "inherit",
+                fontFamily: "var(--font-display), 'Fraunces', serif",
+                letterSpacing: "-0.02em",
+                color: theme.palette.text.primary,
                 textTransform: "none",
               }}
             >
@@ -130,16 +149,49 @@ export default function Header() {
                 <MenuIcon />
               </IconButton>
             ) : (
-              navItems.map((item, i) => (
+              <>
+                {primaryNavItems.map((item, i) => (
+                  <Button
+                    key={i}
+                    onClick={() => handleNavClick(item.href)}
+                    startIcon={item.icon}
+                    sx={linkSx}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
                 <Button
-                  key={i}
-                  onClick={() => handleNavClick(item.href)}
-                  startIcon={item.icon}
+                  onClick={e => setMoreAnchor(e.currentTarget)}
                   sx={linkSx}
                 >
-                  {item.label}
+                  More
                 </Button>
-              ))
+                <Menu
+                  anchorEl={moreAnchor}
+                  open={moreOpen}
+                  onClose={() => setMoreAnchor(null)}
+                  PaperProps={{
+                    sx: {
+                      mt: 1,
+                      backgroundColor: "var(--surface-strong)",
+                      border: "1px solid var(--card-border)",
+                      boxShadow: "var(--shadow-strong)",
+                    },
+                  }}
+                >
+                  {moreNavItems.map((item, i) => (
+                    <MenuItem
+                      key={i}
+                      onClick={() => {
+                        handleNavClick(item.href);
+                        setMoreAnchor(null);
+                      }}
+                    >
+                      {item.label}
+                    </MenuItem>
+                  ))}
+                </Menu>
+              </>
             )}
           </Stack>
 
@@ -152,15 +204,9 @@ export default function Header() {
                 size="small"
                 sx={{
                   "& .MuiToggleButton-root": {
-                    color:
-                      theme.palette.mode === "dark"
-                        ? "#e0e0e0"
-                        : theme.palette.text.primary,
+                    color: theme.palette.text.primary,
                     "&.Mui-selected": {
-                      backgroundColor:
-                        theme.palette.mode === "dark"
-                          ? "rgba(255,255,255,0.15)"
-                          : "rgba(0,0,0,0.08)",
+                      backgroundColor: "rgba(30,58,138,0.15)",
                     },
                   },
                 }}
@@ -196,11 +242,9 @@ export default function Header() {
             PaperProps={{
               sx: {
                 width: 260,
-                backgroundColor:
-                  theme.palette.mode === "dark"
-                    ? "#121217"
-                    : theme.palette.background.default,
+                backgroundColor: "var(--surface-strong)",
                 color: theme.palette.text.primary,
+                borderRight: "1px solid var(--card-border)",
               },
             }}
           >
@@ -223,7 +267,7 @@ export default function Header() {
             </Stack>
 
             <List sx={{ flexGrow: 1 }}>
-              {navItems.map((item, i) => (
+              {[...primaryNavItems, ...moreNavItems].map((item, i) => (
                 <ListItem key={i} disablePadding>
                   <Button
                     onClick={() => {
@@ -261,15 +305,9 @@ export default function Header() {
                 fullWidth
                 sx={{
                   "& .MuiToggleButton-root": {
-                    color:
-                      theme.palette.mode === "dark"
-                        ? "#e0e0e0"
-                        : theme.palette.text.primary,
+                    color: theme.palette.text.primary,
                     "&.Mui-selected": {
-                      backgroundColor:
-                        theme.palette.mode === "dark"
-                          ? "rgba(255,255,255,0.15)"
-                          : "rgba(0,0,0,0.08)",
+                      backgroundColor: "rgba(30,58,138,0.15)",
                     },
                   },
                 }}

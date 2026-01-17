@@ -1,24 +1,141 @@
 {
-  "greeting": "안녕하세요, 오현지입니다.",
-  "subtitle": "사용자를 생각하는 기술을 만듭니다. 최신 웹 기술과 클라우드 인프라를 활용해 문제 해결 중심의 확장 가능한 서비스를 설계하고 구현합니다.",
+  "greeting": "오현지\n풀스택 개발자",
+  "subtitle": "Next.js, Nest.js, AWS를 기반으로 확장성과 안정성을 갖춘 제품을 설계하고, AI 통합을 고려해 완성합니다.",
   "nav": {
     "about": "소개",
     "projects": "프로젝트",
     "experience": "경력",
+    "metrics": "성과",
+    "caseStudies": "케이스 스터디",
+    "skills": "스킬",
+    "summary": "요약",
+    "resume": "이력서",
     "contact": "연락처"
   },
 
-  "projectsHeader": "프로젝트 소개",
-  "projectsSubtitle": "여기서는 제 주요 프로젝트를 통해 문제 해결 능력과 기술 활용 역량을 보여드립니다.",
-  "projectsView": "보기",
+  "metricsHeader": "성과 지표",
+  "metricsSubtitle": "딜리버리 성과를 수치로 정리했습니다.",
+  "metricsData": [
+    {
+      "value": "40%",
+      "label": "결함 해결 속도 개선",
+      "detail": "테스트 기반 안정화와 트러블슈팅 효율을 개선했으며 AI 기반 자동화도 병행했습니다."
+    },
+    {
+      "value": "4",
+      "label": "서비스 영역",
+      "detail": "키오스크·모바일·웹·어드민 전반을 구축했습니다."
+    },
+    {
+      "value": "3+년",
+      "label": "풀스택 구축 경험",
+      "detail": "백엔드부터 UI까지 안정적으로 구현했습니다."
+    }
+  ],
+  "caseStudiesHeader": "케이스 스터디",
+  "caseStudiesSubtitle": "문제·해결·성과를 구조적으로 정리했으며 AI 통합 관점도 포함합니다.",
+  "caseStudyProblemLabel": "문제",
+  "caseStudySolutionLabel": "해결",
+  "caseStudyResultLabel": "결과",
+  "caseStudiesData": [
+    {
+      "title": "키오스크 결제 연동",
+      "problem": "장치 환경에 따라 결제 흐름이 불안정했습니다.",
+      "solution": "C#/.NET HTTP 플러그인과 JS↔C# 바인딩을 안정화하고 Fallback 로직을 추가했습니다.",
+      "result": "/Auth 및 /Cancel 흐름을 안정적으로 처리했습니다.",
+      "techStack": "C#, .NET Framework, CefSharp, SerialPort",
+      "link": "#"
+    },
+    {
+      "title": "실시간 플랫폼 기능",
+      "problem": "고트래픽 환경에서 안정적인 협업 기능이 필요했습니다.",
+      "solution": "WebSocket + Bull Queue, Redis 세션 공유를 적용했습니다.",
+      "result": "1:N 그룹 채팅과 세션 지속성을 확보했습니다.",
+      "techStack": "Nest.js, Redis, WebSocket",
+      "link": "#"
+    },
+    {
+      "title": "대기열 시스템 고도화",
+      "problem": "피크 트래픽에서 순번 정합성과 복구 안정성이 필요했습니다.",
+      "solution": "Redis 원자성 + DB 동기화, 세션 스코프 분리, 장애 복구 흐름을 적용했습니다.",
+      "result": "중복 방지와 안정적 순번 처리, 복구 가능한 운영 구조를 구축했습니다.",
+      "techStack": "Nest.js, Redis, MySQL",
+      "link": "#"
+    },
+    {
+      "title": "정산서 홈페이지 구축",
+      "problem": "수기 정산 문서 처리로 업무 지연과 불일치가 발생했습니다.",
+      "solution": "AI 보조 기반 정산서 사이트를 구축하고 표준화된 워크플로를 적용했습니다.",
+      "result": "처리 속도와 정합성을 개선하고 운영 부담을 낮췄습니다.",
+      "techStack": "Nest.js, Next.js, MySQL, AI tooling",
+      "link": "#"
+    }
+  ],
+  "skillsHeader": "스킬 레이더",
+  "skillsSubtitle": "제품·플랫폼·시스템 전반의 역량과 AI 통합 역량을 함께 보여드립니다.",
+  "skillsRadarData": [
+    { "label": "프론트엔드", "value": 88, "description": "Next.js, React, UI 시스템" },
+    { "label": "백엔드", "value": 84, "description": "Nest.js, API, 데이터 설계" },
+    { "label": "클라우드", "value": 78, "description": "AWS, CI/CD, 모니터링" },
+    { "label": "시스템", "value": 72, "description": "키오스크, 장치 연동" },
+    { "label": "협업", "value": 86, "description": "크로스팀 협업 및 보안 고려" }
+  ],
+  "summaryHeader": "채용 요약",
+  "summarySubtitle": "채용 판단을 위한 핵심 요약입니다.",
+  "summaryHighlights": [
+    "웹·모바일·키오스크·어드민 전반의 풀스택 구축 경험",
+    "플랫폼 설계, 실시간 시스템, 장치 연동 경험",
+    "안정적 납품과 UX 완성도, 유지보수성을 중시",
+    "업무 효율과 품질을 높이기 위해 AI를 적극 활용"
+  ],
+  "summaryCTA": "한 페이지 요약 보기",
+  "resumeHeader": "이력서",
+  "resumeSubtitle": "채용 담당자용 인쇄·공유 PDF입니다.",
+  "resumeCTA": "이력서 PDF 다운로드",
+  "resumeTitle": "오현지 — 풀스택 개발자",
+  "resumeHeadline": "AI 에이전트 시대에 맞춰 제품 관점의 웹 개발자로 성장하고 있으며, 사용자 여정 기반 설계·운영 가능한 시스템·AI 통합·보안/권한을 갖춘 실전형 엔지니어를 지향합니다.",
+  "resumeGoalTitle": "자기소개 / 커리어 목표",
+  "resumeGoalLines": [
+    "단순 기능 구현을 넘어 사용자 여정과 성공 지표로 제품을 설계하는 개발자가 되기 위해 학습·적용 중입니다.",
+    "대기열·정산·결제 등 운영형 도메인에서 동시성, 정합성, 트랜잭션 기반으로 시스템을 안정화해 왔으며 운영 역량을 강화하고 있습니다.",
+    "LLM을 단순 API 호출이 아닌 RAG/Tool calling/Guardrails/Evals/비용 최적화 관점으로 제품에 안전하게 통합하는 역량을 확장하고 있습니다.",
+    "장기적으로는 보안·권한·감사 로그 기반의 컴플라이언스 대응과 도메인 이해를 바탕으로 비즈니스 문제를 빠르게 해결하는 엔지니어로 성장하고자 합니다."
+  ],
+  "resumeGrowthTitle": "성장 중인 역량",
+  "resumeGrowthBullets": [
+    "제품 설계(PM 감각): 기능 중심이 아닌 사용자 여정(가입→결제→재방문)과 성공 지표(전환/리텐션) 기반 설계",
+    "시스템 설계/성능/데이터: 캐시·큐·비동기·트랜잭션·정합성·동시성 제어(락/아이템포턴시) 등 운영형 아키텍처 역량 강화",
+    "운영/관측(SRE 기초): CI/CD, 모니터링·알람·로그 기반 장애 대응까지 포함해 운영 역량 강화",
+    "AI 통합 역량: RAG/Tool calling/Guardrails/Evals/비용 최적화를 실전 프로젝트로 검증",
+    "보안/권한/컴플라이언스: 최소 권한, 접근 제어, 데이터 마스킹, 감사 로그 기반 운영 체계 구축",
+    "도메인 전문성: 산업 문제를 빠르게 이해하고 해결하는 능력을 중심 역량으로 강화"
+  ],
+  "resumeRoadmapTitle": "실행형 로드맵",
+  "resumeRoadmapBullets": [
+    "결제/웹훅 기반 이커머스 프로젝트에서 멱등성, 트랜잭션 정합성, 운영 로그/알람을 포함한 구조로 구현",
+    "고객 응대 자동화에 FAQ 자동 업데이트(RAG) + 정책 필터(Guardrails) + 품질 측정(Evals) 적용",
+    "캐시/모델 선택/요금 관리 등 AI 비용 최적화 전략을 설계 및 실험"
+  ],
+  "resumeInterviewLine": "AI가 코드를 더 빨리 만들수록, 저는 사용자 여정 기반 제품 설계와 운영 가능한 시스템·보안·AI 통합 역량으로 차별화되는 개발자가 되겠습니다.",
+  "resumeSummaryLabel": "요약",
+  "resumeSkillsLabel": "핵심 스킬",
+  "resumeExperienceLabel": "경력",
+  "resumeContactLabel": "연락처",
+  "resumeBackLabel": "사이트로 돌아가기",
+  "resumeDownloadLabel": "PDF로 저장",
+  "resumeOnePageLabel": "한 페이지 요약",
+
+  "projectsHeader": "선별 프로젝트",
+  "projectsSubtitle": "문제 정의부터 결과까지 핵심 작업만 정리했으며 AI 활용도 포함합니다.",
+  "projectsView": "자세히 보기",
  "projectData": [
     {
       "title": "BusinessPlus CRM",
-      "description": "B2B IT 컨설팅 전문 기업 비플의 메인 홈페이지 리뉴얼 프로젝트",
+      "description": "B2B IT 컨설팅 기업 비플의 메인 홈페이지 리뉴얼",
       "images": ["/projects/businessplus.png"],
       "link": "http://www.businessplus.co.kr/",
       "detailImage": "/projects/businessplus.png",
-      "detailText": "비플의 홈페이지를 최신 UI/UX 트렌드에 맞춰 전면 개편했습니다."
+      "detailText": "기업 홈페이지를 최신 UI/UX 기준에 맞춰 전면 개편했습니다."
     },
     {
       "title": "한리온 특허 컨설팅",
@@ -26,15 +143,15 @@
       "images": ["/projects/hanleeon-cafe24.png"],
       "link": "https://hanleeon02.cafe24.com/main/",
       "detailImage": "/projects/hanleeon-cafe24.png",
-      "detailText": "한리온의 서비스 안내와 온라인 상담 기능을 추가했습니다."
+      "detailText": "서비스 안내와 온라인 상담 기능을 체계화했습니다."
     },
     {
       "title": "Inno3Dental Chat",
-      "description": "실시간 그룹 채팅 기능이 포함된 파트너 네트워크 플랫폼",
+      "description": "실시간 그룹 채팅 기능을 포함한 파트너 네트워크 플랫폼",
       "images": ["/projects/innodental-chat.png"],
       "link": "https://dev.inno3dental.com/",
       "detailImage": "/projects/innodental-chat.png",
-      "detailText": "Socket.io와 Redis PUB/SUB 패턴을 이용해 안정적인 채팅 환경을 구현했습니다."
+      "detailText": "Socket.io와 Redis Pub/Sub를 기반으로 안정적인 채팅 환경을 구축했습니다."
     },
     {
       "title": "Inno3Dental Dashboard",
@@ -42,18 +159,18 @@
       "images": ["/projects/innodental-dashboard.png"],
       "link": "https://dev.inno3dental.com/",
       "detailImage": "/projects/innodental-dashboard.png",
-      "detailText": "Chart.js와 Recharts를 활용해 데이터 시각화 대시보드를 개발했습니다."
+      "detailText": "Chart.js와 Recharts로 데이터 시각화 대시보드를 구현했습니다."
     },
     {
       "title": "리포트 관리",
-      "description": "리포트 목록 조회 및 상세보기 화면",
+      "description": "리포트 목록 및 상세 보기 화면",
       "images": [
         "/projects/report-list-1.png",
         "/projects/report-list-2.png"
       ],
       "link": "https://dev.inno3dental.com/",
       "detailImage": "/projects/report-detail.png",
-      "detailText": "필터, 검색, 내보내기/인쇄 기능을 갖춘 리포트 리스트와 세부정보 페이지를 구현했습니다."
+      "detailText": "필터·검색·내보내기/인쇄 기능을 포함한 리포트 화면을 구현했습니다."
     },
     {
       "title": "계정 관리 & 프로필",
@@ -64,7 +181,7 @@
       ],
       "link": "https://dev.inno3dental.com/",
       "detailImage": "/projects/profile.png",
-      "detailText": "계정 정보 수정, 프로필 업로드, 언어 선택 등 전반적인 사용자 계정 관리 UI를 완성했습니다."
+      "detailText": "계정 정보 수정, 프로필 업로드, 언어 선택 등 계정 관리 UI를 완성했습니다."
     },
     {
       "title": "키오스크 결제 연동 시스템",
@@ -73,15 +190,15 @@
         "/projects/kioskPayment.png"
       ],
       "video": "/videos/kioskPayment.mp4",
-      "videoDescription": "키오스크 결제 연동 시스템의 실제 동작을 보여주는 데모 영상입니다.",
+      "videoDescription": "키오스크 결제 연동 시스템 동작 데모 영상입니다.",
       "link": "#",
       "detailImage": "/projects/profile.png",
-      "detailText": "키오스크 결제 연동 시스템 개발 및 운영 환경 구축을 통해 안정적인 결제 시스템을 구현했습니다."
+      "detailText": "운영 환경까지 포함해 안정적인 키오스크 결제 연동을 구현했습니다."
     }
   ],
 
-  "experienceHeader": "나의 경력",
-  "experienceSubtitle": "저의 경력은 도전을 기반으로 성장해왔습니다. 다양한 분야와 역할을 경험하며 쌓은 노하우를 공유합니다.",
+  "experienceHeader": "경력",
+  "experienceSubtitle": "역할, 범위, 성과를 중심으로 정리하고 AI 적용 경험도 포함했습니다.",
   "experienceMore": "상세보기",
   "experienceLess": "접기",
   "experienceData": [
@@ -91,12 +208,17 @@
       "company": "퀸즈스마일",
       "role": "풀스택 개발자",
       "details": [
-        "키오스크, 모바일, 웹, 어드민 서비스 개발",
-        "서비스별 기능 개선 및 운영 지원"
+        "키오스크·모바일·웹·어드민 서비스 개발",
+        "대기열 프로젝트 개발 (Nest.js, Redis 기반)",
+        "대기 등록–호출–입장 흐름을 위한 실시간 대기열 백엔드 설계·구현 (NestJS, Redis, MySQL)",
+        "사내 정산서 홈페이지를 AI 기반으로 개발 및 배포",
+        "Java, Nest.js, Next.js 기반 기능 개발 진행",
+        "운영 지원 및 기능 고도화"
       ],
-      "techStack": "Full-stack, Kiosk, Mobile, Web, Admin",
+      "techStack": "Java, Nest.js, Next.js, Redis, Kiosk, Mobile, Web, Admin",
       "extra": [
-        "제품군 전반의 요구사항을 반영한 기능 구현"
+        "제품군 전반의 요구사항을 반영한 기능 구현",
+        "대기열 시스템의 정합성·동시성·장애 복구를 Redis 원자성 + DB 동기화로 안정화"
       ]
     },
     {
@@ -105,19 +227,19 @@
       "company": "퀸즈스마일",
       "role": "용역 외주",
       "details": [
-        "QR 코드 및 바코드 리더기 연동 기능 구현",
-        "SerialPort를 이용한 RS232 시리얼 통신 처리 및 수신 이벤트 핸들링",
-        "데이터 길이 기반 prefix 분기 처리 및 바이트 문자열 파싱 로직 개발",
-        "스캔 결과 정규표현식 필터링 및 유효성 검증",
-        "프론트 React Kiosk UI와 비동기 연동 처리",
-        "스캔된 데이터의 HTTP 전송 및 응답값에 따른 UI 상태 반영",
-        "장치 미연결 시 fallback 경고 처리 및 예외 대응"
+        "QR·바코드 리더기 연동 기능 구현",
+        "SerialPort 기반 RS232 통신 처리 및 수신 이벤트 핸들링",
+        "데이터 길이 기준 prefix 분기 및 바이트 문자열 파싱 로직 개발",
+        "스캔 결과 정규식 필터링 및 유효성 검증",
+        "React Kiosk UI와 비동기 연동",
+        "스캔 데이터 HTTP 전송 및 응답에 따른 UI 상태 반영",
+        "장치 미연결 시 경고 및 예외 처리"
       ],
       "techStack": "C#, WinForms, SerialPort, Regex, JavaScript, React, HTTP",
       "extra": [
-        "스캐너 장치 환경에 따라 발생하는 데이터 유실/지연 문제 직접 디버깅",
-        "스캔 정확도 향상을 위한 데이터 파싱 개선 및 사용자 피드백 반영",
-        "바코드/QR 리더기 동시 지원을 위한 공통 처리 구조 설계 경험"
+        "장치 환경별 데이터 유실·지연 문제를 직접 디버깅",
+        "스캔 정확도 향상을 위한 파싱 개선 및 사용자 피드백 반영",
+        "바코드/QR 동시 지원을 위한 공통 처리 구조 설계"
       ]
     },
     {
@@ -128,18 +250,18 @@
       "details": [
         "키오스크 결제 연동 시스템 개발 및 운영 환경 구축",
         "C#/.NET 기반 tPayDaemon HTTP 플러그인 개발",
-        "HttpClient 설정 최적화 및 SSL, JSON 바인딩 구현",
-        "/Auth, /Cancel 엔드포인트 결제 요청 처리 안정화",
+        "HttpClient 설정 최적화 및 SSL·JSON 바인딩 구현",
+        "/Auth, /Cancel 엔드포인트 결제 요청 안정화",
         "Chromium(CefSharp.WinForms) 임베딩 및 JS↔C# 바인딩",
-        "JavascriptObjectRepository 설정 및 ChromeAPI 통신 처리",
+        "JavascriptObjectRepository 설정 및 Chrome API 통신 처리",
         "EMV 카드결제 단말기 시리얼 연동 및 ACK 로직 구현",
-        "자동 POS 정보 채움 기능, 디버깅 로깅 및 fallback 처리"
+        "POS 자동 채움, 디버깅 로깅, Fallback 처리"
       ],
       "techStack": "C#, .NET Framework, CefSharp, HttpClient, JSON, WinForms, SerialPort, Windows Registry",
       "extra": [
-        "POS 단말기 연동 후 ACK 흐름을 직접 디버깅하며 문제 해결 경험 축적",
+        "POS 단말기 연동 후 ACK 흐름을 직접 디버깅하며 문제 해결",
         "JS와 C# 간 통신 동기화를 위한 메시지 구조 설계 주도",
-        "운영 환경에서 발생하는 다양한 예외 상황에 대한 fallback 처리 로직 경험"
+        "운영 환경의 예외 상황에 대한 Fallback 로직 구축"
       ]
     },
     {
@@ -148,19 +270,20 @@
       "company": "이노쓰리디",
       "role": "플랫폼팀 주임연구원 팀원",
       "details": [
-        "환자·기공소·치과 간 실시간 주문·3D 파일 뷰어(three.JS)·로그인 유지·파트너 네트워크 플랫폼 설계 및 개발",
-        "AWS EC2, RDS, 로드밸런서를 통한 무중단 고가용성 플랫폼 배포",
-        "JWT 로그인 및 OTP 인증 세션 유지 기능, Nest.js Guard를 통한 RDS 보호",
-        "Redis로 세션 공유 및 재시작 세션 유지, RDS 복제를 통한 백엔드 분산",
-        "WebSocket + Bull Queue로 1:N 실시간 그룹 채팅, 대규모 트래픽 최적화",
-        "AWS IAM + Git 환경 설정 자동화",
-        "Jest 테스트 기반 버그 효율성 40% 향상"
+        "환자·기공소·치과 간 실시간 주문, 3D 파일 뷰어(three.js), 로그인 유지, 파트너 네트워크 플랫폼 설계 및 개발",
+        "AWS EC2·RDS·로드밸런서를 통한 고가용성 플랫폼 배포",
+        "JWT 로그인 및 OTP 인증 세션 유지 기능 구현, Nest.js Guard로 RDS 보호",
+        "Redis 세션 공유 및 RDS 복제를 통한 백엔드 분산",
+        "WebSocket + Bull Queue 기반 1:N 실시간 그룹 채팅 구축",
+        "대기열 시스템 설계·구현으로 작업 처리 안정성 강화",
+        "AWS IAM·Git 환경 설정 자동화",
+        "Jest 테스트 기반 결함 해결 효율 40% 향상"
       ],
       "techStack": "AWS, Nest.js, React, Redis, WebSocket, Bull Queue, PostgreSQL, Jest",
       "extra": [
-        "CI/CD 자동화로 무중단 배포 실현, 트래픽 대비 시스템 안정성 확보",
-        "프로덕션 환경에서 발생한 메모리 릭 및 세션 유실 이슈 직접 분석 및 해결",
-        "PM과 협업하여 요건 정의부터 개발·배포·고도화까지 전 주기 경험"
+        "CI/CD 자동화로 무중단 배포를 실현하고 트래픽 대비 안정성 확보",
+        "프로덕션 환경의 메모리 릭 및 세션 유실 이슈 분석·해결",
+        "PM과 협업하여 요건 정의부터 개발·배포·고도화까지 전 주기 수행"
       ]
     },
     {
@@ -169,13 +292,13 @@
       "company": "해피메이드",
       "role": "개발팀 주임/계장",
       "details": [
-        "사내 거래소 서비스의 관리자 페이지 및 사용자 페이지 PHP 개발",
-        "MySQL 기반 데이터 연동 및 오류 수정"
+        "사내 거래소 서비스 관리자·사용자 페이지 PHP 개발",
+        "MySQL 데이터 연동 및 오류 수정"
       ],
       "techStack": "PHP, MySQL, HTML, CSS, JavaScript",
       "extra": [
-        "사용자 로그 기반 오류 분석 및 예외처리 개선으로 서비스 안정성 확보",
-        "코드 리팩토링 및 SQL 쿼리 최적화를 통해 페이지 로딩 속도 향상"
+        "사용자 로그 기반 오류 분석 및 예외 처리 개선으로 안정성 확보",
+        "리팩토링 및 SQL 쿼리 최적화로 페이지 로딩 속도 개선"
       ]
     },
     {
@@ -184,14 +307,14 @@
       "company": "한커뮤니케이션",
       "role": "개발팀 사원",
       "details": [
-        "사내 고객사 홈페이지 유지보수 및 스토리보드 작성",
-        "고객사 홈페이지 풀스택 개발 (cafe24 기반)",
+        "고객사 홈페이지 유지보수 및 스토리보드 작성",
+        "고객사 홈페이지 풀스택 개발(Cafe24 기반)",
         "https://hanleeon02.cafe24.com/main/"
       ],
       "techStack": "HTML, CSS, JavaScript",
       "extra": [
-        "기획자가 작성한 문서를 바탕으로 직접 스토리보드 작성 및 기획 보완",
-        "HTML 구조 개선 및 레거시 JS 코드를 최신화하여 유지보수 편의성 향상"
+        "기획 문서를 기반으로 스토리보드를 작성하고 기획을 보완",
+        "HTML 구조 개선 및 레거시 JS 최신화로 유지보수 편의성 향상"
       ]
     },
     {
@@ -201,25 +324,68 @@
       "role": "기업부설연구소 연구원",
       "details": [
         "사내 홈페이지 리뉴얼 및 관리자 페이지 개발",
-        "PHP, MariaDB 기반 백엔드와 JS, HTML, CSS3 기반 프론트엔드 구현",
-        "공지사항, 갤러리, 영상 게시판 등 주요 기능 개발",
-        "웹 퍼블리싱 직접 진행",
+        "PHP·MariaDB 기반 백엔드와 JS·HTML·CSS3 기반 프론트엔드 구현",
+        "공지사항·갤러리·영상 게시판 등 주요 기능 개발",
+        "웹 퍼블리싱 수행",
         "http://www.businessplus.co.kr/"
       ],
       "techStack": "PHP, MariaDB, HTML, CSS, JavaScript",
       "extra": [
-        "고객 요청사항 기반 기능 추가 및 유지보수 반복 경험",
+        "고객 요청사항 기반 기능 추가 및 유지보수 수행",
         "웹표준 준수 및 크로스 브라우징 대응으로 호환성 강화"
       ]
     }
   ],
-   "contactHeader": "연락하기",
-  "contactSubtitle": "언제든지 이메일로 문의해주시거나, LinkedIn 및 GitHub에서 제 작업을 확인해보세요.",
+  "chatbotTitle": "포트폴리오 어시스턴트",
+  "chatbotSubtitle": "경력, 기술, 프로젝트, 성과, AI 활용에 대해 문의하세요.",
+  "chatbotPlaceholder": "질문을 입력해 주세요.",
+  "chatbotGreeting": "안녕하세요. 경력, 기술, 프로젝트, 성과에 대해 안내해 드립니다.",
+  "chatbotFallback": "경력, 프로젝트, 기술 스택 또는 성과에 대해 구체적으로 질문해 주세요.",
+  "chatbotSuggestions": [
+    "주요 기술 스택이 궁금합니다",
+    "최근 프로젝트를 요약해 주세요",
+    "대기열 시스템은 어떻게 설계했나요?",
+    "성과 지표를 알려주세요",
+    "AI는 어떻게 활용하나요?",
+    "협업 가능 여부가 궁금합니다"
+  ],
+  "chatbotData": [
+    {
+      "keywords": ["기술", "스택", "스킬", "역량"],
+      "answer": "주요 스택은 TypeScript, React, Next.js, Node.js, Nest.js, AWS, SQL이며 C#/.NET, Three.js도 함께 다룹니다."
+    },
+    {
+      "keywords": ["프로젝트", "최근", "포트폴리오"],
+      "answer": "최근에는 키오스크 결제 연동, 대기열 시스템 고도화, 실시간 기능을 포함한 풀스택 플랫폼 개발을 수행했습니다."
+    },
+    {
+      "keywords": ["대기열", "대기", "큐", "queue", "waiting"],
+      "answer": "Redis 원자성, DB 동기화, 세션 스코프 분리로 정합성과 복구성을 확보한 대기열 시스템을 설계·구현했습니다."
+    },
+    {
+      "keywords": ["성과", "지표", "임팩트", "impact", "metric"],
+      "answer": "결함 해결 효율 40% 향상, 다중 서비스 영역 동시 구축 등 측정 가능한 성과를 중심으로 정리했습니다."
+    },
+    {
+      "keywords": ["ai", "인공지능", "llm"],
+      "answer": "업무 효율과 품질 향상을 위해 AI를 적극 활용하며, 제품 통합 관점에서 안전성과 비용까지 고려합니다."
+    },
+    {
+      "keywords": ["경력", "커리어", "역할"],
+      "answer": "웹·모바일·키오스크·어드민 전반의 풀스택 경험과 플랫폼 엔지니어링·시스템 연동 경험이 있습니다."
+    },
+    {
+      "keywords": ["협업", "채용", "가능", "프리랜서"],
+      "answer": "프로젝트 방향성과 기술 성장에 부합하는 경우 협업을 검토합니다. 연락 부탁드립니다."
+    }
+  ],
+  "contactHeader": "연락처",
+  "contactSubtitle": "이메일로 문의하시거나 LinkedIn, GitHub에서 작업을 확인해 주세요.",
   "contactNameLabel": "이름",
   "contactEmailLabel": "이메일",
   "contactMessageLabel": "메시지",
-  "contactSubmit": "전송하기",
-  "contactSuccess": "메시지가 성공적으로 전송되었습니다!",
-  "contactError": "전송 중 오류가 발생했습니다. 다시 시도해주세요."
+  "contactSubmit": "전송",
+  "contactSuccess": "메시지가 정상적으로 전송되었습니다.",
+  "contactError": "오류가 발생했습니다. 다시 시도해 주세요."
 
 }

@@ -14,6 +14,8 @@
     "@mui/icons-material": "^7.2.0",
     "@mui/lab": "^7.0.0-beta.14",
     "@mui/material": "^7.2.0",
+    "@next/swc-darwin-arm64": "^15.3.5",
+    "@next/swc-wasm-nodejs": "^15.3.5",
     "@react-three/drei": "^10.5.1",
     "@react-three/fiber": "^9.2.0",
     "daisyui": "^5.0.46",

@@ -23,6 +23,7 @@ import BusinessCardThumbnail from '@/components/BusinessCardThumbnail';
 
 export default function ContactSection() {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const { lang } = useLocale();
   const t = lang === 'en' ? en : ko;
 
@@ -75,31 +76,31 @@ export default function ContactSection() {
 
   // TextField 스타일
   const inputSx = {
-    backgroundColor: '#fff',
-    borderRadius: 1,
+    backgroundColor: isDark ? 'rgba(18,28,31,0.6)' : 'rgba(255,255,255,0.9)',
+    borderRadius: 2,
     '& .MuiOutlinedInput-root': {
       '& fieldset': {
-        borderColor: '#ccc',
+        borderColor: 'var(--card-border)',
       },
       '&:hover fieldset': {
-        borderColor: '#888',
+        borderColor: theme.palette.primary.main,
       },
       '&.Mui-focused fieldset': {
-        borderColor: '#888',
+        borderColor: theme.palette.primary.main,
         borderWidth: 2,
       },
     },
     '& .MuiInputBase-input': {
-      color: '#333',
+      color: theme.palette.text.primary,
     },
     '& .MuiInputLabel-root': {
-      color: '#555',
+      color: theme.palette.text.secondary,
     },
     '& .MuiInputLabel-root.Mui-focused': {
       color: theme.palette.primary.main,
     },
     '& .MuiOutlinedInput-input::placeholder': {
-      color: '#999',
+      color: theme.palette.text.secondary,
       opacity: 1,
     },
   };
@@ -110,17 +111,17 @@ export default function ContactSection() {
       sx={{
         position: 'relative',
         overflow: 'hidden',
-        background: 'linear-gradient(135deg, #4e54c8 0%, #6e72fc 33%, #8f94fb 66%, #b388ff 100%)',
-        backgroundSize: '400% 400%',
-        animation: 'gradientShift 15s ease infinite',
+        background: `linear-gradient(135deg, rgba(30,58,138,0.22) 0%, rgba(59,130,246,0.2) 100%)`,
+        backgroundSize: '200% 200%',
+        animation: 'gradientShift 18s ease infinite',
         '&::before': {
           content: '""',
           position: 'absolute',
           inset: 0,
           backdropFilter: 'blur(14px)',
-          background: theme.palette.mode === 'dark'
-            ? 'rgba(0,0,0,0.3)'
-            : 'rgba(255,255,255,0.2)',
+          background: isDark
+            ? 'rgba(10,15,18,0.35)'
+            : 'rgba(255,255,255,0.45)',
           zIndex: 1,
         },
         '@keyframes gradientShift': {
@@ -143,8 +144,8 @@ export default function ContactSection() {
             variant="h4"
             sx={{
               fontWeight: 600,
-              color: '#fff',
-              textShadow: '0 2px 4px rgba(0,0,0,0.6)',
+              color: theme.palette.text.primary,
+              textShadow: '0 2px 10px rgba(0,0,0,0.15)',
               display: 'flex',
               alignItems: 'center',
               gap: 1,
@@ -156,8 +157,7 @@ export default function ContactSection() {
             variant="body1"
             sx={{
               maxWidth: 500,
-              color: '#f0f0f0',
-              textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+              color: theme.palette.text.secondary,
             }}
           >
             {t.contactSubtitle}
@@ -187,18 +187,10 @@ export default function ContactSection() {
               px: 2,
               py: 4,
               borderRadius: 3,
-              background: '#fff',
+              background: 'var(--surface-strong)',
               position: 'relative',
-              border: '2px solid transparent',
-              '&::after': {
-                content: '""',
-                position: 'absolute',
-                inset: 0,
-                margin: '-2px',
-                borderRadius: 3,
-                background: 'linear-gradient(135deg, #4e54c8, #8f94fb)',
-                zIndex: -1,
-              },
+              border: '1px solid var(--card-border)',
+              boxShadow: 'var(--shadow-soft)',
             }}
           >
             <Stack spacing={2}>
@@ -239,8 +231,10 @@ export default function ContactSection() {
                 disabled={status === 'sending'}
                 sx={{
                   mt: 1,
-                  background: 'linear-gradient(135deg, #6e72fc, #8f94fb)',
-                  '&:hover': { background: 'linear-gradient(135deg, #8f94fb, #b388ff)' },
+                  background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                  '&:hover': {
+                    background: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
+                  },
                 }}
               >
                 {status === 'sending' ? '…' : t.contactSubmit}
@@ -264,15 +258,16 @@ export default function ContactSection() {
                   href={s.href}
                   target="_blank"
                   sx={{
-                    border: '1px solid rgba(255,255,255,0.7)',
-                    color: '#fff',
+                    border: '1px solid var(--card-border)',
+                    color: theme.palette.text.primary,
                     p: 1.5,
-                    boxShadow: '0 0 6px rgba(255,255,255,0.5)',
+                    background: 'var(--surface-strong)',
+                    boxShadow: 'var(--shadow-soft)',
                     backdropFilter: 'blur(4px)',
                     transition: 'all 0.3s ease',
                     '&:hover': {
-                      background: 'rgba(255,255,255,0.15)',
-                      boxShadow: '0 0 12px rgba(255,255,255,0.8)',
+                      background: 'var(--surface)',
+                      boxShadow: 'var(--shadow-strong)',
                     },
                   }}
                 >
@@ -304,12 +299,13 @@ export default function ContactSection() {
                 display: 'inline-block',
                 p: 2,
                 borderRadius: 2,
-                background: 'rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(6px)',
+                background: 'var(--surface-strong)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid var(--card-border)',
               }}
             >
               <QRCodeSVG value={vCard} size={128} level="H" includeMargin />
-              <Typography variant="caption" display="block" mt={1} sx={{ color: '#333', textShadow: 'none' }}>
+              <Typography variant="caption" display="block" mt={1} sx={{ color: theme.palette.text.secondary, textShadow: 'none' }}>
                 {lang === 'en' ? 'Scan to add contact' : '스캔해서 연락처 저장'}
               </Typography>
             </Box>
@@ -323,15 +319,16 @@ export default function ContactSection() {
               href={vCardDataUri}
               download="HyunjiOh.vcf"
               sx={{
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.7)',
+                color: theme.palette.text.primary,
+                border: '1px solid var(--card-border)',
+                background: 'var(--surface-strong)',
                 backdropFilter: 'blur(4px)',
-                boxShadow: '0 0 6px rgba(255,255,255,0.5)',
+                boxShadow: 'var(--shadow-soft)',
                 transition: 'all 0.3s ease',
                 '&:hover': {
-                  background: 'rgba(255,255,255,0.15)',
-                  borderColor: 'rgba(255,255,255,0.9)',
-                  boxShadow: '0 0 12px rgba(255,255,255,0.8)',
+                  background: 'var(--surface)',
+                  borderColor: theme.palette.primary.main,
+                  boxShadow: 'var(--shadow-strong)',
                 },
               }}
             >

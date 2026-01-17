@@ -48,7 +48,6 @@ interface ExperienceItem {
 
 export default function ExperienceSection() {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark";
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { lang } = useLocale();
   const t = lang === "en" ? en : ko;
@@ -62,18 +61,14 @@ export default function ExperienceSection() {
       key={idx}
       sx={{
         p: 3,
-        bgcolor: isDark ? "rgba(255,255,255,0.05)" : theme.palette.background.paper,
-        backdropFilter: isDark ? "blur(6px)" : "none",
-        border: isDark ? "1px solid rgba(255,255,255,0.1)" : "none",
-        boxShadow: isDark
-          ? "0 8px 32px rgba(0,0,0,0.7)"
-          : theme.shadows[3],
+        bgcolor: "var(--surface)",
+        backdropFilter: "blur(12px)",
+        border: "1px solid var(--card-border)",
+        boxShadow: "var(--shadow-soft)",
         borderRadius: 3,
         transition: "box-shadow 0.3s ease",
         "&:hover": {
-          boxShadow: isDark
-            ? "0 12px 40px rgba(0,0,0,0.8)"
-            : theme.shadows[6],
+          boxShadow: "var(--shadow-strong)",
         },
       }}
     >
@@ -81,7 +76,15 @@ export default function ExperienceSection() {
         <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
           {exp.company}
         </Typography>
-        <Chip label={exp.role} size="small" color="primary" />
+        <Chip
+          label={exp.role}
+          size="small"
+          sx={{
+            backgroundColor: "rgba(30,58,138,0.15)",
+            color: theme.palette.text.primary,
+            fontWeight: 600,
+          }}
+        />
         {exp.details.some(d => typeof d !== "string") && (
           <IconButton
             component="a"
@@ -126,7 +129,7 @@ export default function ExperienceSection() {
       {exp.techStack && (
         <Typography
           variant="body2"
-          sx={{ fontStyle: "italic", mb: 2, color: theme.palette.text.primary }}
+          sx={{ fontStyle: "italic", mb: 2, color: theme.palette.text.secondary }}
         >
           📦 Tech Stack: {exp.techStack}
         </Typography>
@@ -150,7 +153,12 @@ export default function ExperienceSection() {
             <Button
               size="small"
               onClick={() => toggle(idx)}
-              sx={{ color: theme.palette.primary.main }}
+              sx={{
+                color: theme.palette.primary.main,
+                border: "1px solid var(--card-border)",
+                borderRadius: 999,
+                px: 2,
+              }}
             >
               {expanded[idx] ? t.experienceLess : t.experienceMore}
             </Button>
@@ -190,8 +198,15 @@ export default function ExperienceSection() {
           {experiences.map((exp, idx) => (
             <TimelineItem key={idx}>
               <TimelineSeparator>
-                <TimelineDot color="primary" />
-                {idx < experiences.length - 1 && <TimelineConnector />}
+                <TimelineDot
+                  sx={{
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                    boxShadow: "var(--shadow-soft)",
+                  }}
+                />
+                {idx < experiences.length - 1 && (
+                  <TimelineConnector sx={{ backgroundColor: theme.palette.divider }} />
+                )}
               </TimelineSeparator>
               <TimelineContent sx={{ py: { xs: 2, sm: 3 } }}>
                 {renderCard(exp, idx)}

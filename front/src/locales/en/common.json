@@ -1,81 +1,205 @@
 {
-  "greeting": "Hi, I'm OhJ.",
-  "subtitle": "Passionate Full-stack Developer with expertise in Next.js, Nest.js, and AWS — building scalable, modern, and user-centric web applications.",
+  "greeting": "Oh Hyunji — Full-stack Developer",
+  "subtitle": "Full-stack engineer with deep expertise in Next.js, Nest.js, and AWS, delivering scalable, reliable, and AI-ready digital products.",
   "nav": {
     "about": "About",
     "projects": "Projects",
     "experience": "Experience",
+    "metrics": "Metrics",
+    "caseStudies": "Case Studies",
+    "skills": "Skills",
+    "summary": "Summary",
+    "resume": "Resume",
     "contact": "Contact"
   },
-  "projectsHeader": "Projects Showcase",
-  "projectsSubtitle": "Here are some of my key projects demonstrating problem-solving and technical skills.",
-  "projectsView": "View",
+  "metricsHeader": "Impact Metrics",
+  "metricsSubtitle": "Quantified outcomes from delivery, optimization, operations, and AI-enabled automation.",
+  "metricsData": [
+    {
+      "value": "40%",
+      "label": "Faster defect resolution",
+      "detail": "Improved triage, diagnostics, and test coverage, with AI-assisted automation."
+    },
+    {
+      "value": "4",
+      "label": "Product surfaces delivered",
+      "detail": "Kiosk, mobile, web, and admin releases aligned to one roadmap."
+    },
+    {
+      "value": "3+ yrs",
+      "label": "End-to-end delivery",
+      "detail": "From platform APIs to production-grade UI."
+    }
+  ],
+  "caseStudiesHeader": "Case Studies",
+  "caseStudiesSubtitle": "Selected engagements with explicit problem definition, solution, outcomes, and AI integration.",
+  "caseStudyProblemLabel": "Problem",
+  "caseStudySolutionLabel": "Solution",
+  "caseStudyResultLabel": "Result",
+  "caseStudiesData": [
+    {
+      "title": "Kiosk Payment Integration",
+      "problem": "Payment flows were inconsistent across devices and connection states.",
+      "solution": "Delivered a C#/.NET HTTP plugin, hardened JS↔C# bindings, and implemented fallback handling.",
+      "result": "Stabilized /Auth and /Cancel flows with resilient device orchestration.",
+      "techStack": "C#, .NET Framework, CefSharp, SerialPort",
+      "link": "#"
+    },
+    {
+      "title": "QR/Barcode Scanner Connectivity",
+      "problem": "Scanner data loss and inconsistent parsing in kiosk environments.",
+      "solution": "Implemented RS232 parsing, validation, and asynchronous UI synchronization.",
+      "result": "Improved scan accuracy and response feedback consistency.",
+      "techStack": "C#, WinForms, SerialPort, React",
+      "link": "#"
+    },
+    {
+      "title": "Real-time Platform Features",
+      "problem": "High-traffic collaboration required reliable real-time messaging.",
+      "solution": "Implemented WebSocket messaging with Bull Queue and Redis session sharing.",
+      "result": "Sustained 1:N group chat with stable session continuity.",
+      "techStack": "Nest.js, Redis, WebSocket",
+      "link": "#"
+    },
+    {
+      "title": "Waiting System Modernization",
+      "problem": "Peak-time traffic caused inconsistent ordering and operational recovery issues.",
+      "solution": "Implemented Redis atomicity with DB synchronization, session scopes, and fallback recovery flows.",
+      "result": "Delivered consistent sequencing, duplicate-prevention, and reliable recovery under load.",
+      "techStack": "Nest.js, Redis, MySQL",
+      "link": "#"
+    },
+    {
+      "title": "Settlement Statement Site",
+      "problem": "Manual settlement documentation created operational delays and inconsistencies.",
+      "solution": "Built an AI-assisted internal settlement site with standardized workflows and deployment automation.",
+      "result": "Improved turnaround time and reduced manual reconciliation effort.",
+      "techStack": "Nest.js, Next.js, MySQL, AI tooling",
+      "link": "#"
+    }
+  ],
+  "skillsHeader": "Skill Radar",
+  "skillsSubtitle": "Balanced strengths across product engineering, systems design, delivery, and AI integration.",
+  "skillsRadarData": [
+    { "label": "Front-end", "value": 88, "description": "Next.js, React, UI systems" },
+    { "label": "Back-end", "value": 84, "description": "Nest.js, APIs, data modeling" },
+    { "label": "Cloud", "value": 78, "description": "AWS, CI/CD, observability" },
+    { "label": "Systems", "value": 72, "description": "Kiosk and device integration" },
+    { "label": "Collaboration", "value": 86, "description": "Cross-team execution with security focus" }
+  ],
+  "summaryHeader": "Hiring Snapshot",
+  "summarySubtitle": "A concise, decision-ready profile.",
+  "summaryHighlights": [
+    "Full-stack delivery across web, mobile, kiosk, and admin products.",
+    "Proven experience in platform design, real-time systems, and integrations.",
+    "Emphasis on reliable delivery, UX quality, and maintainable code.",
+    "Actively leverage AI to improve efficiency and quality."
+  ],
+  "summaryCTA": "View One-page Summary",
+  "resumeHeader": "Resume",
+  "resumeSubtitle": "Printable, recruiter-ready PDF format.",
+  "resumeCTA": "Open Resume PDF",
+  "resumeTitle": "Oh Hyunji — Full-stack Developer",
+  "resumeHeadline": "In the era of AI agents, I am growing into a product-minded web developer who delivers user-journey-driven design, operable systems, safe AI integration, and robust security and access control.",
+  "resumeGoalTitle": "Profile / Career Goals",
+  "resumeGoalLines": [
+    "I am learning and applying product design centered on user journeys and success metrics beyond feature delivery.",
+    "Across operational domains such as waiting, settlement, and payment, I have stabilized systems with concurrency, consistency, and transactional integrity while strengthening operations practice.",
+    "I am expanding the capability to integrate LLMs safely via RAG, tool calling, guardrails, evals, and cost optimization, not just API calls.",
+    "Long term, I aim to solve business problems rapidly through domain expertise and compliance-ready security, access control, and audit logging."
+  ],
+  "resumeGrowthTitle": "Growth Areas",
+  "resumeGrowthBullets": [
+    "Product design: user-journey and success-metric-driven planning (signup → payment → retention).",
+    "Systems/performance/data: cache, queue, async, transactions, consistency, and concurrency control (locks/idempotency).",
+    "Operations/observability: CI/CD, monitoring, alerts, and log-driven incident response.",
+    "AI integration: validating RAG, tool calling, guardrails, evals, and cost optimization in production-like work.",
+    "Security/compliance: least privilege, access control, data masking, and audit logging.",
+    "Domain expertise: rapidly understanding industry problems and solving them."
+  ],
+  "resumeRoadmapTitle": "Execution Roadmap",
+  "resumeRoadmapBullets": [
+    "Implementing idempotency, transactional integrity, and operational logging/alerts in a payment and webhook ecommerce project.",
+    "Applying FAQ auto-updates (RAG), policy filters (guardrails), and quality evals to customer support automation.",
+    "Designing and testing AI cost optimization via caching, model selection, and cost controls."
+  ],
+  "resumeInterviewLine": "As AI accelerates code creation, I will differentiate through user-journey product design, operable systems, security, and safe AI integration.",
+  "resumeSummaryLabel": "Summary",
+  "resumeSkillsLabel": "Core Skills",
+  "resumeExperienceLabel": "Experience",
+  "resumeContactLabel": "Contact",
+  "resumeBackLabel": "Back to site",
+  "resumeDownloadLabel": "Save as PDF",
+  "resumeOnePageLabel": "One-page Summary",
+  "projectsHeader": "Selected Projects",
+  "projectsSubtitle": "A curated selection highlighting problem definition, execution, outcomes, and AI usage.",
+  "projectsView": "View Details",
   "projectData": [
     {
       "title": "BusinessPlus CRM",
-      "description": "Redesigned main site for B2B IT consulting firm BusinessPlus",
+      "description": "Main-site redesign for a B2B IT consulting firm",
       "images": ["/projects/businessplus.png"],
       "link": "http://www.businessplus.co.kr/",
       "detailImage": "/projects/businessplus.png",
-      "detailText": "Completely revamped the homepage with modern UI/UX trends."
+      "detailText": "Delivered a full homepage redesign aligned with current UX standards."
     },
     {
       "title": "Hanleeon Patent Consulting",
-      "description": "Refreshed Cafe24-based website for a patent law firm",
+      "description": "Cafe24-based site refresh for a patent law firm",
       "images": ["/projects/hanleeon-cafe24.png"],
       "link": "https://hanleeon02.cafe24.com/main/",
       "detailImage": "/projects/hanleeon-cafe24.png",
-      "detailText": "Added service guides and online consultation features."
+      "detailText": "Added service guides and consultation features for clients."
     },
     {
       "title": "Inno3Dental Chat",
-      "description": "Real-time group chat feature within the partner network platform",
+      "description": "Real-time group chat for a partner network platform",
       "images": ["/projects/innodental-chat.png"],
       "link": "https://dev.inno3dental.com/",
       "detailImage": "/projects/innodental-chat.png",
-      "detailText": "Implemented robust chat using Socket.io and Redis PUB/SUB."
+      "detailText": "Implemented resilient chat using Socket.io and Redis Pub/Sub."
     },
     {
       "title": "Inno3Dental Dashboard",
-      "description": "Admin dashboard with report lists, storage metrics, and charts",
+      "description": "Admin dashboard with reports, storage metrics, and analytics",
       "images": ["/projects/innodental-dashboard.png"],
       "link": "https://dev.inno3dental.com/",
       "detailImage": "/projects/innodental-dashboard.png",
-      "detailText": "Built data visualizations with Chart.js and Recharts."
+      "detailText": "Delivered chart-driven analytics using Chart.js and Recharts."
     },
     {
       "title": "Report Management",
-      "description": "Report list and detail view with date/keyword filters",
+      "description": "Report list and detail view with date and keyword filters",
       "images": [
         "/projects/report-list-1.png",
         "/projects/report-list-2.png"
       ],
       "link": "https://dev.inno3dental.com/",
       "detailImage": "/projects/report-detail.png",
-      "detailText": "Implemented date range and keyword filters plus export/print actions."
+      "detailText": "Implemented date-range filters with export and print workflows."
     },
     {
       "title": "Account & Profile",
-      "description": "Account settings (General, Security, Scanner) and user profile screens",
+      "description": "Account settings and user profile management screens",
       "images": [
         "/projects/account-general-1.png",
         "/projects/account-general-2.png"
       ],
       "link": "https://dev.inno3dental.com/",
       "detailImage": "/projects/profile.png",
-      "detailText": "Completed full account management UI including profile uploads, language selection, and security."
+      "detailText": "Delivered comprehensive account management, including uploads, language selection, and security settings."
     },
     {
       "title": "Kiosk Payment Integration System",
-      "description": "Development and deployment of a kiosk payment integration system",
+      "description": "Delivery of a kiosk payment integration system",
       "images": [
         "/projects/kioskPayment.png"
       ],
       "video": "/videos/kioskPayment.mp4",
-      "videoDescription": "A demo video showcasing the actual operation of the kiosk payment integration system.",
+      "videoDescription": "Demonstration video of the kiosk payment integration workflow.",
       "link": "#",
       "detailImage": "/projects/profile.png",
-      "detailText": "By developing and deploying the kiosk payment integration system, we implemented a reliable payment solution."
+      "detailText": "Implemented a stable payment integration with production-ready deployment."
     }
 
   ],
@@ -87,12 +211,17 @@
       "company": "Queen's Smile",
       "role": "Full-stack Developer",
       "details": [
-        "Developed kiosk, mobile, web, and admin services",
-        "Supported operations and feature improvements across services"
+        "Delivered kiosk, mobile, web, and admin services across the product suite",
+        "Built a queueing project using Nest.js and Redis",
+        "Designed and implemented a real-time waiting system backend for register–call–entry flows (NestJS, Redis, MySQL)",
+        "Developed and deployed an internal settlement statement site with AI support",
+        "Developing features with Java, Nest.js, and Next.js",
+        "Provided operational support and continuous feature enhancement"
       ],
-      "techStack": "Full-stack, Kiosk, Mobile, Web, Admin",
+      "techStack": "Java, Nest.js, Next.js, Redis, Kiosk, Mobile, Web, Admin",
       "extra": [
-        "Delivered features aligned with product-wide requirements"
+        "Implemented features aligned with cross-product requirements",
+        "Stabilized waiting system consistency, concurrency, and recovery using Redis atomicity plus DB synchronization"
       ]
     },
     {
@@ -101,19 +230,19 @@
       "company": "Queen's Smile",
       "role": "Contract Developer",
       "details": [
-        "Implemented QR code and barcode scanner integration functionality",
-        "Handled RS232 serial communication using SerialPort and managed data receive events",
-        "Developed prefix-based logic for data length recognition and byte string parsing",
-        "Applied regular expression filters and validation for scanned data",
-        "Integrated scanner input with React-based Kiosk UI via asynchronous communication",
-        "Processed scanned data through HTTP requests and reflected responses in the UI",
-        "Implemented fallback alerts and error handling for disconnected or malfunctioning devices"
+        "Delivered QR and barcode scanner integration",
+        "Handled RS232 serial communication via SerialPort and event-based ingestion",
+        "Implemented prefix-based parsing for variable-length payloads",
+        "Applied regex validation and data sanitization for scans",
+        "Synchronized scanner input with React kiosk UI asynchronously",
+        "Transmitted scan data via HTTP and reflected responses in UI state",
+        "Implemented fallback alerts and error handling for device disconnects"
       ],
       "techStack": "C#, WinForms, SerialPort, Regex, JavaScript, React, HTTP",
       "extra": [
-        "Debugged issues related to data loss and delays depending on scanner device environments",
-        "Improved parsing logic for better scan accuracy based on real-time user feedback",
-        "Designed a unified logic structure to support both QR and barcode readers simultaneously"
+        "Diagnosed data loss and latency issues across device environments",
+        "Refined parsing logic to improve scan accuracy based on user feedback",
+        "Designed unified handling to support QR and barcode readers concurrently"
       ]
     },
     {
@@ -122,20 +251,20 @@
       "company": "Queen's Smile",
       "role": "Contractor",
       "details": [
-        "Developed kiosk payment integration system and set up production environment",
-        "Built HTTP plugin for tPayDaemon in C#/.NET",
-        "Optimized HttpClient settings, implemented SSL and JSON binding",
+        "Delivered kiosk payment integration and production setup",
+        "Built a C#/.NET HTTP plugin for tPayDaemon",
+        "Optimized HttpClient configuration with SSL and JSON bindings",
         "Stabilized payment requests on /Auth and /Cancel endpoints",
-        "Embedded Chromium (CefSharp.WinForms) and bound JS↔C#",
-        "Configured JavascriptObjectRepository and handled Chrome API communication",
-        "Integrated EMV card terminal via serial port with ACK logic",
-        "Implemented auto POS data filling, debugging logs, and fallback handling"
+        "Embedded Chromium (CefSharp.WinForms) and implemented JS↔C# bindings",
+        "Configured JavascriptObjectRepository and Chrome API communication",
+        "Integrated EMV card terminals via serial port with ACK handling",
+        "Implemented POS autofill, debugging logs, and fallback handling"
       ],
       "techStack": "C#, .NET Framework, CefSharp, HttpClient, JSON, WinForms, SerialPort, Windows Registry",
       "extra": [
-        "Debugged ACK flow after POS terminal integration, solving issues",
-        "Led design of message structure for JS<C# communication synchronization",
-        "Handled various production exceptions with fallback logic"
+        "Resolved ACK flow issues after POS terminal integration",
+        "Designed message structures for synchronized JS↔C# communication",
+        "Handled production exceptions with resilient fallback logic"
       ]
     },
     {
@@ -144,19 +273,20 @@
       "company": "Inno3D",
       "role": "Platform Team Senior Researcher",
       "details": [
-        "Designed and developed real-time ordering, 3D file viewer(three.JS), login persistence, and partner network platform",
-        "Deployed high-availability platform on AWS EC2, RDS, and load balancers",
-        "Implemented JWT login with OTP, Nest.js Guards for RDS protection",
-        "Used Redis for session sharing and restart-persistent sessions, RDS replication for backend scaling",
-        "Built 1:N real-time group chat with WebSocket + Bull Queue for high traffic",
+        "Designed and delivered real-time ordering, 3D file viewing (three.js), login persistence, and partner network features",
+        "Deployed high-availability services on AWS EC2, RDS, and load balancers",
+        "Implemented JWT authentication with OTP and Nest.js Guards for data protection",
+        "Shared sessions with Redis and scaled with RDS replication",
+        "Built 1:N real-time group chat using WebSocket and Bull Queue for high traffic",
+        "Designed and implemented a queueing system for reliable task processing",
         "Automated AWS IAM and Git environment setup",
-        "Improved bug resolution efficiency by 40% with Jest-based testing"
+        "Improved defect resolution efficiency by 40% using Jest-based tests"
       ],
       "techStack": "AWS, Nest.js, React, Redis, WebSocket, Bull Queue, PostgreSQL, Jest",
       "extra": [
-        "Achieved zero-downtime CI/CD deployments, ensured system stability under load",
-        "Analyzed and resolved memory leaks and session loss in production",
-        "Collaborated with PM for full lifecycle development from requirements to deployment"
+        "Delivered zero-downtime CI/CD and ensured system stability under load",
+        "Analyzed and resolved production memory leaks and session-loss issues",
+        "Collaborated with PMs across requirements, delivery, and optimization"
       ]
     },
     {
@@ -165,13 +295,13 @@
       "company": "HappyMade",
       "role": "Dev Team Lead",
       "details": [
-        "Developed admin and user pages for in-house exchange service in PHP",
-        "Integrated MySQL-based data and fixed bugs"
+        "Delivered admin and user portals for an internal exchange service in PHP",
+        "Integrated MySQL data and resolved production defects"
       ],
       "techStack": "PHP, MySQL, HTML, CSS, JavaScript",
       "extra": [
-        "Enhanced stability by analyzing user logs and improving exception handling",
-        "Refactored code and optimized SQL queries for faster page loads"
+        "Improved stability through log analysis and exception handling",
+        "Refactored code and optimized SQL queries to reduce load time"
       ]
     },
     {
@@ -180,14 +310,14 @@
       "company": "Han Communication",
       "role": "Developer",
       "details": [
-        "Maintained client websites and created storyboards",
-        "Developed full-stack client sites on Cafe24",
+        "Maintained client websites and authored storyboards",
+        "Delivered full-stack client sites on Cafe24",
         "https://hanleeon02.cafe24.com/main/"
       ],
       "techStack": "HTML, CSS, JavaScript",
       "extra": [
-        "Authored and refined storyboards based on planning docs",
-        "Improved maintainability by modernizing legacy JS and HTML structure"
+        "Produced storyboards based on planning documents and stakeholder reviews",
+        "Modernized legacy JS and HTML for improved maintainability"
       ]
     },
     {
@@ -196,16 +326,16 @@
       "company": "BeFle (BusinessPlus)",
       "role": "Corporate Researcher",
       "details": [
-        "Redeveloped company website and built admin panel",
-        "Implemented backend in PHP/MariaDB and frontend in JS/HTML/CSS3",
-        "Created notice, gallery, and video boards",
-        "Handled web publishing",
+        "Redeveloped the company website and delivered an admin panel",
+        "Implemented PHP/MariaDB backend and JS/HTML/CSS3 frontend",
+        "Built notice, gallery, and video modules",
+        "Delivered end-to-end web publishing",
         "http://www.businessplus.co.kr/"
       ],
       "techStack": "PHP, MariaDB, HTML, CSS, JavaScript",
       "extra": [
-        "Repeated feature additions and maintenance based on client requests",
-        "Ensured compatibility with web standards and cross-browser support"
+        "Delivered iterative feature updates based on client requests",
+        "Ensured web standards compliance and cross-browser support"
       ]
     },
     {
@@ -214,28 +344,73 @@
       "company": "Hanil Networks",
       "role": "Business Support Staff",
       "details": [
-        "Managed department costs, budgets, marketing, and planning",
+        "Managed departmental costs, budgets, marketing, and planning",
         "Supported general affairs, accounting, document management, procurement, and ERP operations"
       ],
       "techStack": "ERP, MS Excel, Office",
       "extra": [
-        "Proficient in cost/contract management via ERP",
-        "Improved communication skills through cross-functional coordination"
+        "Managed cost and contract processes through ERP",
+        "Coordinated cross-functional stakeholders for operational alignment"
       ]
     }
   ],
 
-  "experienceHeader": "My Career Journey",
-  "experienceSubtitle": "My career has grown through challenges. Here are the roles and skills I've built along the way.",
-  "experienceMore": "More details",
-  "experienceLess": "Less details",
+  "experienceHeader": "Experience",
+  "experienceSubtitle": "Roles, scope, impact, and AI application across products and platforms.",
+  "experienceMore": "View details",
+  "experienceLess": "Hide details",
 
-  "contactHeader": "Let's Connect",
-  "contactSubtitle": "Feel free to reach out anytime via email, or check out my work on LinkedIn and GitHub.",
-   "contactNameLabel": "Name",
+  "chatbotTitle": "Portfolio Assistant",
+  "chatbotSubtitle": "Ask about experience, stack, projects, outcomes, or AI usage.",
+  "chatbotPlaceholder": "Please enter your question.",
+  "chatbotGreeting": "Hello. I can answer questions about experience, skills, projects, and outcomes.",
+  "chatbotFallback": "Please provide more context—e.g., experience, projects, tech stack, or outcomes.",
+  "chatbotSuggestions": [
+    "What is your main tech stack?",
+    "Please summarize recent projects",
+    "How did you design the waiting system?",
+    "What outcomes did you deliver?",
+    "How do you use AI?",
+    "Which roles have you held?",
+    "Are you open to collaboration?"
+  ],
+  "chatbotData": [
+    {
+      "keywords": ["tech", "stack", "skills", "skillset"],
+      "answer": "My core stack includes TypeScript, React, Next.js, Node.js, Nest.js, AWS, and SQL. I also work with C#/.NET and Three.js for specialized delivery."
+    },
+    {
+      "keywords": ["projects", "recent", "portfolio"],
+      "answer": "Recent work includes kiosk payment integration, waiting system modernization, and full-stack platform development with real-time capabilities."
+    },
+    {
+      "keywords": ["waiting", "queue", "queues", "queuing"],
+      "answer": "I designed a waiting system using Redis atomicity and DB synchronization to ensure consistency, concurrency, and recovery under load."
+    },
+    {
+      "keywords": ["outcome", "outcomes", "impact", "metric", "metrics"],
+      "answer": "I delivered measurable improvements such as faster defect resolution and stable multi-surface releases."
+    },
+    {
+      "keywords": ["ai", "artificial intelligence", "llm"],
+      "answer": "I actively leverage AI to improve efficiency and quality while considering safety, cost, and product integration."
+    },
+    {
+      "keywords": ["experience", "career", "role"],
+      "answer": "I deliver full-stack solutions across web, mobile, kiosk, and admin products, as well as platform engineering and system integrations."
+    },
+    {
+      "keywords": ["collaboration", "hire", "available", "freelance"],
+      "answer": "I am open to collaboration when the scope aligns with product impact and technical growth. Please contact me for details."
+    }
+  ],
+
+  "contactHeader": "Contact",
+  "contactSubtitle": "Please reach out by email, or review my work on LinkedIn and GitHub.",
+  "contactNameLabel": "Name",
   "contactEmailLabel": "Email",
   "contactMessageLabel": "Message",
-  "contactSubmit": "Send Message",
-  "contactSuccess": "Your message has been sent!",
-  "contactError": "Something went wrong. Please try again."
+  "contactSubmit": "Send",
+  "contactSuccess": "Your message has been sent successfully.",
+  "contactError": "An error occurred. Please try again."
 }

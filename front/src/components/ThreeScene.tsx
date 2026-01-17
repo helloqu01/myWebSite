@@ -28,7 +28,7 @@ export default function ThreeScene() {
       <Suspense fallback={null}>
         <Sphere args={[1, 64, 64]} scale={1.5}>
           <MeshDistortMaterial
-            color="#8352FD"
+            color="#1e3a8a"
             distort={0.4}
             speed={2}
           />
