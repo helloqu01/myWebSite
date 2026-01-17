@@ -165,14 +165,20 @@ export default function AnalyticsTracker() {
 
     const inpObserver = new PerformanceObserver(list => {
       for (const entry of list.getEntries() as PerformanceEventTiming[]) {
-        if (!entry.interactionId) continue;
+        const interactionId = (entry as PerformanceEventTiming & { interactionId?: number })
+          .interactionId;
+        if (!interactionId) continue;
         if (!inpEntry || entry.duration > inpEntry.duration) {
           inpEntry = entry;
         }
       }
     });
     try {
-      inpObserver.observe({ type: "event", buffered: true, durationThreshold: 40 });
+      inpObserver.observe({
+        type: "event",
+        buffered: true,
+        durationThreshold: 40,
+      } as PerformanceObserverInit & { durationThreshold: number });
     } catch {
       // Some browsers do not support INP yet.
     }
