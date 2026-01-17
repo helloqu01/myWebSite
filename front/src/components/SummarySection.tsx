@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useLocale } from "@/context/LocaleContext";
 import en from "@/locales/en/common.json";
 import ko from "@/locales/ko/common.json";
+import { trackEvent } from "@/lib/analytics";
 
 export default function SummarySection() {
   const { lang } = useLocale();
@@ -56,6 +57,7 @@ export default function SummarySection() {
               component={Link}
               href="/summary"
               variant="contained"
+              onClick={() => trackEvent("summary_open", { source: "summary_section" })}
               sx={{
                 background: "linear-gradient(135deg, #1e3a8a, #3b82f6)",
                 "&:hover": {

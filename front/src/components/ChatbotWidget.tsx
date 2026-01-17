@@ -17,6 +17,7 @@ import { MessageCircle, Send, X } from "lucide-react";
 import { useLocale } from "@/context/LocaleContext";
 import en from "@/locales/en/common.json";
 import ko from "@/locales/ko/common.json";
+import { trackEvent } from "@/lib/analytics";
 
 type BotMessage = {
   role: "bot" | "user";
@@ -72,6 +73,10 @@ export default function ChatbotWidget() {
     const response = matchAnswer(trimmed);
     setMessages(prev => [...prev, { role: "bot", text: response }]);
     setInput("");
+    trackEvent("chatbot_message", {
+      length: trimmed.length,
+      matched: response !== fallback,
+    });
   };
 
   const suggestionsToShow = suggestions.slice(0, 4);

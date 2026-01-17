@@ -9,6 +9,7 @@ import { Download, ArrowLeft } from "lucide-react";
 import { useLocale } from "@/context/LocaleContext";
 import en from "@/locales/en/common.json";
 import ko from "@/locales/ko/common.json";
+import { trackEvent } from "@/lib/analytics";
 
 type ExperienceItem = {
   period: string;
@@ -42,7 +43,10 @@ export default function ResumePage() {
             {t.resumeBackLabel}
           </Button>
           <Button
-            onClick={() => window.print()}
+            onClick={() => {
+              trackEvent("resume_download", { method: "print" });
+              window.print();
+            }}
             startIcon={<Download size={16} />}
             variant="contained"
             sx={{

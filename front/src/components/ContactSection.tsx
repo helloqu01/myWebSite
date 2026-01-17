@@ -20,6 +20,7 @@ import ko from '@/locales/ko/common.json';
 import { useLocale } from '@/context/LocaleContext';
 import ThreeScene from './ThreeScene';
 import BusinessCardThumbnail from '@/components/BusinessCardThumbnail';
+import { trackEvent } from '@/lib/analytics';
 
 export default function ContactSection() {
   const theme = useTheme();
@@ -58,8 +59,10 @@ export default function ContactSection() {
       if (!res.ok) throw new Error();
       setStatus('success');
       setName(''); setEmail(''); setMessage('');
+      trackEvent('contact_submit', { status: 'success' });
     } catch {
       setStatus('error');
+      trackEvent('contact_submit', { status: 'error' });
     }
   };
 

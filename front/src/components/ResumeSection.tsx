@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useLocale } from "@/context/LocaleContext";
 import en from "@/locales/en/common.json";
 import ko from "@/locales/ko/common.json";
+import { trackEvent } from "@/lib/analytics";
 
 export default function ResumeSection() {
   const { lang } = useLocale();
@@ -39,6 +40,7 @@ export default function ResumeSection() {
           href="/resume"
           variant="contained"
           startIcon={<Download size={16} />}
+          onClick={() => trackEvent("resume_open", { source: "section" })}
           sx={{
             background: "linear-gradient(135deg, #1e3a8a, #3b82f6)",
             "&:hover": {

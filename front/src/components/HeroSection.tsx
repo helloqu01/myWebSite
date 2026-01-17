@@ -10,6 +10,7 @@ import { useTheme } from "@mui/material";
 import en from "@/locales/en/common.json";
 import ko from "@/locales/ko/common.json";
 import { useLocale } from "@/context/LocaleContext";
+import { trackEvent } from "@/lib/analytics";
 
 // ① import your Three.js scene
 import ThreeScene from "./ThreeScene";
@@ -102,6 +103,7 @@ export default function HeroSection() {
           component={Link}
           href="/resume"
           variant="contained"
+          onClick={() => trackEvent("resume_open", { source: "hero" })}
           sx={{
             background: "linear-gradient(135deg, #1e3a8a, #3b82f6)",
             "&:hover": {
