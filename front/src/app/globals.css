@@ -48,18 +48,22 @@ body > * {
   position: absolute;
   top: 0;
   left: 0;
-  transform: translateY(-120%);
+  transform: translateY(-140%);
   padding: 10px 14px;
   margin: 12px;
-  background: #111827;
+  background: #0f172a;
   color: #f8fafc;
   border-radius: 12px;
   font-weight: 600;
   text-decoration: none;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
   z-index: 2000;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
 }
 
-.skip-link:focus {
+.skip-link:focus,
+.skip-link:focus-visible {
   transform: translateY(0);
+  outline-color: #60a5fa;
 }

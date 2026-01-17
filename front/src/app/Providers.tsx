@@ -146,7 +146,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           <ConsentScripts />
           <AnalyticsTracker />
           <ChatbotWidget />
-          <main id="main-content">{children}</main>
+          <main id="main-content" tabIndex={-1}>
+            {children}
+          </main>
           <CookieBanner />
         </ThemeProvider>
       </ColorModeContext.Provider>
