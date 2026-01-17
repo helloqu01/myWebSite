@@ -45,30 +45,23 @@ export default function RootLayout({
     // 맨 앞줄에 공백, 주석, "use client" 없어야 합니다.
     <html lang="ko">
       <body className={`${spaceGrotesk.variable} ${fraunces.variable}`}>
-        {/* Google Tag Manager (noscript) */}
-        <noscript>
-          <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-WSMNHKPD"
-            height="0"
-            width="0"
-            style={{ display: "none", visibility: "hidden" }}
-          />
-        </noscript>
-        {/* End Google Tag Manager (noscript) */}
-        {/* Google Tag Manager */}
+        {/* Google tag (gtag.js) */}
         <Script
-          id="gtm-init"
+          src="https://www.googletagmanager.com/gtag/js?id=G-C2589TCWZ6"
+          strategy="afterInteractive"
+        />
+        <Script
+          id="gtag-init"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html:
-              "(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':" +
-              "new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0]," +
-              "j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=" +
-              "'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);" +
-              "})(window,document,'script','dataLayer','GTM-WSMNHKPD');",
+              "window.dataLayer = window.dataLayer || [];" +
+              "function gtag(){dataLayer.push(arguments);}" +
+              "gtag('js', new Date());" +
+              "gtag('config', 'G-C2589TCWZ6');",
           }}
         />
-        {/* End Google Tag Manager */}
+        {/* End Google tag (gtag.js) */}
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -4,6 +4,14 @@ export default function Head() {
     <>
       <title>Oh Hyunji – FullStack Web Developer</title>
       <meta name="description" content="Hyunji Oh 의 포트폴리오 사이트입니다." />
+      <meta name="robots" content="index, follow" />
+      <meta name="author" content="Oh Hyunji" />
+      <meta
+        name="keywords"
+        content="Oh Hyunji, Full-stack Developer, Next.js, Nest.js, AWS, Portfolio, Web Developer"
+      />
+      <link rel="canonical" href="https://codingbyohj.com/" />
+      <meta name="theme-color" content="#1e3a8a" />
 
       {/* Open Graph */}
       <meta property="og:type" content="website" />
@@ -19,6 +27,7 @@ export default function Head() {
       />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
+      <meta property="og:locale" content="ko_KR" />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
