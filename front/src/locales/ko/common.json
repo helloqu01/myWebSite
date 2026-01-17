@@ -86,6 +86,20 @@
   "experienceLess": "접기",
   "experienceData": [
     {
+      "period": "2025.09 ~ 현재",
+      "duration": "재직중",
+      "company": "퀸즈스마일",
+      "role": "풀스택 개발자",
+      "details": [
+        "키오스크, 모바일, 웹, 어드민 서비스 개발",
+        "서비스별 기능 개선 및 운영 지원"
+      ],
+      "techStack": "Full-stack, Kiosk, Mobile, Web, Admin",
+      "extra": [
+        "제품군 전반의 요구사항을 반영한 기능 구현"
+      ]
+    },
+    {
       "period": "2025.07 ~ 2025.07",
       "duration": "1주",
       "company": "퀸즈스마일",

@@ -81,7 +81,21 @@
   ],
 
   "experienceData": [
-        {
+    {
+      "period": "2025.09 ~ Present",
+      "duration": "Present",
+      "company": "Queen's Smile",
+      "role": "Full-stack Developer",
+      "details": [
+        "Developed kiosk, mobile, web, and admin services",
+        "Supported operations and feature improvements across services"
+      ],
+      "techStack": "Full-stack, Kiosk, Mobile, Web, Admin",
+      "extra": [
+        "Delivered features aligned with product-wide requirements"
+      ]
+    },
+    {
       "period": "2025.07 ~ 2025.07",
       "duration": "1 weeks",
       "company": "Queen's Smile",
