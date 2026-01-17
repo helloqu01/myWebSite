@@ -124,6 +124,82 @@
     "Designing and testing AI cost optimization via caching, model selection, and cost controls."
   ],
   "resumeInterviewLine": "As AI accelerates code creation, I will differentiate through user-journey product design, operable systems, security, and safe AI integration.",
+  "resumeTechStackTitle": "Technical Stack (Tools & Infrastructure)",
+  "resumeTechStackSections": [
+    {
+      "title": "Frontend",
+      "items": [
+        "Next.js (App Router, SSR/SSG)",
+        "React",
+        "TypeScript",
+        "Tailwind CSS",
+        "Zustand / Redux Toolkit",
+        "React Hook Form",
+        "shadcn/ui"
+      ]
+    },
+    {
+      "title": "Backend",
+      "items": [
+        "Node.js",
+        "NestJS",
+        "TypeORM",
+        "REST API design",
+        "Authentication (JWT, Refresh Token)",
+        "Role-based Access Control (RBAC)"
+      ]
+    },
+    {
+      "title": "Cloud & Infrastructure (AWS)",
+      "items": [
+        "App Runner (Docker-based services)",
+        "S3 (static hosting)",
+        "CloudFront (CDN, custom domains)",
+        "ECR (Docker image registry)",
+        "RDS (MySQL / Aurora Serverless)",
+        "ALB (load balancing)",
+        "Lambda / API Gateway (serverless)",
+        "IAM (access control)"
+      ]
+    },
+    {
+      "title": "CI / CD",
+      "items": [
+        "GitHub Actions",
+        "Automated build/deploy for frontend and backend",
+        "Docker image build → ECR push → App Runner deploy",
+        "Environment-based deployment (dev / prod)",
+        "Secrets management (GitHub Secrets, AWS Parameter Store)",
+        "Zero-downtime deployment experience"
+      ]
+    },
+    {
+      "title": "DevOps & Development Tools",
+      "items": [
+        "Docker / Dockerfile / Docker Compose",
+        "Git / GitHub / GitLab",
+        "pnpm / npm",
+        "VS Code / IntelliJ",
+        "Postman",
+        "Swagger (OpenAPI)"
+      ]
+    },
+    {
+      "title": "Monitoring & Operations",
+      "items": [
+        "Incident analysis based on application logs",
+        "Architecture decisions considering traffic and cost",
+        "Cost optimization via ECS → App Runner → Serverless transitions",
+        "Auth issue resolution via CloudFront origin request policy"
+      ]
+    },
+    {
+      "title": "One-line Summary",
+      "items": [
+        "Full-stack Web Developer with hands-on experience in AWS CI/CD, Dockerized deployments, and scalable architectures using Next.js and NestJS."
+      ]
+    }
+  ],
   "resumeSummaryLabel": "Summary",
   "resumeSkillsLabel": "Core Skills",
   "resumeExperienceLabel": "Experience",

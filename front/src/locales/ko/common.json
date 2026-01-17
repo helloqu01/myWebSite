@@ -117,6 +117,82 @@
     "캐시/모델 선택/요금 관리 등 AI 비용 최적화 전략을 설계 및 실험"
   ],
   "resumeInterviewLine": "AI가 코드를 더 빨리 만들수록, 저는 사용자 여정 기반 제품 설계와 운영 가능한 시스템·보안·AI 통합 역량으로 차별화되는 개발자가 되겠습니다.",
+  "resumeTechStackTitle": "Technical Stack (Tools & Infrastructure)",
+  "resumeTechStackSections": [
+    {
+      "title": "Frontend",
+      "items": [
+        "Next.js (App Router, SSR/SSG)",
+        "React",
+        "TypeScript",
+        "Tailwind CSS",
+        "Zustand / Redux Toolkit",
+        "React Hook Form",
+        "shadcn/ui"
+      ]
+    },
+    {
+      "title": "Backend",
+      "items": [
+        "Node.js",
+        "NestJS",
+        "TypeORM",
+        "REST API 설계",
+        "Authentication (JWT, Refresh Token)",
+        "Role-based Access Control (RBAC)"
+      ]
+    },
+    {
+      "title": "Cloud & Infrastructure (AWS)",
+      "items": [
+        "AWS App Runner (Docker 기반 서비스 배포)",
+        "AWS S3 (정적 자산 호스팅)",
+        "AWS CloudFront (CDN, 커스텀 도메인)",
+        "AWS ECR (Docker Image Registry)",
+        "AWS RDS (MySQL / Aurora Serverless)",
+        "AWS ALB (로드 밸런싱)",
+        "AWS Lambda / API Gateway (서버리스)",
+        "AWS IAM (권한 관리)"
+      ]
+    },
+    {
+      "title": "CI / CD",
+      "items": [
+        "GitHub Actions",
+        "Frontend / Backend 자동 빌드 및 배포",
+        "Docker Image 빌드 → ECR Push → App Runner 배포",
+        "Environment-based deployment (dev / prod)",
+        "Secret 관리 (GitHub Secrets, AWS Parameter Store)",
+        "Zero-downtime deployment 경험"
+      ]
+    },
+    {
+      "title": "DevOps & Development Tools",
+      "items": [
+        "Docker / Dockerfile / Docker Compose",
+        "Git / GitHub / GitLab",
+        "pnpm / npm",
+        "VS Code / IntelliJ",
+        "Postman",
+        "Swagger (OpenAPI)"
+      ]
+    },
+    {
+      "title": "Monitoring & Operations",
+      "items": [
+        "Application Log 기반 장애 분석",
+        "트래픽/비용 고려한 아키텍처 설계",
+        "ECS → App Runner → Serverless 전환을 통한 비용 최적화 경험",
+        "CloudFront Origin Request Policy 설정을 통한 인증 이슈 해결"
+      ]
+    },
+    {
+      "title": "한 줄 요약",
+      "items": [
+        "FullStack Web Developer with hands-on experience in AWS-based CI/CD pipelines, Dockerized deployments, and scalable web architectures using Next.js and NestJS."
+      ]
+    }
+  ],
   "resumeSummaryLabel": "요약",
   "resumeSkillsLabel": "핵심 스킬",
   "resumeExperienceLabel": "경력",

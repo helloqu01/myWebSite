@@ -167,6 +167,30 @@ export default function ResumePage() {
 
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
+                {t.resumeTechStackTitle}
+              </Typography>
+              <Stack spacing={2}>
+                {(t.resumeTechStackSections as { title: string; items: string[] }[]).map(
+                  (section, idx) => (
+                    <Box key={`${section.title}-${idx}`}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                        {section.title}
+                      </Typography>
+                      <Box component="ul" sx={{ pl: 3, mb: 0 }}>
+                        {section.items.map((item, i) => (
+                          <li key={i}>
+                            <Typography variant="body2">{item}</Typography>
+                          </li>
+                        ))}
+                      </Box>
+                    </Box>
+                  )
+                )}
+              </Stack>
+            </Box>
+
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
                 {t.resumeExperienceLabel}
               </Typography>
               <Stack spacing={2}>
