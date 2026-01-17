@@ -48,6 +48,9 @@ export default function Footer() {
             <Link component={NextLink} href="/insights" underline="hover" color="text.secondary">
               Insights
             </Link>
+            <Link component={NextLink} href="/faq" underline="hover" color="text.secondary">
+              FAQ
+            </Link>
             <Link component={NextLink} href="/privacy" underline="hover" color="text.secondary">
               개인정보처리방침
             </Link>

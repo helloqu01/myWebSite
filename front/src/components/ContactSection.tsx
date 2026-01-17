@@ -223,6 +223,7 @@ export default function ContactSection() {
                   placeholder="Your name"
                   fullWidth
                   required
+                  inputProps={{ "aria-required": true }}
                   sx={inputSx}
                 />
                 <TextField
@@ -233,6 +234,7 @@ export default function ContactSection() {
                   placeholder="you@example.com"
                   fullWidth
                   required
+                  inputProps={{ "aria-required": true }}
                   sx={inputSx}
                 />
                 <TextField
@@ -242,6 +244,7 @@ export default function ContactSection() {
                   placeholder="Write your message"
                   fullWidth
                   required
+                  inputProps={{ "aria-required": true }}
                   multiline
                   rows={4}
                   sx={inputSx}
@@ -264,6 +267,19 @@ export default function ContactSection() {
 
                 {status === 'success' && <Alert severity="success">{t.contactSuccess}</Alert>}
                 {status === 'error' && <Alert severity="error">{t.contactError}</Alert>}
+                <Typography
+                  component="span"
+                  aria-live="polite"
+                  sx={{ position: "absolute", left: -9999, top: "auto", height: 1, width: 1, overflow: "hidden" }}
+                >
+                  {status === 'sending'
+                    ? lang === 'en' ? 'Sending message.' : '메시지 전송 중입니다.'
+                    : status === 'success'
+                    ? t.contactSuccess
+                    : status === 'error'
+                    ? t.contactError
+                    : ''}
+                </Typography>
               </Stack>
             </form>
           </Box>

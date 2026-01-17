@@ -61,6 +61,7 @@ export default function Header() {
   const moreNavItems = [
     { label: t.nav.aboutPage, href: "/about", icon: <Info fontSize="small" /> },
     { label: t.nav.insights, href: "/insights", icon: <Code fontSize="small" /> },
+    { label: t.nav.faq, href: "/faq", icon: <Info fontSize="small" /> },
     { label: t.nav.metrics, href: "#metrics", icon: <Info fontSize="small" /> },
     { label: t.nav.caseStudies, href: "#case-studies", icon: <Code fontSize="small" /> },
     { label: t.nav.skills, href: "#skills", icon: <Code fontSize="small" /> },
