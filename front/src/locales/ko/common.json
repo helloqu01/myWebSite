@@ -10,7 +10,9 @@
     "skills": "스킬",
     "summary": "요약",
     "resume": "이력서",
-    "contact": "연락처"
+    "contact": "연락처",
+    "aboutPage": "소개",
+    "insights": "인사이트"
   },
 
   "metricsHeader": "성과 지표",

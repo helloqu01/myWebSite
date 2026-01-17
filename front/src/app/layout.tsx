@@ -1,6 +1,5 @@
 // src/app/layout.tsx
 import React from "react";
-import Script from "next/script";
 import Providers from "./Providers";
 import { Space_Grotesk, Fraunces } from "next/font/google";
 
@@ -45,41 +44,6 @@ export default function RootLayout({
     // 맨 앞줄에 공백, 주석, "use client" 없어야 합니다.
     <html lang="ko">
       <body className={`${spaceGrotesk.variable} ${fraunces.variable}`}>
-        {/* Google tag (gtag.js) */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-C2589TCWZ6"
-          strategy="afterInteractive"
-        />
-        <Script
-          id="gtag-init"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html:
-              "window.dataLayer = window.dataLayer || [];" +
-              "function gtag(){dataLayer.push(arguments);}" +
-              "gtag('js', new Date());" +
-              "gtag('config', 'G-C2589TCWZ6');",
-          }}
-        />
-        {/* End Google tag (gtag.js) */}
-        {/* Google AdSense */}
-        <Script
-          async
-          strategy="beforeInteractive"
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1115617071874827"
-          crossOrigin="anonymous"
-        />
-        <Script
-          id="clarity-init"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html:
-              "(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};" +
-              "t=l.createElement(r);t.async=1;t.src=\"https://www.clarity.ms/tag/\"+i;" +
-              "y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);" +
-              "})(window, document, \"clarity\", \"script\", \"v2sj4o2bvk\");",
-          }}
-        />
         <Providers>{children}</Providers>
       </body>
     </html>

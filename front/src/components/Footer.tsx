@@ -2,9 +2,13 @@
 
 import React from "react";
 import NextLink from "next/link";
-import { Box, Container, Stack, Typography, Link } from "@mui/material";
+import { Box, Button, Container, Stack, Typography, Link } from "@mui/material";
+import { useLocale } from "@/context/LocaleContext";
 
 export default function Footer() {
+  const { lang } = useLocale();
+  const cookieLabel = lang === "en" ? "Cookie Settings" : "쿠키 설정";
+
   return (
     <Box
       component="footer"
@@ -26,7 +30,24 @@ export default function Footer() {
           <Typography variant="body2" color="text.secondary">
             © {new Date().getFullYear()} Oh Hyunji. All rights reserved.
           </Typography>
-          <Stack direction="row" spacing={2}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Button
+              variant="text"
+              size="small"
+              onClick={() => {
+                window.localStorage.removeItem("cookieConsent");
+                window.dispatchEvent(new CustomEvent("cookie-consent", { detail: null }));
+              }}
+              sx={{ color: "text.secondary", textTransform: "none", p: 0, minWidth: "auto" }}
+            >
+              {cookieLabel}
+            </Button>
+            <Link component={NextLink} href="/about" underline="hover" color="text.secondary">
+              About
+            </Link>
+            <Link component={NextLink} href="/insights" underline="hover" color="text.secondary">
+              Insights
+            </Link>
             <Link component={NextLink} href="/privacy" underline="hover" color="text.secondary">
               개인정보처리방침
             </Link>

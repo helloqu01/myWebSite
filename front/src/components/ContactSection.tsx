@@ -46,19 +46,25 @@ export default function ContactSection() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [company, setCompany] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (company.trim()) {
+      setStatus('success');
+      setName(''); setEmail(''); setMessage(''); setCompany('');
+      return;
+    }
     setStatus('sending');
     try {
       const res = await fetch('/api/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, message }),
+        body: JSON.stringify({ name, email, message, company }),
       });
       if (!res.ok) throw new Error();
       setStatus('success');
-      setName(''); setEmail(''); setMessage('');
+      setName(''); setEmail(''); setMessage(''); setCompany('');
       trackEvent('contact_submit', { status: 'success' });
     } catch {
       setStatus('error');
@@ -196,6 +202,20 @@ export default function ContactSection() {
           >
             <form onSubmit={handleSubmit} style={{ width: '100%' }}>
               <Stack spacing={2}>
+                {/* Honeypot field for basic bot filtering */}
+                <TextField
+                  label="Company"
+                  value={company}
+                  onChange={e => setCompany(e.target.value)}
+                  autoComplete="off"
+                  sx={{
+                    position: 'absolute',
+                    left: '-9999px',
+                    height: 0,
+                    opacity: 0,
+                  }}
+                  tabIndex={-1}
+                />
                 <TextField
                   label={t.contactNameLabel}
                   value={name}

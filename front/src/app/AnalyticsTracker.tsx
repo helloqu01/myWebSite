@@ -1,7 +1,7 @@
 // File: app/AnalyticsTracker.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { trackEvent, trackPageView } from "@/lib/analytics";
 
@@ -20,8 +20,30 @@ const SCROLL_THRESHOLDS = [25, 50, 75, 100];
 
 export default function AnalyticsTracker() {
   const pathname = usePathname();
+  const [consent, setConsent] = useState<"accepted" | "declined" | null>(null);
 
   useEffect(() => {
+    const read = () => window.localStorage.getItem("cookieConsent") as "accepted" | "declined" | null;
+    setConsent(read());
+
+    const handleConsent = (event: Event) => {
+      const detail = (event as CustomEvent<"accepted" | "declined" | null>).detail;
+      setConsent(detail ?? read());
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "cookieConsent") setConsent(read());
+    };
+
+    window.addEventListener("cookie-consent", handleConsent as EventListener);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("cookie-consent", handleConsent as EventListener);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (consent !== "accepted") return;
     if (!pathname) return;
     trackPageView(pathname);
 
@@ -117,9 +139,10 @@ export default function AnalyticsTracker() {
       observer.disconnect();
       document.removeEventListener("click", handleClick, true);
     };
-  }, [pathname]);
+  }, [pathname, consent]);
 
   useEffect(() => {
+    if (consent !== "accepted") return;
     if (typeof window === "undefined" || !("PerformanceObserver" in window)) return;
 
     let lcpValue: number | null = null;
@@ -195,7 +218,7 @@ export default function AnalyticsTracker() {
       inpObserver.disconnect();
       window.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [pathname]);
+  }, [pathname, consent]);
 
   return null;
 }

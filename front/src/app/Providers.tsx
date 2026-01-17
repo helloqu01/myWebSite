@@ -5,6 +5,8 @@ import React, { useState, useMemo } from "react";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import Header from "@/components/Header";
 import ChatbotWidget from "@/components/ChatbotWidget";
+import CookieBanner from "@/components/CookieBanner";
+import ConsentScripts from "@/components/ConsentScripts";
 import { ColorModeContext } from "./context/ColorModeContext";
 import { LocaleProvider } from "@/context/LocaleContext";
 import AnalyticsTracker from "./AnalyticsTracker";
@@ -138,9 +140,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <Header />
+          <ConsentScripts />
           <AnalyticsTracker />
           <ChatbotWidget />
           {children}
+          <CookieBanner />
         </ThemeProvider>
       </ColorModeContext.Provider>
     </LocaleProvider>

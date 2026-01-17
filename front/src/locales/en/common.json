@@ -10,7 +10,9 @@
     "skills": "Skills",
     "summary": "Summary",
     "resume": "Resume",
-    "contact": "Contact"
+    "contact": "Contact",
+    "aboutPage": "About Page",
+    "insights": "Insights"
   },
   "metricsHeader": "Impact Metrics",
   "metricsSubtitle": "Quantified outcomes from delivery, optimization, operations, and AI-enabled automation.",

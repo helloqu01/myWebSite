@@ -2,17 +2,42 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://codingbyohj.com/</loc>
+    <lastmod>2026-01-17</lastmod>
+  </url>
+  <url>
+    <loc>https://codingbyohj.com/about</loc>
+    <lastmod>2026-01-17</lastmod>
+  </url>
+  <url>
+    <loc>https://codingbyohj.com/insights</loc>
+    <lastmod>2026-01-17</lastmod>
+  </url>
+  <url>
+    <loc>https://codingbyohj.com/insights/site-performance</loc>
+    <lastmod>2026-01-17</lastmod>
+  </url>
+  <url>
+    <loc>https://codingbyohj.com/insights/ux-accessibility</loc>
+    <lastmod>2026-01-17</lastmod>
+  </url>
+  <url>
+    <loc>https://codingbyohj.com/insights/adsense-readiness</loc>
+    <lastmod>2026-01-17</lastmod>
   </url>
   <url>
     <loc>https://codingbyohj.com/privacy</loc>
+    <lastmod>2026-01-17</lastmod>
   </url>
   <url>
     <loc>https://codingbyohj.com/terms</loc>
+    <lastmod>2026-01-17</lastmod>
   </url>
   <url>
     <loc>https://codingbyohj.com/resume</loc>
+    <lastmod>2026-01-17</lastmod>
   </url>
   <url>
     <loc>https://codingbyohj.com/summary</loc>
+    <lastmod>2026-01-17</lastmod>
   </url>
 </urlset>
