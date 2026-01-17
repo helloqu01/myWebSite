@@ -11,6 +11,7 @@ import ExperienceSection from "@/components/ExperienceSection";
 import SkillsRadarSection from "@/components/SkillsRadarSection";
 import SummarySection from "@/components/SummarySection";
 import ContactSection from "@/components/ContactSection";
+import Footer from "@/components/Footer";
 
 export default function Page() {
   return (
@@ -23,6 +24,7 @@ export default function Page() {
       <SkillsRadarSection />
       <SummarySection />
       <ContactSection />
+      <Footer />
     </Box>
   );
 }
