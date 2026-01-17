@@ -6,6 +6,11 @@ type SeoParams = {
   path: string;
 };
 
+type ArticleParams = SeoParams & {
+  published: string;
+  modified?: string;
+};
+
 const BASE_URL = "https://codingbyohj.com";
 const DEFAULT_IMAGE = "https://codingbyohj.com/images/businesscard.png";
 
@@ -32,5 +37,39 @@ export function SeoHead({ title, description, path }: SeoParams) {
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={DEFAULT_IMAGE} />
     </>
+  );
+}
+
+export function ArticleJsonLd({ title, description, path, published, modified }: ArticleParams) {
+  const url = `${BASE_URL}${path}`;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: title,
+    description,
+    author: {
+      "@type": "Person",
+      name: "Oh Hyunji",
+    },
+    datePublished: published,
+    dateModified: modified || published,
+    mainEntityOfPage: url,
+    image: DEFAULT_IMAGE,
+    publisher: {
+      "@type": "Organization",
+      name: "Oh Hyunji",
+      logo: {
+        "@type": "ImageObject",
+        url: DEFAULT_IMAGE,
+      },
+    },
+    url,
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
   );
 }

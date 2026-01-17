@@ -5,6 +5,7 @@ import NextLink from "next/link";
 import { Box, Container, Stack, Typography, Link } from "@mui/material";
 import { useLocale } from "@/context/LocaleContext";
 import AdUnit from "@/components/AdUnit";
+import RelatedInsights from "@/components/RelatedInsights";
 
 export default function CloudCostsPage() {
   const { lang } = useLocale();
@@ -41,6 +42,8 @@ export default function CloudCostsPage() {
           <AdUnit />
           <Typography variant="body1">{content.body[2]}</Typography>
           <Typography variant="body1">{content.body[3]}</Typography>
+          <AdUnit slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_INSIGHTS_SECONDARY} minHeight={220} />
+          <RelatedInsights currentSlug="cloud-costs" />
           <Link component={NextLink} href="/insights" underline="hover" color="primary">
             {lang === "en" ? "Back to Insights" : "인사이트로 돌아가기"}
           </Link>

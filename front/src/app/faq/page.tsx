@@ -2,7 +2,18 @@
 
 import React from "react";
 import NextLink from "next/link";
-import { Box, Container, Stack, Typography, Link } from "@mui/material";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Container,
+  Stack,
+  Typography,
+  Link,
+  Chip,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useLocale } from "@/context/LocaleContext";
 
 const faqData = {
@@ -47,25 +58,84 @@ const faqData = {
 export default function FaqPage() {
   const { lang } = useLocale();
   const title = lang === "en" ? "FAQ" : "자주 묻는 질문";
+  const subtitle =
+    lang === "en"
+      ? "Answers to the most common questions about this portfolio."
+      : "포트폴리오 사이트에 대해 자주 묻는 질문을 정리했습니다.";
   const items = lang === "en" ? faqData.en : faqData.ko;
 
   return (
-    <Box sx={{ py: { xs: 6, md: 10 } }}>
-      <Container maxWidth="md">
-        <Stack spacing={3}>
-          <Typography variant="h3" sx={{ fontWeight: 700 }}>
-            {title}
-          </Typography>
-          {items.map((item, idx) => (
-            <Stack key={idx} spacing={1.5}>
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                {item.q}
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                {item.a}
-              </Typography>
-            </Stack>
-          ))}
+    <Box
+      sx={{
+        py: { xs: 6, md: 10 },
+        position: "relative",
+        overflow: "hidden",
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          inset: 0,
+          background:
+            "radial-gradient(circle at 85% 10%, rgba(249,115,22,0.18), transparent 45%), radial-gradient(circle at 12% 0%, rgba(59,130,246,0.16), transparent 50%)",
+          zIndex: 0,
+        },
+      }}
+    >
+      <Container maxWidth="md" sx={{ position: "relative", zIndex: 1 }}>
+        <Stack spacing={4}>
+          <Stack spacing={1.5}>
+            <Chip
+              label={lang === "en" ? "Support" : "지원"}
+              sx={{
+                backgroundColor: "rgba(249,115,22,0.15)",
+                color: "text.primary",
+                fontWeight: 600,
+                width: "fit-content",
+              }}
+            />
+            <Typography variant="h2" sx={{ fontWeight: 700, letterSpacing: "-0.02em" }}>
+              {title}
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              {subtitle}
+            </Typography>
+          </Stack>
+
+          <Stack spacing={2}>
+            {items.map((item, idx) => (
+              <Accordion
+                key={idx}
+                elevation={0}
+                sx={{
+                  border: "1px solid var(--card-border)",
+                  borderRadius: 3,
+                  background: "var(--surface-strong)",
+                  boxShadow: "var(--shadow-soft)",
+                  "&::before": { display: "none" },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  sx={{
+                    px: 3,
+                    "& .MuiAccordionSummary-content": {
+                      alignItems: "center",
+                      gap: 2,
+                    },
+                  }}
+                >
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    {item.q}
+                  </Typography>
+                </AccordionSummary>
+                <AccordionDetails sx={{ px: 3, pb: 3, pt: 0 }}>
+                  <Typography variant="body1" color="text.secondary">
+                    {item.a}
+                  </Typography>
+                </AccordionDetails>
+              </Accordion>
+            ))}
+          </Stack>
+
           <Link component={NextLink} href="/" underline="hover" color="primary">
             {lang === "en" ? "Back to Home" : "홈으로 돌아가기"}
           </Link>

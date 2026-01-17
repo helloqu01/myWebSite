@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import { useLocale } from "@/context/LocaleContext";
 
@@ -14,10 +14,32 @@ const AD_CLIENT = "ca-pub-1115617071874827";
 
 export default function AdUnit({ slot, format = "auto", minHeight = 280 }: AdUnitProps) {
   const { lang } = useLocale();
+  const [consent, setConsent] = useState<"accepted" | "declined" | null>(null);
   const resolvedSlot =
     slot || process.env.NEXT_PUBLIC_ADSENSE_SLOT_INSIGHTS || "";
 
   useEffect(() => {
+    const read = () => window.localStorage.getItem("cookieConsent") as "accepted" | "declined" | null;
+    setConsent(read());
+
+    const handleConsent = (event: Event) => {
+      const detail = (event as CustomEvent<"accepted" | "declined" | null>).detail;
+      setConsent(detail ?? read());
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "cookieConsent") setConsent(read());
+    };
+
+    window.addEventListener("cookie-consent", handleConsent as EventListener);
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("cookie-consent", handleConsent as EventListener);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (consent !== "accepted") return;
     if (!resolvedSlot) return;
     const pushAd = () => {
       try {
@@ -32,9 +54,9 @@ export default function AdUnit({ slot, format = "auto", minHeight = 280 }: AdUni
     return () => {
       window.removeEventListener("adsense-ready", pushAd);
     };
-  }, [resolvedSlot]);
+  }, [resolvedSlot, consent]);
 
-  if (!resolvedSlot) return null;
+  if (!resolvedSlot || consent !== "accepted") return null;
 
   return (
     <Box
