@@ -20,6 +20,8 @@ export default function AdUnit({ slot, format = "auto", minHeight = 280 }: AdUni
   useEffect(() => {
     if (!resolvedSlot) return;
     let intervalId: number | null = null;
+    let attempts = 0;
+    const maxAttempts = 10;
     const pushAd = () => {
       if (!window.adsbygoogle) return false;
       try {
@@ -31,15 +33,27 @@ export default function AdUnit({ slot, format = "auto", minHeight = 280 }: AdUni
       return false;
     };
 
+    const handleReady = () => {
+      if (pushAd() && intervalId) {
+        window.clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
     if (!pushAd()) {
+      window.addEventListener("adsense-ready", handleReady);
       intervalId = window.setInterval(() => {
-        if (pushAd() && intervalId) {
-          window.clearInterval(intervalId);
-          intervalId = null;
+        attempts += 1;
+        if (pushAd() || attempts >= maxAttempts) {
+          if (intervalId) {
+            window.clearInterval(intervalId);
+            intervalId = null;
+          }
         }
       }, 500);
     }
     return () => {
+      window.removeEventListener("adsense-ready", handleReady);
       if (intervalId) window.clearInterval(intervalId);
     };
   }, [resolvedSlot]);

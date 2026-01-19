@@ -79,6 +79,9 @@ export default function RootLayout({
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1115617071874827"
           strategy="beforeInteractive"
           crossOrigin="anonymous"
+          onLoad={() => {
+            window.dispatchEvent(new Event("adsense-ready"));
+          }}
         />
       </head>
       <body className={`${spaceGrotesk.variable} ${fraunces.variable}`}>
