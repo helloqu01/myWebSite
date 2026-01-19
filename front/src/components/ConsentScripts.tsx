@@ -28,28 +28,22 @@ export default function ConsentScripts() {
     };
   }, []);
 
+  useEffect(() => {
+    if (consent === null) return;
+    if (typeof window.gtag !== "function") return;
+    const status = consent === "accepted" ? "granted" : "denied";
+    window.gtag("consent", "update", {
+      ad_storage: status,
+      analytics_storage: status,
+      ad_user_data: status,
+      ad_personalization: status,
+    });
+  }, [consent]);
+
   if (consent !== "accepted") return null;
 
   return (
     <>
-      {/* Google tag (gtag.js) */}
-      <Script
-        src="https://www.googletagmanager.com/gtag/js?id=G-C2589TCWZ6"
-        strategy="afterInteractive"
-      />
-      <Script
-        id="gtag-init"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html:
-            "window.dataLayer = window.dataLayer || [];" +
-            "function gtag(){dataLayer.push(arguments);}" +
-            "gtag('js', new Date());" +
-            "gtag('config', 'G-C2589TCWZ6');",
-        }}
-      />
-      {/* End Google tag (gtag.js) */}
-
       {/* Microsoft Clarity */}
       <Script
         id="clarity-init"
@@ -60,17 +54,6 @@ export default function ConsentScripts() {
             "t=l.createElement(r);t.async=1;t.src=\"https://www.clarity.ms/tag/\"+i;" +
             "y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);" +
             "})(window, document, \"clarity\", \"script\", \"v2sj4o2bvk\");",
-        }}
-      />
-
-      {/* Google AdSense */}
-      <Script
-        async
-        strategy="afterInteractive"
-        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1115617071874827"
-        crossOrigin="anonymous"
-        onLoad={() => {
-          window.dispatchEvent(new Event("adsense-ready"));
         }}
       />
     </>
