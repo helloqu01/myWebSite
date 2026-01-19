@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Box, Typography } from "@mui/material";
 import { useLocale } from "@/context/LocaleContext";
 
@@ -14,49 +14,42 @@ const AD_CLIENT = "ca-pub-1115617071874827";
 
 export default function AdUnit({ slot, format = "auto", minHeight = 280 }: AdUnitProps) {
   const { lang } = useLocale();
-  const [consent, setConsent] = useState<"accepted" | "declined" | null>(null);
   const resolvedSlot =
     slot || process.env.NEXT_PUBLIC_ADSENSE_SLOT_INSIGHTS || "";
 
   useEffect(() => {
-    const read = () => window.localStorage.getItem("cookieConsent") as "accepted" | "declined" | null;
-    setConsent(read());
-
-    const handleConsent = (event: Event) => {
-      const detail = (event as CustomEvent<"accepted" | "declined" | null>).detail;
-      setConsent(detail ?? read());
-    };
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === "cookieConsent") setConsent(read());
-    };
-
-    window.addEventListener("cookie-consent", handleConsent as EventListener);
-    window.addEventListener("storage", handleStorage);
-    return () => {
-      window.removeEventListener("cookie-consent", handleConsent as EventListener);
-      window.removeEventListener("storage", handleStorage);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (consent !== "accepted") return;
     if (!resolvedSlot) return;
+    let intervalId: number | null = null;
+    let attempts = 0;
+    const maxAttempts = 10;
     const pushAd = () => {
+      if (!window.adsbygoogle) return false;
       try {
         (window.adsbygoogle = window.adsbygoogle || []).push({});
+        return true;
       } catch {
         // Ignore if adsbygoogle is not ready yet.
       }
+      return false;
     };
 
-    pushAd();
-    window.addEventListener("adsense-ready", pushAd);
+    if (!pushAd()) {
+      intervalId = window.setInterval(() => {
+        attempts += 1;
+        if (pushAd() || attempts >= maxAttempts) {
+          if (intervalId) {
+            window.clearInterval(intervalId);
+            intervalId = null;
+          }
+        }
+      }, 500);
+    }
     return () => {
-      window.removeEventListener("adsense-ready", pushAd);
+      if (intervalId) window.clearInterval(intervalId);
     };
-  }, [resolvedSlot, consent]);
+  }, [resolvedSlot]);
 
-  if (!resolvedSlot || consent !== "accepted") return null;
+  if (!resolvedSlot) return null;
 
   return (
     <Box
