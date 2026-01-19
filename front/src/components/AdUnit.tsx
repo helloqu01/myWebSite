@@ -33,15 +33,7 @@ export default function AdUnit({ slot, format = "auto", minHeight = 280 }: AdUni
       return false;
     };
 
-    const handleReady = () => {
-      if (pushAd() && intervalId) {
-        window.clearInterval(intervalId);
-        intervalId = null;
-      }
-    };
-
     if (!pushAd()) {
-      window.addEventListener("adsense-ready", handleReady);
       intervalId = window.setInterval(() => {
         attempts += 1;
         if (pushAd() || attempts >= maxAttempts) {
@@ -53,7 +45,6 @@ export default function AdUnit({ slot, format = "auto", minHeight = 280 }: AdUni
       }, 500);
     }
     return () => {
-      window.removeEventListener("adsense-ready", handleReady);
       if (intervalId) window.clearInterval(intervalId);
     };
   }, [resolvedSlot]);

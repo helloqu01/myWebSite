@@ -2,18 +2,6 @@
 import React from "react";
 import Script from "next/script";
 import Providers from "./Providers";
-import { Space_Grotesk, Fraunces } from "next/font/google";
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  display: "swap",
-});
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-});
 
 export const metadata = {
   title: 'Oh Hyunji – FullStack Web Developer',
@@ -79,12 +67,9 @@ export default function RootLayout({
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1115617071874827"
           strategy="beforeInteractive"
           crossOrigin="anonymous"
-          onLoad={() => {
-            window.dispatchEvent(new Event("adsense-ready"));
-          }}
         />
       </head>
-      <body className={`${spaceGrotesk.variable} ${fraunces.variable}`}>
+      <body>
         <Providers>{children}</Providers>
       </body>
     </html>
