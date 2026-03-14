@@ -1,0 +1,36 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="800" rx="36" fill="#FFF7ED"/>
+  <rect x="36" y="36" width="1128" height="728" rx="28" fill="url(#paint0_linear)"/>
+  <text x="88" y="142" fill="#111827" font-size="46" font-family="Arial, sans-serif" font-weight="700">CookieRun Waiting System</text>
+  <text x="88" y="194" fill="#475569" font-size="24" font-family="Arial, sans-serif">Registration, call, entry, admin stats, SMS notifications, Redis sync.</text>
+  <rect x="88" y="252" width="280" height="432" rx="28" fill="#FFFFFF" stroke="#FCD34D"/>
+  <rect x="402" y="252" width="706" height="432" rx="28" fill="#FFFFFF" stroke="#FDE68A"/>
+  <text x="122" y="314" fill="#B45309" font-size="24" font-family="Arial, sans-serif" font-weight="700">Queue State</text>
+  <rect x="122" y="354" width="210" height="54" rx="18" fill="#FEF3C7"/>
+  <rect x="122" y="430" width="210" height="54" rx="18" fill="#FDE68A"/>
+  <rect x="122" y="506" width="210" height="54" rx="18" fill="#FCA5A5"/>
+  <rect x="122" y="582" width="210" height="54" rx="18" fill="#86EFAC"/>
+  <text x="156" y="388" fill="#92400E" font-size="24" font-family="Arial, sans-serif" font-weight="700">Registered</text>
+  <text x="172" y="464" fill="#92400E" font-size="24" font-family="Arial, sans-serif" font-weight="700">Called</text>
+  <text x="172" y="540" fill="#92400E" font-size="24" font-family="Arial, sans-serif" font-weight="700">No-show</text>
+  <text x="180" y="616" fill="#166534" font-size="24" font-family="Arial, sans-serif" font-weight="700">Entered</text>
+  <text x="438" y="314" fill="#1D4ED8" font-size="24" font-family="Arial, sans-serif" font-weight="700">Operations Dashboard</text>
+  <rect x="438" y="350" width="180" height="120" rx="22" fill="#DBEAFE"/>
+  <rect x="642" y="350" width="180" height="120" rx="22" fill="#EDE9FE"/>
+  <rect x="846" y="350" width="226" height="120" rx="22" fill="#DCFCE7"/>
+  <text x="464" y="396" fill="#1E3A8A" font-size="22" font-family="Arial, sans-serif" font-weight="700">Sessions</text>
+  <text x="464" y="438" fill="#111827" font-size="40" font-family="Arial, sans-serif" font-weight="700">Open / Close</text>
+  <text x="668" y="396" fill="#6D28D9" font-size="22" font-family="Arial, sans-serif" font-weight="700">Realtime</text>
+  <text x="668" y="438" fill="#111827" font-size="40" font-family="Arial, sans-serif" font-weight="700">My Status</text>
+  <text x="874" y="396" fill="#166534" font-size="22" font-family="Arial, sans-serif" font-weight="700">Notify</text>
+  <text x="874" y="438" fill="#111827" font-size="40" font-family="Arial, sans-serif" font-weight="700">SMS / Kakao</text>
+  <rect x="438" y="530" width="634" height="110" rx="22" fill="#111827"/>
+  <text x="474" y="580" fill="#F8FAFC" font-size="26" font-family="Arial, sans-serif" font-weight="700">NestJS + Redis + MySQL with admin-only queue operations</text>
+  <defs>
+    <linearGradient id="paint0_linear" x1="36" y1="36" x2="1164" y2="764" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF7ED"/>
+      <stop offset="0.55" stop-color="#FFFBEB"/>
+      <stop offset="1" stop-color="#FEF3C7"/>
+    </linearGradient>
+  </defs>
+</svg>

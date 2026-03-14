@@ -39,10 +39,9 @@ export default function AdsenseReadinessPage() {
           </Typography>
           <Typography variant="body1">{content.body[0]}</Typography>
           <Typography variant="body1">{content.body[1]}</Typography>
-          <AdUnit />
           <Typography variant="body1">{content.body[2]}</Typography>
           <Typography variant="body1">{content.body[3]}</Typography>
-          <AdUnit slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_INSIGHTS_SECONDARY} minHeight={220} />
+          <AdUnit minHeight={220} />
           <RelatedInsights currentSlug="adsense-readiness" />
           <Link component={NextLink} href="/insights" underline="hover" color="primary">
             {lang === "en" ? "Back to Insights" : "인사이트로 돌아가기"}

@@ -2,25 +2,27 @@
 import React from "react";
 import Script from "next/script";
 import Providers from "./Providers";
+import { siteConfig } from "@/lib/siteConfig";
 
 export const metadata = {
-  title: 'Oh Hyunji – FullStack Web Developer',
-  description: 'Hyunji Oh 의 포트폴리오 사이트입니다.',
+  title: "Oh Hyunji | Freelance Full-stack Developer",
+  description:
+    "프리랜서 풀스택 개발자 오현지의 포트폴리오 및 서비스 소개 사이트입니다. 기업 사이트, 관리자 도구, 운영형 웹 서비스, AI 연동 작업을 다룹니다.",
   openGraph: {
-    url: 'https://codingbyohj.com',
+    url: siteConfig.siteUrl,
     images: [
       {
-        url: 'https://codingbyohj.com/images/businesscard.png',
+        url: `${siteConfig.siteUrl}/images/businesscard.png`,
         width: 1200,
         height: 630,
-        alt: 'Hyunji Oh Business Card',
+        alt: "Hyunji Oh Business Card",
       },
     ],
-    type: 'website',
+    type: "website",
   },
   twitter: {
-    card: 'summary_large_image',
-    images: ['https://codingbyohj.com/images/businesscard.png'],
+    card: "summary_large_image",
+    images: [`${siteConfig.siteUrl}/images/businesscard.png`],
   },
 };
 

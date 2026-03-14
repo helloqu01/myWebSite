@@ -12,10 +12,11 @@ import {
   CardActions,
   Button,
   IconButton,
+  Chip,
   useTheme,
 } from "@mui/material";
 import Image from "next/image";
-import { Wrench, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import ProjectDialog from "./ProjectDialog";
 import en from "@/locales/en/common.json";
@@ -58,21 +59,23 @@ export default function ProjectsSection() {
 
   return (
     <Container id="projects" sx={{ py: { xs: 8, md: 12 } }}>
-      <Stack spacing={3} textAlign="center" mb={6}>
-        <Typography
-          variant="h3"
+      <Stack spacing={1.5} alignItems="flex-start" mb={{ xs: 5, md: 8 }}>
+        <Chip
+          label={lang === "en" ? "Projects" : "프로젝트"}
           sx={{
+            borderRadius: 999,
+            background: "rgba(139,92,246,0.1)",
+            border: "1px solid rgba(139,92,246,0.22)",
+            color: "#a78bfa",
             fontWeight: 700,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 1,
-            letterSpacing: "-0.02em",
+            letterSpacing: "0.07em",
+            fontSize: "0.7rem",
           }}
-        >
-          <Wrench size={28} /> {t.projectsHeader}
+        />
+        <Typography variant="h2" sx={{ fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1.05 }}>
+          {t.projectsHeader}
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 560 }}>
           {t.projectsSubtitle}
         </Typography>
       </Stack>

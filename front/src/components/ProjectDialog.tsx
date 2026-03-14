@@ -50,6 +50,7 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
   const handleNext = () => setIdx(prev => (prev + 1) % rawImages.length);
   const handlePreviewOpen = () => setPreviewOpen(true);
   const handlePreviewClose = () => setPreviewOpen(false);
+  const hasExternalLink = Boolean(project.link && project.link !== "#");
 
   return (
     <>
@@ -60,9 +61,11 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
         fullWidth
         PaperProps={{
           sx: {
-            backgroundColor: "var(--surface-strong)",
+            backgroundColor: "background.paper",
+            bgcolor: "background.paper",
             border: "1px solid var(--card-border)",
             boxShadow: "var(--shadow-strong)",
+            backdropFilter: "none",
           },
         }}
       >
@@ -162,24 +165,26 @@ export default function ProjectDialog({ open, project, onClose, viewLabel }: Pro
             {project.detailText}
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: 'flex-end' }}>
-          <Button
-            href={project.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            startIcon={<LinkIcon />}
-            sx={{
-              background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-              color: theme.palette.common.white,
-              px: 3,
-              "&:hover": {
-                background: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
-              },
-            }}
-          >
-            {viewLabel}
-          </Button>
-        </DialogActions>
+        {hasExternalLink && (
+          <DialogActions sx={{ justifyContent: 'flex-end' }}>
+            <Button
+              href={project.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              startIcon={<LinkIcon />}
+              sx={{
+                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                color: theme.palette.common.white,
+                px: 3,
+                "&:hover": {
+                  background: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
+                },
+              }}
+            >
+              {viewLabel}
+            </Button>
+          </DialogActions>
+        )}
       </Dialog>
 
       {/* Fullscreen Preview */}

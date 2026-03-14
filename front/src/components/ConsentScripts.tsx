@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Script from "next/script";
+import { siteConfig } from "@/lib/siteConfig";
 
 type ConsentValue = "accepted" | "declined" | null;
 
@@ -53,7 +54,18 @@ export default function ConsentScripts() {
             "(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};" +
             "t=l.createElement(r);t.async=1;t.src=\"https://www.clarity.ms/tag/\"+i;" +
             "y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);" +
-            "})(window, document, \"clarity\", \"script\", \"v2sj4o2bvk\");",
+            `})(window, document, "clarity", "script", "${siteConfig.clarityProjectId}");`,
+        }}
+      />
+
+      {/* Google AdSense */}
+      <Script
+        async
+        strategy="afterInteractive"
+        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${siteConfig.adsenseClient}`}
+        crossOrigin="anonymous"
+        onLoad={() => {
+          window.dispatchEvent(new Event("adsense-ready"));
         }}
       />
     </>

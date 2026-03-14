@@ -2,8 +2,7 @@
 "use client";
 
 import React from "react";
-import { Box, Container, Stack, Typography, Card } from "@mui/material";
-import { TrendingUp } from "lucide-react";
+import { Box, Chip, Container, Stack, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { useLocale } from "@/context/LocaleContext";
 import en from "@/locales/en/common.json";
@@ -19,61 +18,97 @@ export default function MetricsSection() {
   const { lang } = useLocale();
   const t = lang === "en" ? en : ko;
   const metrics = (t.metricsData as MetricItem[]) || [];
+  const eyebrow = lang === "en" ? "Impact" : "성과";
 
   return (
-    <Container id="metrics" sx={{ py: { xs: 8, md: 12 } }}>
-      <Stack spacing={2} textAlign="center" mb={6}>
-        <Typography
-          variant="h3"
+    <Box id="metrics" sx={{ py: { xs: 10, md: 16 } }}>
+      <Container maxWidth="lg">
+        {/* Header */}
+        <Stack
+          spacing={1.5}
+          mb={{ xs: 8, md: 12 }}
+          alignItems={{ xs: "center", md: "flex-start" }}
+          textAlign={{ xs: "center", md: "left" }}
+        >
+          <Chip
+            label={eyebrow}
+            sx={{
+              borderRadius: 999,
+              background: "rgba(139,92,246,0.1)",
+              border: "1px solid rgba(139,92,246,0.22)",
+              color: "#a78bfa",
+              fontWeight: 700,
+              letterSpacing: "0.07em",
+              fontSize: "0.7rem",
+            }}
+          />
+          <Typography
+            variant="h2"
+            sx={{ fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1.05 }}
+          >
+            {t.metricsHeader}
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 500 }}>
+            {t.metricsSubtitle}
+          </Typography>
+        </Stack>
+
+        {/* Giant numbers — no cards, just dividers */}
+        <Box
           sx={{
-            fontWeight: 700,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 1,
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
+            borderTop: "1px solid var(--card-border)",
           }}
         >
-          <TrendingUp size={28} /> {t.metricsHeader}
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          {t.metricsSubtitle}
-        </Typography>
-      </Stack>
-
-      <Box
-        display="grid"
-        gridTemplateColumns={{ xs: "1fr", md: "repeat(3, 1fr)" }}
-        gap={3}
-      >
-        {metrics.map((metric, idx) => (
-          <Card
-            key={idx}
-            component={motion.div}
-            whileHover={{ y: -6 }}
-            sx={{
-              p: 3,
-              borderRadius: 3,
-              backgroundColor: "var(--surface)",
-              border: "1px solid var(--card-border)",
-              boxShadow: "var(--shadow-soft)",
-              transition: "box-shadow 0.25s ease",
-              "&:hover": {
-                boxShadow: "var(--shadow-strong)",
-              },
-            }}
-          >
-            <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-              {metric.value}
-            </Typography>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-              {metric.label}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {metric.detail}
-            </Typography>
-          </Card>
-        ))}
-      </Box>
-    </Container>
+          {metrics.map((metric, idx) => (
+            <Box
+              key={idx}
+              component={motion.div}
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.5, delay: idx * 0.12 }}
+              sx={{
+                py: { xs: 6, md: 8 },
+                px: { xs: 2, md: 6 },
+                borderBottom: { xs: "1px solid var(--card-border)", md: "none" },
+                borderRight: { md: idx < 2 ? "1px solid var(--card-border)" : "none" },
+                textAlign: { xs: "center", md: "left" },
+                transition: "background 0.3s ease",
+                "&:hover": { background: "rgba(139,92,246,0.03)" },
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: { xs: "4rem", md: "5.5rem" },
+                  fontWeight: 800,
+                  fontFamily: "var(--font-display), 'Fraunces', serif",
+                  background: "linear-gradient(135deg, #a78bfa 0%, #22d3ee 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  lineHeight: 1,
+                  mb: 2,
+                  letterSpacing: "-0.03em",
+                }}
+              >
+                {metric.value}
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1, letterSpacing: "-0.01em" }}>
+                {metric.label}
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ maxWidth: 260, lineHeight: 1.75 }}
+              >
+                {metric.detail}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      </Container>
+    </Box>
   );
 }

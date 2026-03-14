@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import NextLink from "next/link";
-import { Box, Container, Stack, Typography, Link } from "@mui/material";
+import { Box, Container, Stack, Typography } from "@mui/material";
 
 export default function TermsPage() {
   return (
@@ -75,9 +74,6 @@ export default function TermsPage() {
             is not responsible for third-party sites. Contact: helloqu@naver.com.
           </Typography>
 
-          <Link component={NextLink} href="/" underline="hover" color="primary">
-            홈으로 돌아가기
-          </Link>
         </Stack>
       </Container>
     </Box>

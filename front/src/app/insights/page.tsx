@@ -9,7 +9,6 @@ import {
   Container,
   Stack,
   Typography,
-  Link,
   Chip,
 } from "@mui/material";
 import { useLocale } from "@/context/LocaleContext";
@@ -196,9 +195,6 @@ export default function InsightsPage() {
             ))}
           </Box>
 
-          <Link component={NextLink} href="/" underline="hover" color="primary">
-            {lang === "en" ? "Back to Home" : "홈으로 돌아가기"}
-          </Link>
         </Stack>
       </Container>
     </Box>

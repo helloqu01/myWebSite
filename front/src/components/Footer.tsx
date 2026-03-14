@@ -2,96 +2,105 @@
 
 import React from "react";
 import NextLink from "next/link";
-import { Box, Button, Container, Stack, Typography, Link } from "@mui/material";
+import { Box, Button, Container, Link, Stack, Typography } from "@mui/material";
 import { useLocale } from "@/context/LocaleContext";
+import { siteConfig } from "@/lib/siteConfig";
 
 export default function Footer() {
   const { lang } = useLocale();
+
   const cookieLabel = lang === "en" ? "Cookie Settings" : "쿠키 설정";
+  const footerBody =
+    lang === "en"
+      ? "Freelance full-stack developer building business websites, admin tools, and AI-ready product workflows."
+      : "기업 사이트, 관리자 도구, 운영형 웹 서비스와 AI 연동 기능을 구축하는 프리랜서 풀스택 개발자입니다.";
+  const quickLinksLabel = lang === "en" ? "Quick Links" : "바로가기";
+  const quickLinks =
+    lang === "en"
+      ? [
+          { label: "Services", href: "/#services" },
+          { label: "About", href: "/#about" },
+          { label: "Insights", href: "/insights" },
+          { label: "FAQ", href: "/faq" },
+          { label: "Privacy", href: "/privacy" },
+          { label: "Terms", href: "/terms" },
+        ]
+      : [
+          { label: "서비스", href: "/#services" },
+          { label: "소개", href: "/#about" },
+          { label: "인사이트", href: "/insights" },
+          { label: "FAQ", href: "/faq" },
+          { label: "개인정보처리방침", href: "/privacy" },
+          { label: "이용약관", href: "/terms" },
+        ];
 
   return (
     <Box
       component="footer"
       sx={{
-        mt: 8,
-        py: { xs: 5, md: 6 },
         borderTop: "1px solid var(--card-border)",
-        background:
-          "linear-gradient(180deg, rgba(255,250,242,0.7) 0%, rgba(245,247,251,0.9) 100%)",
-        backdropFilter: "blur(14px)",
-        position: "relative",
-        overflow: "hidden",
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(circle at 15% 20%, rgba(30,58,138,0.16), transparent 45%), radial-gradient(circle at 90% 10%, rgba(14,116,144,0.14), transparent 40%)",
-          opacity: 0.7,
-          pointerEvents: "none",
-        },
+        py: { xs: 8, md: 10 },
+        mt: 8,
       }}
     >
-      <Container sx={{ position: "relative", zIndex: 1 }}>
+      <Container maxWidth="lg">
         <Stack
           direction={{ xs: "column", md: "row" }}
-          spacing={{ xs: 3, md: 6 }}
           justifyContent="space-between"
+          alignItems={{ xs: "flex-start", md: "flex-end" }}
+          gap={{ xs: 6, md: 4 }}
         >
-          <Stack spacing={2} sx={{ maxWidth: 420 }}>
+          {/* Brand */}
+          <Box sx={{ maxWidth: 380 }}>
             <Typography
-              variant="h5"
-              sx={{ fontWeight: 700, letterSpacing: "-0.01em" }}
+              sx={{
+                fontWeight: 700,
+                fontSize: "1.35rem",
+                fontFamily: "var(--font-display), 'Fraunces', serif",
+                letterSpacing: "-0.02em",
+                mb: 1,
+                background: "linear-gradient(135deg, #a78bfa, #22d3ee)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
             >
-              Oh Hyunji
+              OhJ
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Full-stack developer delivering production-ready web products, AI-enabled automation,
-              and scalable platform experiences.
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ lineHeight: 1.8, mb: 1.5 }}
+            >
+              {footerBody}
             </Typography>
-            <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-              <Typography variant="body2" color="text.secondary">
-                helloqu@naver.com
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                © {new Date().getFullYear()}
-              </Typography>
-            </Stack>
-          </Stack>
+            <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.85 }}>
+              {siteConfig.email} · © {new Date().getFullYear()}
+            </Typography>
+          </Box>
 
-          <Stack spacing={2}>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ letterSpacing: "0.1em" }}>
-              QUICK LINKS
+          {/* Links */}
+          <Box>
+            <Typography
+              variant="overline"
+              color="text.secondary"
+              sx={{ letterSpacing: "0.1em", fontWeight: 700, fontSize: "0.65rem", mb: 2, display: "block" }}
+            >
+              {quickLinksLabel}
             </Typography>
-            <Stack direction="row" spacing={2} flexWrap="wrap">
-              {[
-                { label: "About", href: "/about" },
-                { label: "Insights", href: "/insights" },
-                { label: "FAQ", href: "/faq" },
-                { label: "개인정보처리방침", href: "/privacy" },
-                { label: "이용약관", href: "/terms" },
-              ].map(item => (
+            <Stack direction="row" flexWrap="wrap" gap={1.5}>
+              {quickLinks.map(item => (
                 <Link
                   key={item.href}
                   component={NextLink}
                   href={item.href}
                   underline="none"
                   sx={{
-                    px: 2,
-                    py: 0.75,
-                    borderRadius: 999,
-                    border: "1px solid var(--card-border)",
                     color: "text.secondary",
-                    background: "rgba(255,255,255,0.6)",
                     fontSize: "0.85rem",
-                    fontWeight: 600,
-                    transition: "all 0.25s ease",
-                    "&:hover": {
-                      color: "primary.main",
-                      borderColor: "primary.main",
-                      background: "rgba(255,255,255,0.9)",
-                      boxShadow: "var(--shadow-soft)",
-                    },
+                    fontWeight: 500,
+                    transition: "color 0.2s ease",
+                    "&:hover": { color: "#a78bfa" },
                   }}
                 >
                   {item.label}
@@ -99,25 +108,26 @@ export default function Footer() {
               ))}
               <Button
                 variant="text"
-                size="small"
                 onClick={() => {
                   window.localStorage.removeItem("cookieConsent");
                   window.dispatchEvent(new CustomEvent("cookie-consent", { detail: null }));
                 }}
                 sx={{
                   color: "text.secondary",
+                  fontSize: "0.85rem",
+                  fontWeight: 500,
+                  p: 0,
+                  minWidth: 0,
+                  lineHeight: "inherit",
                   textTransform: "none",
-                  px: 2,
-                  py: 0.6,
-                  borderRadius: 999,
-                  border: "1px dashed var(--card-border)",
-                  fontWeight: 600,
+                  transition: "color 0.2s ease",
+                  "&:hover": { color: "#a78bfa", background: "none" },
                 }}
               >
                 {cookieLabel}
               </Button>
             </Stack>
-          </Stack>
+          </Box>
         </Stack>
       </Container>
     </Box>

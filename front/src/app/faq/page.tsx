@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import NextLink from "next/link";
 import {
   Accordion,
   AccordionDetails,
@@ -10,7 +9,6 @@ import {
   Container,
   Stack,
   Typography,
-  Link,
   Chip,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -136,9 +134,6 @@ export default function FaqPage() {
             ))}
           </Stack>
 
-          <Link component={NextLink} href="/" underline="hover" color="primary">
-            {lang === "en" ? "Back to Home" : "홈으로 돌아가기"}
-          </Link>
         </Stack>
       </Container>
     </Box>

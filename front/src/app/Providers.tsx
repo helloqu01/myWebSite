@@ -12,7 +12,7 @@ import { LocaleProvider } from "@/context/LocaleContext";
 import AnalyticsTracker from "./AnalyticsTracker";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<"light" | "dark">("light");
+  const [mode, setMode] = useState<"light" | "dark">("dark");
   const colorMode = useMemo(
     () => ({ toggleColorMode: () => setMode(m => (m === "light" ? "dark" : "light")) }),
     []
@@ -20,13 +20,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   const theme = useMemo(
     () => {
       const isDark = mode === "dark";
-      const primaryMain = isDark ? "#93c5fd" : "#1e3a8a";
-      const secondaryMain = isDark ? "#60a5fa" : "#3b82f6";
-      const backgroundDefault = isDark ? "#0b0f16" : "#f5f7fb";
-      const backgroundPaper = isDark ? "#111827" : "#fdfdff";
-      const textPrimary = isDark ? "#f1f5f9" : "#1f2937";
-      const textSecondary = isDark ? "#cbd5e1" : "#5b5b5b";
-      const divider = isDark ? "rgba(148,163,184,0.22)" : "rgba(30,58,138,0.18)";
+      const primaryMain = isDark ? "#a78bfa" : "#7c3aed";
+      const secondaryMain = isDark ? "#22d3ee" : "#0891b2";
+      const backgroundDefault = isDark ? "#060912" : "#fafafe";
+      const backgroundPaper = isDark ? "#0c1122" : "#ffffff";
+      const textPrimary = isDark ? "#f1f5f9" : "#0f172a";
+      const textSecondary = isDark ? "#a0aec0" : "#334155";
+      const divider = isDark ? "rgba(255,255,255,0.07)" : "rgba(109,40,217,0.1)";
 
       return createTheme({
         palette: {
@@ -40,6 +40,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           text: {
             primary: textPrimary,
             secondary: textSecondary,
+            disabled: isDark ? "#6b7a99" : "#64748b",
           },
           divider,
         },
@@ -48,23 +49,23 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           fontFamily: "var(--font-sans), 'Space Grotesk', sans-serif",
           h1: {
             fontFamily: "var(--font-display), 'Fraunces', serif",
-            fontWeight: 600,
-            letterSpacing: "-0.02em",
+            fontWeight: 700,
+            letterSpacing: "-0.03em",
           },
           h2: {
             fontFamily: "var(--font-display), 'Fraunces', serif",
-            fontWeight: 600,
-            letterSpacing: "-0.02em",
+            fontWeight: 700,
+            letterSpacing: "-0.03em",
           },
           h3: {
             fontFamily: "var(--font-display), 'Fraunces', serif",
-            fontWeight: 600,
-            letterSpacing: "-0.02em",
+            fontWeight: 700,
+            letterSpacing: "-0.025em",
           },
           h4: {
             fontFamily: "var(--font-display), 'Fraunces', serif",
-            fontWeight: 600,
-            letterSpacing: "-0.01em",
+            fontWeight: 700,
+            letterSpacing: "-0.02em",
           },
           button: {
             textTransform: "none",
@@ -79,28 +80,35 @@ export default function Providers({ children }: { children: React.ReactNode }) {
                 color: textPrimary,
                 backgroundColor: backgroundDefault,
                 backgroundImage: isDark
-                  ? "linear-gradient(180deg, #0b0f16 0%, #111827 45%, #0b0f16 100%), radial-gradient(circle at 12% 20%, rgba(147,197,253,0.14), transparent 50%), radial-gradient(circle at 90% 12%, rgba(96,165,250,0.18), transparent 45%)"
-                  : "linear-gradient(180deg, #f5f7fb 0%, #e8edf7 45%, #f5f7fb 100%), radial-gradient(circle at 10% 18%, rgba(30,58,138,0.12), transparent 50%), radial-gradient(circle at 88% 12%, rgba(59,130,246,0.16), transparent 45%)",
+                  ? "radial-gradient(ellipse at 20% -5%, rgba(109,40,217,0.2) 0%, transparent 55%), radial-gradient(ellipse at 85% 5%, rgba(14,116,144,0.15) 0%, transparent 50%)"
+                  : "radial-gradient(ellipse at 20% -5%, rgba(109,40,217,0.08) 0%, transparent 55%), radial-gradient(ellipse at 85% 5%, rgba(8,145,178,0.07) 0%, transparent 50%)",
                 backgroundAttachment: "fixed",
                 "--surface": isDark
-                  ? "rgba(18,28,31,0.78)"
-                  : "rgba(255,250,242,0.78)",
+                  ? "rgba(255,255,255,0.04)"
+                  : "rgba(109,40,217,0.03)",
                 "--surface-strong": isDark
-                  ? "rgba(18,28,31,0.92)"
-                  : "rgba(255,250,242,0.94)",
+                  ? "rgba(255,255,255,0.07)"
+                  : "rgba(109,40,217,0.06)",
                 "--card-border": isDark
-                  ? "rgba(148,163,184,0.25)"
-                  : "rgba(30,58,138,0.18)",
+                  ? "rgba(255,255,255,0.08)"
+                  : "rgba(109,40,217,0.12)",
                 "--shadow-soft": isDark
-                  ? "0 18px 40px rgba(0,0,0,0.45)"
-                  : "0 24px 50px rgba(15,23,26,0.12)",
+                  ? "0 4px 24px rgba(0,0,0,0.5)"
+                  : "0 4px 24px rgba(0,0,0,0.08)",
                 "--shadow-strong": isDark
-                  ? "0 24px 60px rgba(0,0,0,0.6)"
-                  : "0 30px 70px rgba(15,23,26,0.16)",
+                  ? "0 20px 60px rgba(0,0,0,0.7)"
+                  : "0 20px 60px rgba(0,0,0,0.12)",
+                "--glow-violet": isDark
+                  ? "0 0 40px rgba(139,92,246,0.3)"
+                  : "0 0 30px rgba(124,58,237,0.2)",
+                "--glow-cyan": isDark
+                  ? "0 0 40px rgba(34,211,238,0.25)"
+                  : "0 0 30px rgba(8,145,178,0.15)",
+                "--gradient-accent": "linear-gradient(135deg, #a78bfa 0%, #22d3ee 100%)",
                 "--page-pattern": isDark
-                  ? "repeating-linear-gradient(0deg, rgba(226,232,240,0.08) 0, rgba(226,232,240,0.08) 1px, transparent 1px, transparent 18px), repeating-linear-gradient(90deg, rgba(226,232,240,0.06) 0, rgba(226,232,240,0.06) 1px, transparent 1px, transparent 18px)"
-                  : "repeating-linear-gradient(0deg, rgba(30,58,138,0.08) 0, rgba(30,58,138,0.08) 1px, transparent 1px, transparent 18px), repeating-linear-gradient(90deg, rgba(30,58,138,0.06) 0, rgba(30,58,138,0.06) 1px, transparent 1px, transparent 18px)",
-                "--page-pattern-opacity": isDark ? "0.22" : "0.18",
+                  ? "repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 28px), repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 28px)"
+                  : "repeating-linear-gradient(0deg, rgba(109,40,217,0.04) 0, rgba(109,40,217,0.04) 1px, transparent 1px, transparent 28px), repeating-linear-gradient(90deg, rgba(109,40,217,0.03) 0, rgba(109,40,217,0.03) 1px, transparent 1px, transparent 28px)",
+                "--page-pattern-opacity": "1",
               },
             },
           },
@@ -115,7 +123,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             styleOverrides: {
               root: {
                 border: `1px solid ${divider}`,
-                backgroundColor: "var(--surface)",
+                backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(109,40,217,0.02)",
                 backdropFilter: "blur(16px)",
                 boxShadow: "var(--shadow-soft)",
               },
@@ -125,6 +133,23 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             styleOverrides: {
               root: {
                 borderRadius: 999,
+                transition: "all 0.25s ease",
+              },
+              containedPrimary: {
+                background: "linear-gradient(135deg, #7c3aed, #0891b2)",
+                boxShadow: "0 0 20px rgba(124,58,237,0.3)",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #6d28d9, #0e7490)",
+                  boxShadow: "0 0 32px rgba(124,58,237,0.5)",
+                  transform: "translateY(-1px)",
+                },
+              },
+            },
+          },
+          MuiChip: {
+            styleOverrides: {
+              root: {
+                fontWeight: 600,
               },
             },
           },

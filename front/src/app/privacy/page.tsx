@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import NextLink from "next/link";
-import { Box, Container, Stack, Typography, Link } from "@mui/material";
+import { Box, Container, Stack, Typography } from "@mui/material";
+import { siteConfig } from "@/lib/siteConfig";
 
 export default function PrivacyPage() {
   return (
@@ -78,7 +78,7 @@ export default function PrivacyPage() {
             개인정보 관련 문의는 아래 이메일로 연락해 주세요.
           </Typography>
           <Typography variant="body1">
-            이메일: helloqu@naver.com
+            이메일: {siteConfig.email}
           </Typography>
 
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
@@ -87,12 +87,9 @@ export default function PrivacyPage() {
           <Typography variant="body1">
             We collect contact form details (name, email, message) and basic analytics data to respond
             to inquiries and improve the site. We may use Google AdSense and analytics services that
-            set cookies. Contact: helloqu@naver.com.
+            set cookies. Contact: {siteConfig.email}.
           </Typography>
 
-          <Link component={NextLink} href="/" underline="hover" color="primary">
-            홈으로 돌아가기
-          </Link>
         </Stack>
       </Container>
     </Box>

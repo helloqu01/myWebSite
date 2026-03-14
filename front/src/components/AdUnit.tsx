@@ -3,14 +3,13 @@
 import React, { useEffect } from "react";
 import { Box, Typography } from "@mui/material";
 import { useLocale } from "@/context/LocaleContext";
+import { siteConfig } from "@/lib/siteConfig";
 
 type AdUnitProps = {
   slot?: string;
   format?: string;
   minHeight?: number;
 };
-
-const AD_CLIENT = "ca-pub-1115617071874827";
 
 export default function AdUnit({ slot, format = "auto", minHeight = 280 }: AdUnitProps) {
   const { lang } = useLocale();
@@ -68,7 +67,7 @@ export default function AdUnit({ slot, format = "auto", minHeight = 280 }: AdUni
       <ins
         className="adsbygoogle"
         style={{ display: "block", minHeight }}
-        data-ad-client={AD_CLIENT}
+        data-ad-client={siteConfig.adsenseClient}
         data-ad-slot={resolvedSlot}
         data-ad-format={format}
         data-full-width-responsive="true"

@@ -7,40 +7,53 @@ import {
   OrbitControls,
   Sphere,
   MeshDistortMaterial,
-  Environment,
 } from "@react-three/drei";
 
 export default function ThreeScene() {
   return (
     <Canvas
-      frameloop="always"  // ← 항상 렌더링해서 autoRotate 동작
+      frameloop="always"
       onCreated={({ gl }) => {
         gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        gl.setClearColor(0x000000, 0); // 투명 배경
       }}
       camera={{ position: [0, 0, 5], fov: 50 }}
       style={{ width: "100%", height: "100%" }}
     >
-      {/* 조명 */}
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[5, 5, 5]} intensity={1} />
+      <ambientLight intensity={0.6} />
+      <directionalLight position={[5, 5, 5]} intensity={0.8} />
+      <pointLight position={[-5, -3, 3]} intensity={0.4} color="#a78bfa" />
 
-      {/* 3D 콘텐츠 */}
       <Suspense fallback={null}>
-        <Sphere args={[1, 64, 64]} scale={1.5}>
+        <Sphere args={[1, 80, 80]} scale={1.6}>
           <MeshDistortMaterial
-            color="#1e3a8a"
-            distort={0.4}
-            speed={2}
+            color="#7c3aed"
+            distort={0.35}
+            speed={1.4}
+            opacity={0.18}
+            transparent
+            roughness={0}
+            metalness={0.9}
           />
         </Sphere>
-        <Environment preset="studio" />
+        {/* 외곽 와이어프레임 구 */}
+        <Sphere args={[1, 32, 32]} scale={1.62}>
+          <MeshDistortMaterial
+            color="#a78bfa"
+            distort={0.3}
+            speed={1.2}
+            opacity={0.08}
+            transparent
+            wireframe
+          />
+        </Sphere>
       </Suspense>
 
-      {/* 자동 회전 + 마우스 드래그 */}
       <OrbitControls
         enableZoom={false}
-        autoRotate      // ← 자동으로 카메라가 구체 주위를 회전
-        autoRotateSpeed={1.5}  // 속도 조절 (기본 2)
+        autoRotate
+        autoRotateSpeed={0.8}
+        enablePan={false}
       />
     </Canvas>
   );

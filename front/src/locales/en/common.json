@@ -211,66 +211,52 @@
   "resumeDownloadLabel": "Save as PDF",
   "resumeOnePageLabel": "One-page Summary",
   "projectsHeader": "Selected Projects",
-  "projectsSubtitle": "A curated selection highlighting problem definition, execution, outcomes, and AI usage.",
+  "projectsSubtitle": "Ordered from the most recent work, highlighting implementation scope and operational thinking.",
   "projectsView": "View Details",
   "projectData": [
     {
-      "title": "BusinessPlus CRM",
-      "description": "Main-site redesign for a B2B IT consulting firm",
-      "images": ["/projects/businessplus.png"],
-      "link": "http://www.businessplus.co.kr/",
-      "detailImage": "/projects/businessplus.png",
-      "detailText": "Delivered a full homepage redesign aligned with current UX standards."
-    },
-    {
-      "title": "Hanleeon Patent Consulting",
-      "description": "Cafe24-based site refresh for a patent law firm",
-      "images": ["/projects/hanleeon-cafe24.png"],
-      "link": "https://hanleeon02.cafe24.com/main/",
-      "detailImage": "/projects/hanleeon-cafe24.png",
-      "detailText": "Added service guides and consultation features for clients."
-    },
-    {
-      "title": "Inno3Dental Chat",
-      "description": "Real-time group chat for a partner network platform",
-      "images": ["/projects/innodental-chat.png"],
-      "link": "https://dev.inno3dental.com/",
-      "detailImage": "/projects/innodental-chat.png",
-      "detailText": "Implemented resilient chat using Socket.io and Redis Pub/Sub."
-    },
-    {
-      "title": "Inno3Dental Dashboard",
-      "description": "Admin dashboard with reports, storage metrics, and analytics",
-      "images": ["/projects/innodental-dashboard.png"],
-      "link": "https://dev.inno3dental.com/",
-      "detailImage": "/projects/innodental-dashboard.png",
-      "detailText": "Delivered chart-driven analytics using Chart.js and Recharts."
-    },
-    {
-      "title": "Report Management",
-      "description": "Report list and detail view with date and keyword filters",
+      "title": "Festival Cardnews Prompt",
+      "description": "A content operations platform that turns festival data into AI-generated cardnews, Canva assets, and scheduled Instagram posts",
       "images": [
-        "/projects/report-list-1.png",
-        "/projects/report-list-2.png"
+        "/projects/festival-cardnews-studio.svg"
       ],
-      "link": "https://dev.inno3dental.com/",
-      "detailImage": "/projects/report-detail.png",
-      "detailText": "Implemented date-range filters with export and print workflows."
+      "link": "#",
+      "detailImage": "/projects/festival-cardnews-studio.svg",
+      "detailText": "Built a Next.js studio that unifies festival-source aggregation, AI-generated cardnews and captions, saved-content management, Canva template handoff, Instagram publishing queues, and performance dashboards."
     },
     {
-      "title": "Account & Profile",
-      "description": "Account settings and user profile management screens",
+      "title": "INSPIRE Workforce Management System",
+      "description": "An event operations dashboard for staffing visibility, role-based evaluations, and administrator updates",
       "images": [
-        "/projects/account-general-1.png",
-        "/projects/account-general-2.png"
+        "/projects/inspire-workforce.svg"
       ],
-      "link": "https://dev.inno3dental.com/",
-      "detailImage": "/projects/profile.png",
-      "detailText": "Delivered comprehensive account management, including uploads, language selection, and security settings."
+      "link": "#",
+      "detailImage": "/projects/inspire-workforce.svg",
+      "detailText": "Designed an event-based workforce console with event selection, role tabs, worker search, evaluation reporting, and administrator flows for adding and updating staff records in a consistent operational format."
+    },
+    {
+      "title": "NexusLuxor",
+      "description": "A Firebase-based commerce back office and kiosk integration system covering orders, payments, reconciliation, and notifications",
+      "images": [
+        "/projects/nexus-luxor.svg"
+      ],
+      "link": "#",
+      "detailImage": "/projects/nexus-luxor.svg",
+      "detailText": "Integrated order creation, stock deduction, eFinance webhook signature verification, payment state transitions, SMS job queues, admin dashboards, and CSV-based reconciliation into a single operational workflow."
+    },
+    {
+      "title": "CookieRun Waiting System",
+      "description": "A NestJS and Redis-based real-time queueing platform for registration, calling, entry handling, notifications, and operations metrics",
+      "images": [
+        "/projects/cookie-run-queue.svg"
+      ],
+      "link": "#",
+      "detailImage": "/projects/cookie-run-queue.svg",
+      "detailText": "Structured queue flows around session open/close, wait-entry registration, admin listing and force-status actions, real-time status lookup, session metrics, and notification delivery, with Redis synchronization and admin guards for operational stability."
     },
     {
       "title": "Kiosk Payment Integration System",
-      "description": "Delivery of a kiosk payment integration system",
+      "description": "A production-grade payment authentication and cancellation flow connecting on-site terminals with kiosk UI",
       "images": [
         "/projects/kioskPayment.png"
       ],
@@ -278,7 +264,61 @@
       "videoDescription": "Demonstration video of the kiosk payment integration workflow.",
       "link": "#",
       "detailImage": "/projects/profile.png",
-      "detailText": "Implemented a stable payment integration with production-ready deployment."
+      "detailText": "Delivered a stable payment flow across a C#/.NET HTTP plugin, CefSharp-based JS↔C# bridge, EMV terminal serial communication, and ACK/fallback handling for real operational environments."
+    },
+    {
+      "title": "BusinessPlus CRM",
+      "description": "A corporate site renewal aligned with the brand positioning of a B2B IT consulting firm",
+      "images": ["/projects/businessplus.png"],
+      "link": "http://www.businessplus.co.kr/",
+      "detailImage": "/projects/businessplus.png",
+      "detailText": "Restructured the information architecture and refreshed the main visual system to improve brand trust and consultation conversion on the corporate website."
+    },
+    {
+      "title": "Hanleeon Patent Consulting",
+      "description": "A Cafe24-based website renewal focused on service clarity and online consultation flow for a patent law office",
+      "images": ["/projects/hanleeon-cafe24.png"],
+      "link": "https://hanleeon02.cafe24.com/main/",
+      "detailImage": "/projects/hanleeon-cafe24.png",
+      "detailText": "Refined the service structure and consultation entry points to strengthen credibility and inquiry conversion for a professional services website."
+    },
+    {
+      "title": "Account & Profile",
+      "description": "Unified account, security, and scanner settings for user profile management",
+      "images": [
+        "/projects/account-general-1.png",
+        "/projects/account-general-2.png"
+      ],
+      "link": "https://dev.inno3dental.com/",
+      "detailImage": "/projects/profile.png",
+      "detailText": "Designed and implemented operational account-management screens covering general settings, security options, profile uploads, language selection, and scanner configuration."
+    },
+    {
+      "title": "Report Management",
+      "description": "A report operations screen with filtering, lookup, and export workflows",
+      "images": [
+        "/projects/report-list-1.png",
+        "/projects/report-list-2.png"
+      ],
+      "link": "https://dev.inno3dental.com/",
+      "detailImage": "/projects/report-detail.png",
+      "detailText": "Implemented a management workflow that brings together report listing, detail views, search, date filtering, printing, and export for faster operator review."
+    },
+    {
+      "title": "Inno3Dental Dashboard",
+      "description": "An administrative dashboard combining reports, storage usage, and core operational metrics",
+      "images": ["/projects/innodental-dashboard.png"],
+      "link": "https://dev.inno3dental.com/",
+      "detailImage": "/projects/innodental-dashboard.png",
+      "detailText": "Delivered a data-visualization dashboard using Chart.js and Recharts to surface report status, storage usage, and statistical charts in a single view."
+    },
+    {
+      "title": "Inno3Dental Chat",
+      "description": "A partner-network collaboration platform with Redis-backed sessions and real-time group messaging",
+      "images": ["/projects/innodental-chat.png"],
+      "link": "https://dev.inno3dental.com/",
+      "detailImage": "/projects/innodental-chat.png",
+      "detailText": "Built real-time group messaging and session continuity on top of Socket.io and Redis Pub/Sub to support partner collaboration under production traffic."
     }
 
   ],
@@ -290,17 +330,18 @@
       "company": "Queen's Smile",
       "role": "Full-stack Developer",
       "details": [
-        "Delivered kiosk, mobile, web, and admin services across the product suite",
-        "Built a queueing project using Nest.js and Redis",
-        "Designed and implemented a real-time waiting system backend for register–call–entry flows (NestJS, Redis, MySQL)",
-        "Developed and deployed an internal settlement statement site with AI support",
-        "Developing features with Java, Nest.js, and Next.js",
-        "Provided operational support and continuous feature enhancement"
+        "Delivered feature development and operational improvements across kiosk, mobile, web, and admin products",
+        "Built a content operations platform covering festival data intake, AI cardnews generation, Canva handoff, and scheduled Instagram publishing",
+        "Implemented a Firebase-based commerce operations system spanning orders, payment webhooks, reconciliation, and SMS job queues",
+        "Developed an integrated workforce management dashboard with event-level staffing visibility, role-based evaluations, and admin editing flows",
+        "Designed and implemented a real-time waiting system covering registration, calling, entry handling, notifications, and operational metrics",
+        "Developed and deployed an internal settlement statement site with AI support"
       ],
-      "techStack": "Java, Nest.js, Next.js, Redis, Kiosk, Mobile, Web, Admin",
+      "techStack": "Java, Next.js, Nest.js, Firebase Functions, Firestore, Redis, MySQL, AI Integration, Kiosk, Admin",
       "extra": [
-        "Implemented features aligned with cross-product requirements",
-        "Stabilized waiting system consistency, concurrency, and recovery using Redis atomicity plus DB synchronization"
+        "Structured multiple operations-heavy products around shared architecture and real-world workflow constraints",
+        "Stabilized queue consistency, concurrency, and recovery using Redis atomicity plus database synchronization",
+        "Improved operational efficiency by connecting payments, notifications, admin tools, and content workflows into one delivery surface"
       ]
     },
     {

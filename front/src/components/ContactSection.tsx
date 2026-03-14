@@ -6,21 +6,22 @@ import {
   Container,
   Stack,
   Typography,
-  IconButton,
   TextField,
   Button,
   Alert,
   useTheme,
+  Chip,
+  Divider,
 } from '@mui/material';
-import { Mail, Linkedin, Github } from 'lucide-react';
+import { Mail, Linkedin, Github, Send, Download, QrCode } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import en from '@/locales/en/common.json';
 import ko from '@/locales/ko/common.json';
 import { useLocale } from '@/context/LocaleContext';
-import ThreeScene from './ThreeScene';
 import BusinessCardThumbnail from '@/components/BusinessCardThumbnail';
 import { trackEvent } from '@/lib/analytics';
+import { siteConfig } from '@/lib/siteConfig';
 
 export default function ContactSection() {
   const theme = useTheme();
@@ -28,33 +29,28 @@ export default function ContactSection() {
   const { lang } = useLocale();
   const t = lang === 'en' ? en : ko;
 
-  // vCard 데이터
   const vCard = [
     'BEGIN:VCARD',
     'VERSION:3.0',
     'N:Oh;Hyunji;;;',
     'FN:Hyunji Oh',
-    'TITLE:Fullstack Web Developer',
-    'EMAIL;TYPE=WORK:ddaaadd01@gmail.com',
-    'TEL;TYPE=CELL:+821090677472',
-    'URL:https://codingbyohj.com/',
+    'TITLE:Freelance Full-stack Developer',
+    `EMAIL;TYPE=WORK:${siteConfig.email}`,
+    `TEL;TYPE=CELL:${siteConfig.phoneE164}`,
+    `URL:${siteConfig.siteUrl}`,
     'END:VCARD',
   ].join('\r\n');
   const vCardDataUri = `data:text/vcard;charset=utf-8,${encodeURIComponent(vCard)}`;
 
-  // 폼 상태
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [company, setCompany] = useState('');
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (company.trim()) {
-      setStatus('success');
-      setName(''); setEmail(''); setMessage(''); setCompany('');
-      return;
-    }
+    if (company.trim()) { setStatus('success'); return; }
     setStatus('sending');
     try {
       const res = await fetch('/api/email', {
@@ -72,308 +68,337 @@ export default function ContactSection() {
     }
   };
 
-  // 3D tilt 값
-  const bcX = useMotionValue(0), bcY = useMotionValue(0);
-  const bcRotX = useTransform(bcY, [-80, 80], [15, -15]);
-  const bcRotY = useTransform(bcX, [-80, 80], [-15, 15]);
-  const bcScale = useMotionValue(1);
-
-  const qrX = useMotionValue(0), qrY = useMotionValue(0);
-  const qrRotX = useTransform(qrY, [-50, 50], [10, -10]);
-  const qrRotY = useTransform(qrX, [-50, 50], [-10, 10]);
-  const qrScale = useMotionValue(1);
-
-  // TextField 스타일
   const inputSx = {
-    backgroundColor: isDark ? 'rgba(18,28,31,0.6)' : 'rgba(255,255,255,0.9)',
-    borderRadius: 2,
     '& .MuiOutlinedInput-root': {
+      backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.7)',
+      borderRadius: '10px',
       '& fieldset': {
-        borderColor: 'var(--card-border)',
+        borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(109,40,217,0.12)',
       },
       '&:hover fieldset': {
-        borderColor: theme.palette.primary.main,
+        borderColor: 'rgba(139,92,246,0.35)',
       },
       '&.Mui-focused fieldset': {
-        borderColor: theme.palette.primary.main,
-        borderWidth: 2,
+        borderColor: '#a78bfa',
+        borderWidth: '1.5px',
       },
     },
-    '& .MuiInputBase-input': {
-      color: theme.palette.text.primary,
-    },
-    '& .MuiInputLabel-root': {
-      color: theme.palette.text.secondary,
-    },
-    '& .MuiInputLabel-root.Mui-focused': {
-      color: theme.palette.primary.main,
-    },
-    '& .MuiOutlinedInput-input::placeholder': {
-      color: theme.palette.text.secondary,
-      opacity: 1,
-    },
+    '& .MuiInputBase-input': { color: theme.palette.text.primary },
+    '& .MuiInputLabel-root': { color: theme.palette.text.disabled, fontSize: '0.88rem' },
+    '& .MuiInputLabel-root.Mui-focused': { color: '#a78bfa' },
   };
+
+  const socialLinks = [
+    { icon: <Mail size={17} />, href: `mailto:${siteConfig.email}`, label: 'Email' },
+    { icon: <Linkedin size={17} />, href: siteConfig.linkedInUrl, label: 'LinkedIn' },
+    { icon: <Github size={17} />, href: siteConfig.githubUrl, label: 'GitHub' },
+  ];
 
   return (
     <Box
       id="contact"
       sx={{
+        borderTop: '1px solid var(--card-border)',
+        py: { xs: 10, md: 16 },
         position: 'relative',
-        overflow: 'hidden',
-        background: `linear-gradient(135deg, rgba(30,58,138,0.22) 0%, rgba(59,130,246,0.2) 100%)`,
-        backgroundSize: '200% 200%',
-        animation: 'gradientShift 18s ease infinite',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          inset: 0,
-          backdropFilter: 'blur(14px)',
-          background: isDark
-            ? 'rgba(10,15,18,0.35)'
-            : 'rgba(255,255,255,0.45)',
-          zIndex: 1,
-        },
-        '@keyframes gradientShift': {
-          '0%': { backgroundPosition: '0% 50%' },
-          '50%': { backgroundPosition: '100% 50%' },
-          '100%': { backgroundPosition: '0% 50%' },
-        },
       }}
     >
-      {/* 3D 배경 */}
-      <Box sx={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-        <ThreeScene />
-      </Box>
-
-      {/* 콘텐츠 */}
-      <Container sx={{ position: 'relative', zIndex: 2, py: 10 }}>
-        <Stack spacing={4} alignItems="center" textAlign="center">
-          {/* 헤더 */}
-          <Typography
-            variant="h4"
+      <Container maxWidth="lg">
+        {/* Section header */}
+        <Stack spacing={1.5} alignItems="flex-start" mb={{ xs: 6, md: 10 }}>
+          <Chip
+            label={lang === 'en' ? 'Contact' : '연락처'}
             sx={{
-              fontWeight: 600,
-              color: theme.palette.text.primary,
-              textShadow: '0 2px 10px rgba(0,0,0,0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
+              borderRadius: 999,
+              background: 'rgba(139,92,246,0.1)',
+              border: '1px solid rgba(139,92,246,0.22)',
+              color: '#a78bfa',
+              fontWeight: 700,
+              letterSpacing: '0.07em',
+              fontSize: '0.7rem',
             }}
+          />
+          <Typography
+            variant="h2"
+            sx={{ fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.05 }}
           >
-            <Mail size={28} /> {t.contactHeader}
+            {t.contactHeader}
           </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              maxWidth: 500,
-              color: theme.palette.text.secondary,
-            }}
-          >
+          <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 480 }}>
             {t.contactSubtitle}
           </Typography>
+        </Stack>
 
-          {/* 3D 명함 */}
-          <motion.div
-            style={{ perspective: 700, rotateX: bcRotX, rotateY: bcRotY, scale: bcScale }}
-            onMouseMove={e => {
-              const r = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-              bcX.set(e.clientX - r.left - r.width / 2);
-              bcY.set(e.clientY - r.top - r.height / 2);
-            }}
-            onMouseEnter={() => bcScale.set(1.04)}
-            onMouseLeave={() => { bcX.set(0); bcY.set(0); bcScale.set(1); }}
-          >
-            <BusinessCardThumbnail />
-          </motion.div>
+        {/* Two-column layout */}
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
+            gap: { xs: 6, lg: 10 },
+            alignItems: 'start',
+          }}
+        >
+          {/* ── Left col ── */}
+          <Stack spacing={5}>
+            {/* Business card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <BusinessCardThumbnail />
+            </motion.div>
 
-          {/* 문의 폼 */}
-          <Box
-            sx={{
-              width: '100%',
-              maxWidth: 600,
-              px: 2,
-              py: 4,
-              borderRadius: 3,
-              background: 'var(--surface-strong)',
-              position: 'relative',
-              border: '1px solid var(--card-border)',
-              boxShadow: 'var(--shadow-soft)',
-            }}
-          >
-            <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-              <Stack spacing={2}>
-                {/* Honeypot field for basic bot filtering */}
-                <TextField
-                  label="Company"
-                  value={company}
-                  onChange={e => setCompany(e.target.value)}
-                  autoComplete="off"
-                  sx={{
-                    position: 'absolute',
-                    left: '-9999px',
-                    height: 0,
-                    opacity: 0,
-                  }}
-                  tabIndex={-1}
-                />
-                <TextField
-                  label={t.contactNameLabel}
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="Your name"
-                  fullWidth
-                  required
-                  inputProps={{ "aria-required": true }}
-                  sx={inputSx}
-                />
-                <TextField
-                  label={t.contactEmailLabel}
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  fullWidth
-                  required
-                  inputProps={{ "aria-required": true }}
-                  sx={inputSx}
-                />
-                <TextField
-                  label={t.contactMessageLabel}
-                  value={message}
-                  onChange={e => setMessage(e.target.value)}
-                  placeholder="Write your message"
-                  fullWidth
-                  required
-                  inputProps={{ "aria-required": true }}
-                  multiline
-                  rows={4}
-                  sx={inputSx}
-                />
-
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={status === 'sending'}
-                  sx={{
-                    mt: 1,
-                    background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                    '&:hover': {
-                      background: `linear-gradient(135deg, ${theme.palette.secondary.main}, ${theme.palette.primary.main})`,
-                    },
-                  }}
-                >
-                  {status === 'sending' ? '…' : t.contactSubmit}
-                </Button>
-
-                {status === 'success' && <Alert severity="success">{t.contactSuccess}</Alert>}
-                {status === 'error' && <Alert severity="error">{t.contactError}</Alert>}
-                <Typography
-                  component="span"
-                  aria-live="polite"
-                  sx={{ position: "absolute", left: -9999, top: "auto", height: 1, width: 1, overflow: "hidden" }}
-                >
-                  {status === 'sending'
-                    ? lang === 'en' ? 'Sending message.' : '메시지 전송 중입니다.'
-                    : status === 'success'
-                    ? t.contactSuccess
-                    : status === 'error'
-                    ? t.contactError
-                    : ''}
-                </Typography>
+            {/* Social links */}
+            <Box>
+              <Typography
+                variant="overline"
+                sx={{
+                  color: theme.palette.text.disabled,
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  fontSize: '0.63rem',
+                  display: 'block',
+                  mb: 2,
+                }}
+              >
+                {lang === 'en' ? 'Connect' : '소셜'}
+              </Typography>
+              <Stack direction="row" spacing={1.5}>
+                {socialLinks.map((s, i) => (
+                  <motion.div
+                    key={i}
+                    whileHover={{ y: -3 }}
+                    transition={{ type: 'spring', stiffness: 400 }}
+                  >
+                    <Button
+                      href={s.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      startIcon={s.icon}
+                      size="small"
+                      sx={{
+                        borderRadius: '10px',
+                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(109,40,217,0.12)'}`,
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.7)',
+                        color: theme.palette.text.secondary,
+                        fontSize: '0.82rem',
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        px: 2,
+                        py: 0.9,
+                        '&:hover': {
+                          borderColor: 'rgba(139,92,246,0.4)',
+                          color: '#a78bfa',
+                          backgroundColor: 'rgba(139,92,246,0.07)',
+                        },
+                      }}
+                    >
+                      {s.label}
+                    </Button>
+                  </motion.div>
+                ))}
               </Stack>
-            </form>
-          </Box>
+            </Box>
 
-          {/* 소셜 아이콘 */}
-          <Stack direction="row" spacing={2} justifyContent="center">
-            {[
-              { icon: <Mail size={20} />, href: 'mailto:ddaaadd01@gmail.com' },
-              { icon: <Linkedin size={20} />, href: 'https://www.linkedin.com/in/hyunji-oh-13949233a/' },
-              { icon: <Github size={20} />, href: 'https://github.com/helloqu01' },
-            ].map((s, i) => (
-              <motion.div key={i} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} transition={{ type: 'spring', stiffness: 300 }}>
-                <IconButton
-                  href={s.href}
-                  target="_blank"
-                  rel="noreferrer"
+            <Divider sx={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }} />
+
+            {/* QR + vCard */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Box
+                sx={{
+                  p: 1.5,
+                  borderRadius: '12px',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(109,40,217,0.12)'}`,
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
+                  flexShrink: 0,
+                }}
+              >
+                <QRCodeSVG
+                  value={vCard}
+                  size={90}
+                  level="H"
+                  fgColor={isDark ? '#e9d5ff' : '#4c1d95'}
+                  bgColor="transparent"
+                />
+              </Box>
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <QrCode size={14} color="#a78bfa" />
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, color: theme.palette.text.primary, fontSize: '0.85rem' }}
+                  >
+                    {lang === 'en' ? 'Scan to add contact' : '스캔해서 연락처 저장'}
+                  </Typography>
+                </Box>
+                <Typography variant="caption" color="text.disabled" sx={{ lineHeight: 1.7, display: 'block', mb: 2 }}>
+                  {lang === 'en'
+                    ? 'Scan the QR code with your phone camera to instantly save contact info.'
+                    : '카메라로 QR 코드를 스캔하면 연락처가 바로 저장됩니다.'}
+                </Typography>
+                <Button
+                  href={vCardDataUri}
+                  download="HyunjiOh.vcf"
+                  size="small"
+                  startIcon={<Download size={14} />}
                   sx={{
-                    border: '1px solid var(--card-border)',
-                    color: theme.palette.text.primary,
-                    p: 1.5,
-                    background: 'var(--surface-strong)',
-                    boxShadow: 'var(--shadow-soft)',
-                    backdropFilter: 'blur(4px)',
-                    transition: 'all 0.3s ease',
+                    borderRadius: '8px',
+                    border: `1px solid ${isDark ? 'rgba(139,92,246,0.25)' : 'rgba(109,40,217,0.2)'}`,
+                    color: '#a78bfa',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    px: 2,
+                    textTransform: 'none',
                     '&:hover': {
-                      background: 'var(--surface)',
-                      boxShadow: 'var(--shadow-strong)',
+                      backgroundColor: 'rgba(139,92,246,0.08)',
+                      borderColor: 'rgba(139,92,246,0.45)',
                     },
                   }}
                 >
-                  {s.icon}
-                </IconButton>
-              </motion.div>
-            ))}
+                  {lang === 'en' ? 'Download vCard' : 'vCard 다운로드'}
+                </Button>
+              </Box>
+            </Box>
           </Stack>
 
-          {/* 3D QR */}
+          {/* ── Right col: Form ── */}
           <motion.div
-            style={{
-              perspective: 600,
-              rotateX: qrRotX,
-              rotateY: qrRotY,
-              scale: qrScale,
-              marginTop: theme.spacing(4),
-            }}
-            onMouseMove={e => {
-              const r = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-              qrX.set(e.clientX - r.left - r.width / 2);
-              qrY.set(e.clientY - r.top - r.height / 2);
-            }}
-            onMouseEnter={() => qrScale.set(1.07)}
-            onMouseLeave={() => { qrX.set(0); qrY.set(0); qrScale.set(1); }}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
           >
             <Box
               sx={{
-                display: 'inline-block',
-                p: 2,
-                borderRadius: 2,
-                background: 'var(--surface-strong)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid var(--card-border)',
-              }}
-            >
-              <QRCodeSVG value={vCard} size={128} level="H" includeMargin />
-              <Typography variant="caption" display="block" mt={1} sx={{ color: theme.palette.text.secondary, textShadow: 'none' }}>
-                {lang === 'en' ? 'Scan to add contact' : '스캔해서 연락처 저장'}
-              </Typography>
-            </Box>
-          </motion.div>
-
-          {/* vCard 다운로드 */}
-          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} transition={{ type: 'spring', stiffness: 300 }} style={{ marginTop: 16 }}>
-            <Button
-              variant="outlined"
-              href={vCardDataUri}
-              download="HyunjiOh.vcf"
-              sx={{
-                color: theme.palette.text.primary,
-                border: '1px solid var(--card-border)',
-                background: 'var(--surface-strong)',
-                backdropFilter: 'blur(4px)',
-                boxShadow: 'var(--shadow-soft)',
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  background: 'var(--surface)',
-                  borderColor: theme.palette.primary.main,
-                  boxShadow: 'var(--shadow-strong)',
+                p: { xs: 3, sm: 4 },
+                borderRadius: '16px',
+                backgroundColor: isDark ? '#0c1122' : '#ffffff',
+                border: `1px solid ${isDark ? 'rgba(139,92,246,0.15)' : 'rgba(109,40,217,0.12)'}`,
+                boxShadow: isDark
+                  ? '0 24px 64px rgba(0,0,0,0.6)'
+                  : '0 12px 40px rgba(109,40,217,0.08)',
+                position: 'relative',
+                overflow: 'hidden',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '2px',
+                  background: 'linear-gradient(90deg, #7c3aed, #22d3ee)',
                 },
               }}
             >
-              {lang === 'en' ? 'Download vCard' : 'vCard 다운로드'}
-            </Button>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 700, mb: 0.5, fontSize: '1rem' }}
+              >
+                {lang === 'en' ? 'Send a message' : '메시지 보내기'}
+              </Typography>
+              <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 3 }}>
+                {lang === 'en' ? 'I usually reply within 24 hours.' : '보통 24시간 내에 답변드립니다.'}
+              </Typography>
+
+              <form onSubmit={handleSubmit}>
+                <Stack spacing={2}>
+                  {/* Honeypot */}
+                  <TextField
+                    label="Company"
+                    value={company}
+                    onChange={e => setCompany(e.target.value)}
+                    autoComplete="off"
+                    sx={{ position: 'absolute', left: '-9999px', height: 0, opacity: 0 }}
+                    tabIndex={-1}
+                  />
+                  <TextField
+                    label={t.contactNameLabel}
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    fullWidth
+                    required
+                    size="small"
+                    sx={inputSx}
+                  />
+                  <TextField
+                    label={t.contactEmailLabel}
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    fullWidth
+                    required
+                    size="small"
+                    sx={inputSx}
+                  />
+                  <TextField
+                    label={t.contactMessageLabel}
+                    value={message}
+                    onChange={e => setMessage(e.target.value)}
+                    fullWidth
+                    required
+                    multiline
+                    rows={5}
+                    sx={inputSx}
+                  />
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={status === 'sending'}
+                    endIcon={<Send size={15} />}
+                    sx={{
+                      mt: 0.5,
+                      py: 1.3,
+                      borderRadius: '10px',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    {status === 'sending' ? '…' : t.contactSubmit}
+                  </Button>
+
+                  {status === 'success' && (
+                    <Alert
+                      severity="success"
+                      sx={{
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(52,211,153,0.1)',
+                        border: '1px solid rgba(52,211,153,0.25)',
+                        color: '#6ee7b7',
+                        '& .MuiAlert-icon': { color: '#34d399' },
+                      }}
+                    >
+                      {t.contactSuccess}
+                    </Alert>
+                  )}
+                  {status === 'error' && (
+                    <Alert
+                      severity="error"
+                      sx={{
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(248,113,113,0.1)',
+                        border: '1px solid rgba(248,113,113,0.25)',
+                      }}
+                    >
+                      {t.contactError}
+                    </Alert>
+                  )}
+                  <Typography
+                    component="span"
+                    aria-live="polite"
+                    sx={{ position: 'absolute', left: -9999, top: 'auto', height: 1, width: 1, overflow: 'hidden' }}
+                  >
+                    {status === 'sending'
+                      ? lang === 'en' ? 'Sending message.' : '메시지 전송 중입니다.'
+                      : status === 'success' ? t.contactSuccess
+                      : status === 'error' ? t.contactError : ''}
+                  </Typography>
+                </Stack>
+              </form>
+            </Box>
           </motion.div>
-        </Stack>
+        </Box>
       </Container>
     </Box>
   );

@@ -1,0 +1,34 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="800" rx="36" fill="#F8FAFC"/>
+  <rect x="40" y="40" width="1120" height="720" rx="28" fill="url(#paint0_linear)"/>
+  <text x="92" y="142" fill="#111827" font-size="46" font-family="Arial, sans-serif" font-weight="700">INSPIRE Workforce Management</text>
+  <text x="92" y="194" fill="#475569" font-size="24" font-family="Arial, sans-serif">Event-based staffing overview, role tabs, evaluations, admin edits.</text>
+  <rect x="92" y="250" width="252" height="430" rx="26" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <rect x="378" y="250" width="730" height="430" rx="26" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <rect x="120" y="290" width="170" height="22" rx="11" fill="#7C3AED"/>
+  <rect x="120" y="342" width="184" height="52" rx="16" fill="#F5F3FF"/>
+  <rect x="120" y="412" width="184" height="52" rx="16" fill="#F8FAFC"/>
+  <rect x="120" y="482" width="184" height="52" rx="16" fill="#F8FAFC"/>
+  <rect x="120" y="552" width="184" height="52" rx="16" fill="#F8FAFC"/>
+  <rect x="410" y="290" width="180" height="118" rx="22" fill="#F5F3FF"/>
+  <rect x="614" y="290" width="180" height="118" rx="22" fill="#FEF3C7"/>
+  <rect x="818" y="290" width="258" height="118" rx="22" fill="#ECFEFF"/>
+  <text x="438" y="334" fill="#6D28D9" font-size="22" font-family="Arial, sans-serif" font-weight="700">Total Workers</text>
+  <text x="438" y="378" fill="#111827" font-size="42" font-family="Arial, sans-serif" font-weight="700">16</text>
+  <text x="642" y="334" fill="#B45309" font-size="22" font-family="Arial, sans-serif" font-weight="700">Avg Score</text>
+  <text x="642" y="378" fill="#111827" font-size="42" font-family="Arial, sans-serif" font-weight="700">9.4</text>
+  <text x="850" y="334" fill="#0F766E" font-size="22" font-family="Arial, sans-serif" font-weight="700">Active Event</text>
+  <text x="850" y="378" fill="#111827" font-size="26" font-family="Arial, sans-serif" font-weight="700">Black Combat 16</text>
+  <rect x="410" y="452" width="666" height="184" rx="22" fill="#F8FAFC"/>
+  <rect x="438" y="488" width="266" height="22" rx="11" fill="#CBD5E1"/>
+  <rect x="438" y="528" width="582" height="18" rx="9" fill="#E2E8F0"/>
+  <rect x="438" y="562" width="520" height="18" rx="9" fill="#E2E8F0"/>
+  <rect x="438" y="598" width="148" height="18" rx="9" fill="#A78BFA"/>
+  <defs>
+    <linearGradient id="paint0_linear" x1="40" y1="40" x2="1160" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC"/>
+      <stop offset="0.6" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+  </defs>
+</svg>

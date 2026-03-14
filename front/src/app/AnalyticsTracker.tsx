@@ -7,11 +7,14 @@ import { trackEvent, trackPageView } from "@/lib/analytics";
 
 const SECTION_IDS = [
   "hero",
+  "about",
+  "services",
   "metrics",
   "projects",
   "case-studies",
   "experience",
   "skills",
+  "process",
   "summary",
   "contact",
 ];

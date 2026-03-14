@@ -1,35 +1,29 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import NextLink from "next/link";
 import { Box, Container, Stack, Typography, Link } from "@mui/material";
 import { useLocale } from "@/context/LocaleContext";
 
 export default function AboutPage() {
   const { lang } = useLocale();
+  useEffect(() => {
+    window.location.replace("/#about");
+  }, []);
+
   const content =
     lang === "en"
       ? {
-          title: "About",
-          subtitle: "Operator: Oh Hyunji",
-          body: [
-            "This site is a personal portfolio showcasing projects, experience, and product delivery outcomes.",
-            "The content focuses on real-world engineering work across Next.js, Nest.js, AWS, and AI-enabled automation.",
-            "For collaboration, hiring inquiries, or partnerships, please reach out via the contact form or email.",
-          ],
-          email: "Contact: helloqu@naver.com",
-          back: "Back to Home",
+          title: "Redirecting to About",
+          subtitle: "The standalone About page has been merged into the homepage.",
+          body: "If the redirect does not happen automatically, use the link below.",
+          back: "Go to About section",
         }
       : {
-          title: "소개",
-          subtitle: "운영자: 오현지",
-          body: [
-            "이 사이트는 프로젝트, 경력, 성과를 정리한 개인 포트폴리오입니다.",
-            "Next.js, Nest.js, AWS, AI 자동화를 포함한 실무 중심의 작업을 소개합니다.",
-            "협업/채용/프로젝트 문의는 연락처 섹션 또는 이메일로 부탁드립니다.",
-          ],
-          email: "문의: helloqu@naver.com",
-          back: "홈으로 돌아가기",
+          title: "소개 섹션으로 이동 중",
+          subtitle: "기존 소개 페이지는 홈의 소개 섹션으로 합쳐졌습니다.",
+          body: "자동으로 이동하지 않으면 아래 링크를 눌러주세요.",
+          back: "소개 섹션으로 가기",
         };
 
   return (
@@ -42,13 +36,8 @@ export default function AboutPage() {
           <Typography variant="subtitle1" color="text.secondary">
             {content.subtitle}
           </Typography>
-          {content.body.map((text, idx) => (
-            <Typography key={idx} variant="body1">
-              {text}
-            </Typography>
-          ))}
-          <Typography variant="body1">{content.email}</Typography>
-          <Link component={NextLink} href="/" underline="hover" color="primary">
+          <Typography variant="body1">{content.body}</Typography>
+          <Link component={NextLink} href="/#about" underline="hover" color="primary">
             {content.back}
           </Link>
         </Stack>
