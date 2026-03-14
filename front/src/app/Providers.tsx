@@ -168,7 +168,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           <ConsentScripts />
           <AnalyticsTracker />
           <ChatbotWidget />
-          <main id="main-content" tabIndex={-1}>
+          <main id="main-content" tabIndex={-1} {...{ "google-side-rail-overlap": "false" }}>
             {children}
           </main>
           <CookieBanner />

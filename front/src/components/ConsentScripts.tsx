@@ -41,6 +41,13 @@ export default function ConsentScripts() {
     });
   }, [consent]);
 
+  useEffect(() => {
+    document.body.dataset.adsenseActive = consent === "accepted" ? "true" : "false";
+    return () => {
+      delete document.body.dataset.adsenseActive;
+    };
+  }, [consent]);
+
   if (consent !== "accepted") return null;
 
   return (
@@ -64,6 +71,7 @@ export default function ConsentScripts() {
         strategy="afterInteractive"
         src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${siteConfig.adsenseClient}`}
         crossOrigin="anonymous"
+        {...{ "data-overlays": "collapsed-bottom" }}
       />
     </>
   );

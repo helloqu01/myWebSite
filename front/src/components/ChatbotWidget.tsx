@@ -89,7 +89,10 @@ export default function ChatbotWidget() {
         sx={{
           position: "fixed",
           right: { xs: 16, sm: 24 },
-          bottom: { xs: 16, sm: 24 },
+          bottom: {
+            xs: "calc(16px + var(--adsense-anchor-offset, 0px))",
+            sm: "calc(24px + var(--adsense-anchor-offset, 0px))",
+          },
           zIndex: 1200,
           width: 56,
           height: 56,
@@ -111,7 +114,10 @@ export default function ChatbotWidget() {
           sx={{
             position: "fixed",
             right: { xs: 16, sm: 24 },
-            bottom: { xs: 84, sm: 96 },
+            bottom: {
+              xs: "calc(84px + var(--adsense-anchor-offset, 0px))",
+              sm: "calc(96px + var(--adsense-anchor-offset, 0px))",
+            },
             width: { xs: "calc(100% - 32px)", sm: 360 },
             maxHeight: { xs: "65vh", sm: 520 },
             display: "flex",

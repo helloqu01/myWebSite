@@ -7,6 +7,7 @@
 :root {
   --font-sans: "Space Grotesk";
   --font-display: "Fraunces";
+  --adsense-anchor-offset: 0px;
 }
 
 html {
@@ -53,6 +54,14 @@ body::after {
 body > * {
   position: relative;
   z-index: 1;
+}
+
+body[data-adsense-active="true"] {
+  --adsense-anchor-offset: 72px;
+}
+
+body[data-adsense-active="true"] #main-content {
+  padding-bottom: var(--adsense-anchor-offset);
 }
 
 .scrollbar-none::-webkit-scrollbar {
