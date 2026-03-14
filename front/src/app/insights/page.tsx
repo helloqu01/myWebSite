@@ -37,9 +37,9 @@ const articles = [
     titleEn: "AdSense Readiness: Content and Compliance",
     titleKo: "애드센스 승인 준비: 콘텐츠와 정책",
     summaryEn:
-      "What helps sites pass review: content depth, policies, and crawlability.",
+      "Why developer, AI, and SaaS practical content is a realistic AdSense strategy.",
     summaryKo:
-      "승인에 필요한 콘텐츠 깊이, 정책, 크롤링 접근성을 정리했습니다.",
+      "개발자, AI, SaaS 실무 콘텐츠가 왜 현실적인 전략인지 정리했습니다.",
   },
   {
     slug: "api-reliability",
