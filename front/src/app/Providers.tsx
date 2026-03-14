@@ -164,9 +164,6 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <ColorModeContext.Provider value={colorMode}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <a className="skip-link" href="#main-content">
-            Skip to content
-          </a>
           <Header />
           <ConsentScripts />
           <AnalyticsTracker />

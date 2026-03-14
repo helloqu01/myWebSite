@@ -54,21 +54,17 @@ export default function RootLayout({
           }}
         />
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-C2589TCWZ6"
+          src={`https://www.googletagmanager.com/gtag/js?id=${siteConfig.gaMeasurementId}`}
           strategy="beforeInteractive"
         />
         <Script
           id="gtag-config"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: "gtag('js', new Date());" + "gtag('config', 'G-C2589TCWZ6');",
+            __html:
+              "gtag('js', new Date());" +
+              `gtag('config', '${siteConfig.gaMeasurementId}');`,
           }}
-        />
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1115617071874827"
-          strategy="beforeInteractive"
-          crossOrigin="anonymous"
         />
       </head>
       <body>

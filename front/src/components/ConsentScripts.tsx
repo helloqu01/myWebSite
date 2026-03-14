@@ -64,9 +64,6 @@ export default function ConsentScripts() {
         strategy="afterInteractive"
         src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${siteConfig.adsenseClient}`}
         crossOrigin="anonymous"
-        onLoad={() => {
-          window.dispatchEvent(new Event("adsense-ready"));
-        }}
       />
     </>
   );

@@ -4,7 +4,6 @@ import React from "react";
 import NextLink from "next/link";
 import { Box, Container, Stack, Typography, Link } from "@mui/material";
 import { useLocale } from "@/context/LocaleContext";
-import AdUnit from "@/components/AdUnit";
 import RelatedInsights from "@/components/RelatedInsights";
 
 export default function SecurityBasicsPage() {
@@ -41,7 +40,6 @@ export default function SecurityBasicsPage() {
           <Typography variant="body1">{content.body[1]}</Typography>
           <Typography variant="body1">{content.body[2]}</Typography>
           <Typography variant="body1">{content.body[3]}</Typography>
-          <AdUnit minHeight={220} />
           <RelatedInsights currentSlug="security-basics" />
           <Link component={NextLink} href="/insights" underline="hover" color="primary">
             {lang === "en" ? "Back to Insights" : "인사이트로 돌아가기"}
