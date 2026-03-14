@@ -20,6 +20,44 @@ function renderSection(section: InsightSection, index: number) {
           {paragraph}
         </Typography>
       ))}
+      {section.steps ? (
+        <Stack component="ol" spacing={1.5} sx={{ pl: 0, mb: 0, listStyle: "none" }}>
+          {section.steps.map((step, stepIndex) => (
+            <Box
+              component="li"
+              key={`step-${index}-${stepIndex}`}
+              sx={{
+                display: "flex",
+                gap: 1.5,
+                alignItems: "flex-start",
+                p: 2,
+                borderRadius: 3,
+                border: "1px solid var(--card-border)",
+                background: "rgba(255,255,255,0.04)",
+              }}
+            >
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  flexShrink: 0,
+                  borderRadius: "50%",
+                  display: "grid",
+                  placeItems: "center",
+                  fontWeight: 700,
+                  fontSize: "0.95rem",
+                  color: "text.primary",
+                  backgroundColor: "rgba(34,211,238,0.16)",
+                  border: "1px solid rgba(34,211,238,0.24)",
+                }}
+              >
+                {stepIndex + 1}
+              </Box>
+              <Typography variant="body1">{step}</Typography>
+            </Box>
+          ))}
+        </Stack>
+      ) : null}
       {section.items ? (
         <Stack component="ul" spacing={1.25} sx={{ pl: 3, mb: 0 }}>
           {section.items.map((item, itemIndex) => (

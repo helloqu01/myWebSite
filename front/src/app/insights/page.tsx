@@ -19,8 +19,8 @@ export default function InsightsPage() {
   const title = lang === "en" ? "Insights" : "인사이트";
   const subtitle =
     lang === "en"
-      ? "Practical notes on deployment, AI features, automation, payments, and debugging."
-      : "배포, AI 기능, 자동화, 결제, 디버깅까지 실무에서 쌓인 노트를 정리했습니다.";
+      ? "Practical, step-by-step notes based on real delivery work across deployment, AI features, automation, payments, and debugging."
+      : "배포, AI 기능, 자동화, 결제, 디버깅까지 실제로 해결하고 운영한 내용을 초보자도 따라갈 수 있게 단계별로 정리했습니다.";
   const featuredLabel = lang === "en" ? "Field Notes" : "현장 노트";
 
   return (

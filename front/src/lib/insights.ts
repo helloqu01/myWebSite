@@ -2,6 +2,7 @@ export type InsightSection = {
   variant?: "default" | "callout";
   title?: string;
   paragraphs?: string[];
+  steps?: string[];
   items?: string[];
 };
 
@@ -49,6 +50,23 @@ export const insights: InsightArticle[] = [
           "Compare cold starts, rollout speed, and rollback simplicity before committing to one path.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "Audit the app first. Check whether the site can be exported statically or whether it depends on server rendering, dynamic APIs, middleware, or image optimization at runtime.",
+          "Run a local production build before touching AWS. A broken route, missing environment variable, or asset path issue is faster to fix locally than after deployment.",
+          "If the app is static, prepare S3, CloudFront, ACM, and DNS in that order. If it needs runtime logic, choose App Runner or ECS before you design the deployment pipeline.",
+          "Automate build and deploy with CI/CD so artifact upload, cache invalidation, and environment injection happen the same way every time.",
+          "After release, verify HTTPS, 404 behavior, cache refresh, log visibility, and rollback steps. Deployment is only done when you can also debug the next failure quickly.",
+        ],
+      },
+      {
+        title: "Actual cases from delivery",
+        paragraphs: [
+          "This portfolio itself is deployed as a static Next.js export on S3 and CloudFront, which is the right fit for a content-first site with minimal runtime needs.",
+          "In prior production work, I also handled AWS delivery paths across App Runner and serverless-style transitions, including CloudFront auth issues that required origin request policy fixes and tighter environment handling in CI/CD.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -65,6 +83,23 @@ export const insights: InsightArticle[] = [
           "정적 자산, 앱 런타임, API 경계를 먼저 분리해서 생각합니다.",
           "캐시 정책, 무효화 전략, 환경별 시크릿 주입 방식을 초기에 정합니다.",
           "콜드 스타트, 배포 속도, 롤백 단순성을 비교한 뒤 최종 경로를 고릅니다.",
+        ],
+      },
+      {
+        title: "초보자 기준 진행 순서",
+        steps: [
+          "먼저 이 앱이 정적 export 가능한지 확인합니다. 서버 렌더링, 동적 API, 미들웨어, 런타임 이미지 최적화가 핵심이면 정적 배포만으로 끝나지 않을 수 있습니다.",
+          "AWS를 건드리기 전에 로컬에서 프로덕션 빌드를 돌립니다. 깨진 라우트, 빠진 환경변수, 잘못된 자산 경로는 로컬에서 잡는 편이 훨씬 빠릅니다.",
+          "정적 사이트면 S3, CloudFront, ACM, DNS 순서로 준비하고, 런타임이 필요하면 App Runner나 ECS를 먼저 결정한 뒤 파이프라인을 설계합니다.",
+          "빌드와 배포, 캐시 무효화, 환경변수 주입은 CI/CD로 자동화합니다. 수동 업로드는 처음 한 번은 되지만 반복 운영에서는 바로 실수 지점이 됩니다.",
+          "배포 후에는 HTTPS, 404 처리, 캐시 갱신, 로그 확인, 롤백 경로까지 점검합니다. 배포는 올리는 것보다 다음 장애를 빨리 찾을 수 있어야 끝입니다.",
+        ],
+      },
+      {
+        title: "실제로 풀었던 사례",
+        paragraphs: [
+          "이 포트폴리오 자체는 정적 Next.js export를 S3와 CloudFront로 배포하는 구조라서, 콘텐츠 중심 사이트에 맞는 가장 단순한 경로를 직접 적용하고 있습니다.",
+          "실무에서는 App Runner와 서버리스 전환 경험도 있었고, CloudFront origin request policy 조정으로 인증 이슈를 해결하는 등 배포 경로에 따라 다른 운영 문제를 직접 다뤘습니다.",
         ],
       },
     ],
@@ -97,6 +132,23 @@ export const insights: InsightArticle[] = [
           "Prepare fallback responses for timeouts, moderation blocks, and upstream model errors.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "Start with one narrow task such as summary generation, support reply drafting, or internal search help. Do not begin by promising a general-purpose assistant.",
+          "Create a backend endpoint that receives validated user input and calls the model with server-side secrets. This is where auth, quota, and prompt rules should live.",
+          "Decide what context the model can access and trim it aggressively. Most bad answers come from sending too much noisy context, not too little.",
+          "Build the frontend around loading, streaming, timeout, and retry states. Users need to understand when the model is still working and when it failed safely.",
+          "Log prompt metadata, token usage, latency, and error categories from day one so you can control cost and improve quality with evidence instead of intuition.",
+        ],
+      },
+      {
+        title: "Actual cases from delivery",
+        paragraphs: [
+          "I used AI-assisted flows in an internal settlement statement site where speed and consistency mattered more than flashy generation. The useful part was workflow standardization, not raw model novelty.",
+          "I also built a festival content studio that connected source aggregation, AI-generated cardnews drafts and captions, Canva handoff, and Instagram publishing queues into one operational surface.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -113,6 +165,23 @@ export const insights: InsightArticle[] = [
           "모든 호출에 대해 요청 메타데이터, 토큰 사용량, 지연 시간을 남깁니다.",
           "재시도는 안전한 실패 유형에만 적용하고 사용자나 워크스페이스 단위 비용 상한을 둡니다.",
           "타임아웃, 정책 차단, 상위 모델 오류에 대한 대체 응답을 준비합니다.",
+        ],
+      },
+      {
+        title: "초보자 기준 진행 순서",
+        steps: [
+          "처음에는 요약, 답변 초안, 내부 검색 보조처럼 범위가 좁은 작업 하나만 정합니다. 처음부터 만능 AI 비서를 만들겠다고 시작하면 실패할 확률이 높습니다.",
+          "검증된 사용자 입력을 받는 백엔드 API를 만들고, 서버에서만 모델을 호출합니다. 인증, 쿼터, 프롬프트 규칙은 이 경계 안에 있어야 합니다.",
+          "모델이 볼 수 있는 문맥 범위를 정하고 과감히 줄입니다. 실제로는 문맥이 부족해서보다 너무 많은 잡정보를 넣어서 품질이 떨어지는 경우가 많습니다.",
+          "프론트엔드는 로딩, 스트리밍, 타임아웃, 재시도 상태를 명확히 보여주도록 만듭니다. 사용자는 모델이 아직 처리 중인지, 안전하게 실패했는지를 알아야 합니다.",
+          "처음부터 프롬프트 메타데이터, 토큰 사용량, 지연 시간, 오류 유형을 기록합니다. 그래야 감이 아니라 근거로 품질과 비용을 조정할 수 있습니다.",
+        ],
+      },
+      {
+        title: "실제로 적용했던 사례",
+        paragraphs: [
+          "사내 정산서 사이트에서는 AI를 화려한 생성 기능보다 처리 속도와 문서 일관성을 높이는 보조 흐름으로 붙였습니다. 핵심은 모델 자체보다 워크플로 표준화였습니다.",
+          "또 다른 프로젝트에서는 축제 데이터 수집, AI 카드뉴스 초안과 캡션 생성, Canva 연동, Instagram 발행 큐를 하나의 운영 화면으로 연결했습니다.",
         ],
       },
     ],
@@ -145,6 +214,23 @@ export const insights: InsightArticle[] = [
           "Use ECS when you need custom sidecars, richer autoscaling control, or long-running worker services.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "List the app shape first: request duration, background jobs, websocket needs, VPC dependencies, and whether traffic is steady or bursty.",
+          "Package one small API or service and deploy it to the simplest candidate runtime. Hands-on friction teaches more than a feature matrix.",
+          "Check startup time, deploy speed, log visibility, secret handling, and networking setup before you compare edge cases.",
+          "Estimate who will operate the service after launch. The cheapest technical option can still be the wrong one if the team cannot support it reliably.",
+          "Choose the runtime that gives the simplest day-two operations, not the runtime with the most impressive architecture slide.",
+        ],
+      },
+      {
+        title: "Actual cases from delivery",
+        paragraphs: [
+          "In practice, I have worked with AWS delivery paths spanning EC2, RDS, load-balanced services, App Runner-style container deployment, and serverless transitions driven by cost and operational simplicity.",
+          "The comparison becomes concrete only when you include rollout speed, auth/network friction, and whether the team can realistically operate the platform after launch.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -161,6 +247,23 @@ export const insights: InsightArticle[] = [
           "상태 없는 API이고 트래픽 급증이 불규칙하면 Lambda가 잘 맞습니다.",
           "컨테이너는 쓰되 ECS 자원을 세세하게 다루고 싶지 않으면 App Runner가 편합니다.",
           "사이드카, 세밀한 오토스케일링, 장기 실행 워커가 필요하면 ECS가 유리합니다.",
+        ],
+      },
+      {
+        title: "초보자 기준 선택 순서",
+        steps: [
+          "먼저 요청 특성을 적어 봅니다. 실행 시간, 백그라운드 작업 유무, 웹소켓 필요 여부, VPC 의존성, 트래픽이 꾸준한지 급증형인지가 핵심입니다.",
+          "작은 API 하나를 가장 단순한 후보 런타임에 직접 올려 봅니다. 표 비교표보다 실제 배포 마찰을 보는 편이 훨씬 정확합니다.",
+          "기동 시간, 배포 속도, 로그 확인 편의, 시크릿 주입, 네트워크 설정 난이도를 먼저 확인합니다. 초보자에겐 이 지점이 진짜 운영 비용입니다.",
+          "출시 후 누가 이 서비스를 운영할지까지 계산합니다. 기술적으로 더 싸 보여도 팀이 안정적으로 관리하지 못하면 잘못된 선택일 수 있습니다.",
+          "결국 가장 중요한 기준은 화려한 아키텍처가 아니라, 출시 후 둘째 날에도 가장 단순하게 운영할 수 있는가입니다.",
+        ],
+      },
+      {
+        title: "실제로 비교하게 된 사례",
+        paragraphs: [
+          "실무에서는 EC2, RDS, 로드밸런서 환경부터 App Runner 계열 컨테이너 배포, 서버리스 전환까지 운영 복잡도와 비용을 기준으로 선택을 바꿔 본 경험이 있습니다.",
+          "결국 비교는 기능표가 아니라 배포 속도, 인증과 네트워크 마찰, 런칭 이후 팀이 감당할 수 있는 운영 수준까지 넣어야 현실적입니다.",
         ],
       },
     ],
@@ -193,6 +296,23 @@ export const insights: InsightArticle[] = [
           "Order, payment, settlement, and refund records drifting out of sync after partial failures.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "Draw the full payment timeline before writing more code. Include browser redirect, backend approval, PG callback, webhook, cancel flow, and refund flow on one diagram.",
+          "Create explicit states for order, payment, and settlement records so each system transition is visible instead of implied.",
+          "Add idempotency checks and correlation IDs to approval, cancel, refund, and webhook handlers before testing the happy path again.",
+          "Run sandbox tests for success, user cancel, timeout, duplicate webhook, partial failure, and delayed callback. Payment bugs usually hide outside the success case.",
+          "Build an admin view that shows the event timeline and allows safe manual recovery. Without that screen, support work turns into database guesswork.",
+        ],
+      },
+      {
+        title: "Actual cases from delivery",
+        paragraphs: [
+          "On kiosk payment work, I had to stabilize `/Auth` and `/Cancel` flows across a C#/.NET plugin, terminal communication, browser bridge code, and fallback ACK handling.",
+          "In a Firebase-based commerce back office, the hard parts were payment state transitions, eFinance webhook signature verification, reconciliation, and keeping admin operations aligned with actual settlement state.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -209,6 +329,23 @@ export const insights: InsightArticle[] = [
           "승인과 환불 엔드포인트에 멱등성 처리가 빠져 있는 경우.",
           "웹훅 서명 검증이 없거나 재전송 이벤트를 안전하게 처리하지 못하는 경우.",
           "부분 실패 이후 주문, 결제, 정산, 환불 레코드가 서로 어긋나는 경우.",
+        ],
+      },
+      {
+        title: "초보자 기준 진행 순서",
+        steps: [
+          "코드를 더 쓰기 전에 결제 전체 타임라인을 먼저 그립니다. 브라우저 리다이렉트, 서버 승인, PG 콜백, 웹훅, 취소, 환불 흐름을 한 장에 담아야 합니다.",
+          "주문, 결제, 정산 레코드의 상태를 명시적으로 정의합니다. 상태가 코드에 암묵적으로 숨어 있으면 장애 때 설명이 안 됩니다.",
+          "승인, 취소, 환불, 웹훅 처리부에 멱등성 검사와 correlation ID를 넣고 나서 정상 케이스를 다시 검증합니다.",
+          "샌드박스에서 성공, 사용자 취소, 타임아웃, 중복 웹훅, 부분 실패, 지연 콜백을 각각 테스트합니다. 실제 결제 버그는 성공 케이스 밖에서 숨어 있습니다.",
+          "이벤트 타임라인과 안전한 수동 복구 동작이 보이는 관리자 화면을 만듭니다. 그 화면이 없으면 CS와 운영이 결국 DB 추측으로 흘러갑니다.",
+        ],
+      },
+      {
+        title: "실제로 겪은 사례",
+        paragraphs: [
+          "키오스크 결제 연동에서는 C#/.NET 플러그인, 단말기 통신, 브라우저 브리지, ACK 및 fallback 처리까지 얽혀 있어서 `/Auth`와 `/Cancel` 흐름을 안정화하는 데 상태 관리가 핵심이었습니다.",
+          "Firebase 기반 상거래 백오피스에서는 결제 상태 전이, eFinance 웹훅 서명 검증, 정산 대사, 관리자 운영 흐름을 실제 결제 상태와 맞추는 작업이 가장 어려운 부분이었습니다.",
         ],
       },
     ],
@@ -241,6 +378,23 @@ export const insights: InsightArticle[] = [
           "How the system behaves when the provider is slow, unavailable, or returns low-quality output.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "Pick one believable workflow first, such as a project summarizer, portfolio Q&A helper, or proposal draft generator. One strong feature is better than five shallow demos.",
+          "Define the trigger clearly so users know when the AI should run and when the normal UI should stay in control.",
+          "Build the feature behind your backend and add usage limits, latency states, and fallback messages before polishing the visual layer.",
+          "Explain the system on the page itself: what data it uses, what it cannot do well, and how errors are handled.",
+          "Document the outcome as a case study with problem, approach, and operator value. The explanation is part of the portfolio signal, not an optional extra.",
+        ],
+      },
+      {
+        title: "Actual cases from delivery",
+        paragraphs: [
+          "The strongest examples in my own work were not generic chat UIs. They were operational tools: an AI-assisted settlement workflow and a content operations studio that combined generation, human review, template handoff, and publish queues.",
+          "Those projects were credible because the AI feature sat inside a real business flow with clear limits and measurable operator value.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -257,6 +411,23 @@ export const insights: InsightArticle[] = [
           "AI 기능이 어떤 문제를 해결하고 언제는 동작하지 않아야 하는지.",
           "사용량을 어떻게 제한하고 기록하며 비용을 어떻게 통제하는지.",
           "모델 응답이 느리거나 실패하거나 품질이 낮을 때 시스템이 어떻게 버티는지.",
+        ],
+      },
+      {
+        title: "초보자 기준 진행 순서",
+        steps: [
+          "먼저 프로젝트 요약 도우미, 포트폴리오 Q&A, 제안서 초안 생성처럼 그럴듯한 흐름 하나만 고릅니다. 얕은 데모 다섯 개보다 강한 기능 하나가 낫습니다.",
+          "사용자가 언제 AI를 실행해야 하는지, 언제는 일반 UI가 주도권을 가져야 하는지 트리거를 명확히 정합니다.",
+          "기능은 백엔드 뒤에 두고, 화면 다듬기 전에 사용량 제한, 지연 상태, 실패 메시지를 먼저 넣습니다.",
+          "페이지 안에서 이 기능이 어떤 데이터를 보고 무엇을 잘 못하는지, 오류는 어떻게 처리되는지를 설명합니다.",
+          "마지막으로 문제, 접근 방식, 운영 가치가 보이는 케이스 스터디 형태로 정리합니다. 설명 자체가 포트폴리오의 신뢰 신호입니다.",
+        ],
+      },
+      {
+        title: "실제로 설득력이 있었던 사례",
+        paragraphs: [
+          "제가 직접 만든 AI 기능 중에서 강했던 것은 일반 챗봇보다 운영 도구에 들어간 기능이었습니다. 예를 들면 AI 보조 정산 워크플로와 생성, 검수, 템플릿 전달, 발행 큐가 연결된 콘텐츠 운영 스튜디오입니다.",
+          "이 사례들이 설득력 있었던 이유는 AI가 실제 비즈니스 흐름 안에 들어가 있었고, 한계와 운영 가치가 분명했기 때문입니다.",
         ],
       },
     ],
@@ -289,6 +460,23 @@ export const insights: InsightArticle[] = [
           "Protect shared resources with locks or version checks when multiple workers compete on the same record.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "Start by listing which tasks are slow, retryable, and safe to run after the HTTP response. That is the real queue boundary.",
+          "Create one queue and one worker first, and keep the job payload small. Store IDs, not large mutable objects, so the worker can fetch the latest state safely.",
+          "Add retry count, dead-letter handling, and structured logs before you add more job types. A queue without observability becomes a hidden failure machine.",
+          "Protect shared records with Redis locks, version checks, or transaction rules if multiple workers can update the same entity.",
+          "Prepare operator tools for replay, pause, and recovery. You do not really own a queue until you can recover from a stuck or duplicated job.",
+        ],
+      },
+      {
+        title: "Actual cases from delivery",
+        paragraphs: [
+          "I applied this in a NestJS and Redis-based waiting system where session open/close, registration, admin force-state changes, metrics, and notifications all had to stay consistent under load.",
+          "I also worked on Redis-backed session sharing, WebSocket messaging, and Bull Queue-based real-time collaboration features where queue boundaries and session ownership mattered as much as the transport itself.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -305,6 +493,23 @@ export const insights: InsightArticle[] = [
           "페이로드는 작게 유지하고 워커 안에서 최신 원본 데이터를 다시 읽습니다.",
           "재시도 제한, 데드레터 처리, 작업별 관측성을 처음부터 넣습니다.",
           "여러 워커가 같은 레코드를 건드릴 수 있으면 락이나 버전 체크로 보호합니다.",
+        ],
+      },
+      {
+        title: "초보자 기준 진행 순서",
+        steps: [
+          "먼저 어떤 작업이 느리고, 재시도 가능하고, HTTP 응답 뒤에서 처리돼도 되는지 목록으로 나눕니다. 그 경계가 진짜 큐 경계입니다.",
+          "처음에는 큐 하나와 워커 하나만 만들고, 작업 페이로드는 작게 유지합니다. 큰 가변 객체 대신 ID만 넣고 워커에서 최신 상태를 다시 읽는 편이 안전합니다.",
+          "재시도 횟수, 데드레터 처리, 구조화 로그를 먼저 넣고 나서 작업 종류를 늘립니다. 관측성 없는 큐는 숨겨진 장애 생성기가 됩니다.",
+          "여러 워커가 같은 엔터티를 건드릴 수 있으면 Redis 락, 버전 체크, 트랜잭션 규칙으로 보호합니다.",
+          "재실행, 일시정지, 복구를 위한 운영자 도구를 준비합니다. 멈춘 작업이나 중복 작업을 복구할 수 있어야 진짜로 큐를 소유한 것입니다.",
+        ],
+      },
+      {
+        title: "실제로 적용한 사례",
+        paragraphs: [
+          "NestJS와 Redis 기반 대기열 시스템에서는 세션 오픈·종료, 대기 등록, 관리자 강제 상태 변경, 통계, 알림이 피크 트래픽에서도 어긋나지 않도록 정합성을 잡아야 했습니다.",
+          "또 다른 실시간 플랫폼 기능에서는 Redis 세션 공유, WebSocket 메시징, Bull Queue가 함께 돌아가면서 큐 경계와 세션 소유권을 명확히 나누는 것이 핵심이었습니다.",
         ],
       },
     ],
@@ -337,6 +542,23 @@ export const insights: InsightArticle[] = [
           "The price of engineering time when the platform model does not fit the product.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "Write down the product shape first: number of users, realtime requirements, file storage, background jobs, and admin workflows.",
+          "Estimate the usage drivers that actually create cost, such as document reads, function invocations, image delivery, container uptime, and data transfer.",
+          "Include developer time in the comparison. A platform that is slightly cheaper on paper can still be more expensive if it slows delivery or debugging.",
+          "Prototype one representative workload on each stack instead of debating only from pricing tables.",
+          "Choose the platform that fits both the current phase and the likely next phase. Migration cost is part of the total cost, even when it is not on the invoice.",
+        ],
+      },
+      {
+        title: "Actual cases from delivery",
+        paragraphs: [
+          "I have worked on both sides: Firebase-powered commerce operations for fast product iteration, and AWS-based delivery for infrastructure control, CI/CD, custom domains, and cost-sensitive runtime choices.",
+          "The cost answer changed depending on whether the team valued shipping speed, realtime convenience, or long-term operational control more.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -353,6 +575,23 @@ export const insights: InsightArticle[] = [
           "Firebase 쪽에서는 실시간 읽기, 쓰기 증폭, 스토리지 증가가 크게 작용합니다.",
           "AWS 쪽에서는 유휴 컨테이너 비용, egress, CloudFront 패턴, 운영 도구 비용이 중요합니다.",
           "플랫폼과 제품 구조가 맞지 않을 때 발생하는 개발 시간 비용도 반드시 포함해야 합니다.",
+        ],
+      },
+      {
+        title: "초보자 기준 비교 순서",
+        steps: [
+          "먼저 제품 형태를 적습니다. 사용자 수, 실시간 기능 필요 여부, 파일 저장량, 백그라운드 작업, 관리자 기능이 핵심입니다.",
+          "그다음 실제 비용을 만드는 요소를 추정합니다. 문서 읽기, 함수 호출, 이미지 전송, 컨테이너 가동 시간, 데이터 전송량처럼요.",
+          "개발 시간 비용도 비교표에 넣습니다. 청구서상 조금 싸 보여도 개발과 디버깅이 느려지면 총비용은 더 커질 수 있습니다.",
+          "가격표만 보지 말고 대표적인 워크로드 하나를 각 스택에서 직접 돌려 봅니다.",
+          "현재 단계와 다음 단계 둘 다에 맞는 플랫폼을 고릅니다. 나중에 갈아타는 비용도 결국 총비용의 일부입니다.",
+        ],
+      },
+      {
+        title: "실제로 비교하게 된 사례",
+        paragraphs: [
+          "저는 Firebase 기반 상거래 운영 시스템도 만들어 봤고, AWS 기반 배포와 CI/CD, 커스텀 도메인, 런타임 선택이 중요한 프로젝트도 해봤습니다.",
+          "무엇이 더 싼지는 결국 출시 속도가 더 중요한지, 실시간 기능 편의가 더 중요한지, 장기적인 인프라 제어가 더 중요한지에 따라 달라졌습니다.",
         ],
       },
     ],
@@ -385,6 +624,23 @@ export const insights: InsightArticle[] = [
           "Persist publish status, retry reason, and platform response IDs for later reconciliation.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "Define the source data first: title, date, venue, image set, CTA, hashtags, and template variant. Automation breaks quickly when the input schema is vague.",
+          "Generate drafts and assets before you touch publishing. The early stages are safer places to automate than the final customer-facing action.",
+          "Add a human review step for copy, image fit, and policy risk. This is where bad automation should be caught before it becomes public.",
+          "Queue publishing with retry limits, rate awareness, and a visible status model so you know whether a post is pending, failed, or successfully published.",
+          "Save asset versions, external post IDs, and analytics references so later edits and reconciliation are possible.",
+        ],
+      },
+      {
+        title: "Actual cases from delivery",
+        paragraphs: [
+          "In a festival content operations studio, I connected source aggregation, AI-generated cardnews drafts, Canva handoff, Instagram publishing queues, and analytics in one workflow.",
+          "What mattered most was not the generation step alone, but the review boundary and the ability to track which asset version and publish attempt mapped to which downstream result.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -401,6 +657,23 @@ export const insights: InsightArticle[] = [
           "템플릿 변수로 자산을 생성하고 결과물 버전을 추적합니다.",
           "콘텐츠 리스크가 있으면 소셜 발행 전에 검수 단계를 둡니다.",
           "발행 상태, 재시도 사유, 플랫폼 응답 ID를 저장해 나중에 정합성을 맞춥니다.",
+        ],
+      },
+      {
+        title: "초보자 기준 진행 순서",
+        steps: [
+          "먼저 입력 데이터를 정의합니다. 제목, 일정, 장소, 이미지 세트, CTA, 해시태그, 템플릿 종류가 최소 기준입니다. 입력 스키마가 흐리면 자동화는 금방 깨집니다.",
+          "발행 전에 초안과 자산 생성까지 자동화합니다. 실제 사용자에게 노출되는 최종 발행보다 앞단이 훨씬 안전한 자동화 지점입니다.",
+          "문구, 이미지 적합성, 정책 리스크를 보는 사람 검수 단계를 둡니다. 자동화가 잘못되었는지는 공개되기 전에 여기서 걸러져야 합니다.",
+          "발행은 재시도 제한, 레이트 고려, 상태 표시가 있는 큐로 처리합니다. 대기 중인지, 실패했는지, 발행됐는지가 보여야 운영이 가능합니다.",
+          "자산 버전, 외부 플랫폼 게시물 ID, 분석 기준값을 함께 저장합니다. 그래야 나중에 수정과 정합성 점검이 가능합니다.",
+        ],
+      },
+      {
+        title: "실제로 구성했던 사례",
+        paragraphs: [
+          "축제 콘텐츠 운영 스튜디오에서는 소스 수집, AI 카드뉴스 초안 생성, Canva 전달, Instagram 발행 큐, 분석 화면을 하나의 흐름으로 연결했습니다.",
+          "여기서 중요한 건 생성 기능 그 자체보다 검수 경계와, 어떤 자산 버전이 어떤 발행 시도와 연결되는지 추적 가능한 구조였습니다.",
         ],
       },
     ],
@@ -433,6 +706,16 @@ export const insights: InsightArticle[] = [
           "A clear contract for text, tool calls, images, and streaming events.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "Start with one provider first and make the feature work end to end before adding a second provider.",
+          "Define a small internal contract for input, output, usage logging, and error shape. This is the layer that should stay stable when providers change.",
+          "Create one adapter per provider for auth, model selection, and request formatting instead of trying to hide every difference behind one giant abstraction.",
+          "Test streaming, tool calls, images, and fallback behavior separately because providers differ most at those edges.",
+          "Route traffic by use case after you have real quality and cost data. Provider abstraction is useful only when it helps product decisions, not when it hides them.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -449,6 +732,16 @@ export const insights: InsightArticle[] = [
           "프롬프트 조립, 인증, 쿼터 검사, 응답 추적.",
           "타임아웃 정책, 대체 모델 라우팅, 비용 모니터링.",
           "텍스트, 도구 호출, 이미지, 스트리밍 이벤트에 대한 명확한 계약.",
+        ],
+      },
+      {
+        title: "초보자 기준 진행 순서",
+        steps: [
+          "처음에는 공급자 하나만 붙여서 기능을 끝까지 동작시키고, 그다음 두 번째 공급자를 추가합니다.",
+          "입력, 출력, 사용량 기록, 오류 형태에 대한 작은 내부 계약을 먼저 정합니다. 공급자가 바뀌어도 안정적으로 유지돼야 하는 부분은 이 계층입니다.",
+          "공급자별 인증, 모델 선택, 요청 포맷은 어댑터로 분리하고, 모든 차이를 억지로 하나의 거대한 추상화로 숨기려 하지는 않습니다.",
+          "스트리밍, 도구 호출, 이미지 생성, fallback 동작은 각각 따로 테스트합니다. 공급자 차이는 이 경계에서 가장 크게 드러납니다.",
+          "실제 품질과 비용 데이터를 본 뒤 기능별 라우팅을 결정합니다. 추상화는 제품 판단을 돕는 수준에서만 유용합니다.",
         ],
       },
     ],
@@ -481,6 +774,16 @@ export const insights: InsightArticle[] = [
           "Limit expensive tasks with quotas, async jobs, or approval steps.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "Choose one feature class first: chatbot, summary, recommendation, or image generation. Each one has a different interaction and failure pattern.",
+          "Define the user input and the system context separately so you know what the model is allowed to use.",
+          "Design the fallback before polishing the happy path. Decide what happens when the model is slow, wrong, unavailable, or too expensive to run.",
+          "Use asynchronous jobs for expensive work such as bulk summarization or image generation, and keep the UI honest about progress.",
+          "Measure whether the feature actually saves time or improves decisions. AI features that do not improve real behavior should not stay in the product.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -497,6 +800,16 @@ export const insights: InsightArticle[] = [
           "사용자 입력 계약과 모델이 볼 수 있는 문맥 범위를 정의합니다.",
           "필요한 곳에는 지연 상태, 출처, 신뢰 힌트를 노출합니다.",
           "비싼 작업은 쿼터, 비동기 처리, 승인 단계로 제한합니다.",
+        ],
+      },
+      {
+        title: "초보자 기준 진행 순서",
+        steps: [
+          "먼저 챗봇, 요약, 추천, 이미지 생성 중 하나만 고릅니다. 기능마다 상호작용 방식과 실패 패턴이 다르기 때문입니다.",
+          "사용자 입력과 시스템 문맥을 분리해서 정의합니다. 모델이 무엇을 볼 수 있는지 경계가 분명해야 합니다.",
+          "정상 흐름보다 실패 대체 흐름을 먼저 설계합니다. 느릴 때, 틀릴 때, unavailable일 때, 비용이 너무 클 때를 먼저 정해야 합니다.",
+          "대량 요약이나 이미지 생성처럼 비싼 작업은 비동기 잡으로 빼고, 화면에는 진행 상태를 솔직하게 보여줍니다.",
+          "마지막으로 이 기능이 실제로 시간을 줄였는지, 선택을 더 쉽게 했는지 측정합니다. 행동을 바꾸지 못하는 기능은 제품에 남길 이유가 약합니다.",
         ],
       },
     ],
@@ -529,6 +842,16 @@ export const insights: InsightArticle[] = [
           "A token and cost ledger that can be reconciled against provider usage reports.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "Choose the billing entity first: individual user, team, workspace, or company account. Everything else depends on that mapping.",
+          "Check entitlement before the model call starts so blocked users do not consume tokens before being rejected.",
+          "Record every request with user ID, plan, feature type, token usage, and estimated cost in one ledger.",
+          "Expose remaining quota and upgrade rules clearly in the UI so limits do not feel random or broken.",
+          "Reconcile your internal ledger against provider usage reports and refund flows regularly. Billing systems drift unless someone closes the loop.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -545,6 +868,16 @@ export const insights: InsightArticle[] = [
           "모델 호출 전에 역할 기반 기능 접근 제어를 거칩니다.",
           "남은 사용량이 보이는 soft / hard limit를 둡니다.",
           "공급자 사용량 리포트와 맞출 수 있는 토큰 및 비용 원장을 남깁니다.",
+        ],
+      },
+      {
+        title: "초보자 기준 진행 순서",
+        steps: [
+          "먼저 누가 비용을 부담하는지 정합니다. 개인 사용자, 팀, 워크스페이스, 회사 계정 중 하나가 명확해야 나머지가 정리됩니다.",
+          "모델 호출 전에 권한과 플랜을 검사해서, 차단된 사용자가 토큰부터 쓰고 거절되는 상황을 막습니다.",
+          "모든 요청에 대해 사용자 ID, 플랜, 기능 종류, 토큰 사용량, 예상 비용을 한 원장에 기록합니다.",
+          "남은 사용량과 업그레이드 기준을 UI에서 명확히 보여줘야 제한이 고장처럼 느껴지지 않습니다.",
+          "정기적으로 내부 사용량 원장과 공급자 사용량 리포트, 환불 내역을 맞춰 봅니다. 과금 시스템은 누가 닫아보지 않으면 조금씩 어긋납니다.",
         ],
       },
     ],
@@ -577,6 +910,16 @@ export const insights: InsightArticle[] = [
           "A rollback path that is documented and can be executed without improvisation.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "Start by making the build reproducible on one machine. Pin dependencies, freeze the Node version, and make the build pass locally before writing workflow YAML.",
+          "Define the deployment artifact clearly: static export, Docker image, or packaged function bundle. The pipeline should move one known artifact, not rebuild unpredictably later.",
+          "Inject environment variables and secrets at the stage that matches the runtime, and avoid mixing build-time and runtime configuration accidentally.",
+          "Validate the artifact before deploy with smoke checks such as build output existence, image startup, or health endpoint verification.",
+          "Document rollback as a normal path, not an emergency improvisation. A pipeline is only mature when the previous stable version can be restored quickly.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -593,6 +936,16 @@ export const insights: InsightArticle[] = [
           "의존성 설치 버전 고정과 올바른 단계의 환경변수 주입으로 재현 가능한 빌드를 만듭니다.",
           "배포 후가 아니라 배포 전에 산출물을 검증합니다.",
           "문서화된 롤백 절차를 즉시 실행할 수 있어야 합니다.",
+        ],
+      },
+      {
+        title: "초보자 기준 진행 순서",
+        steps: [
+          "먼저 한 대의 개발 환경에서 빌드가 재현 가능해야 합니다. 의존성 버전과 Node 버전을 고정하고 로컬 빌드부터 통과시킵니다.",
+          "배포 산출물을 명확히 정합니다. 정적 export인지, Docker 이미지인지, 함수 번들인지 먼저 고정해야 파이프라인이 흔들리지 않습니다.",
+          "환경변수와 시크릿은 런타임에 맞는 단계에서 주입하고, 빌드 시점과 실행 시점 설정을 섞지 않도록 주의합니다.",
+          "배포 전에 산출물을 검증합니다. 빌드 결과 존재 여부, 컨테이너 기동, health endpoint 확인 같은 작은 점검이 장애를 크게 줄입니다.",
+          "롤백 절차를 비상 대응이 아니라 정상 경로로 문서화합니다. 이전 안정 버전으로 빨리 돌아갈 수 있어야 파이프라인이 성숙합니다.",
         ],
       },
     ],
@@ -625,6 +978,16 @@ export const insights: InsightArticle[] = [
           "A source-of-truth system that remains authoritative even when automation fails halfway.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "Map the current manual flow first and mark which steps are repetitive, approval-based, or error-prone. Those are the best candidates for automation.",
+          "Choose one source of truth such as your database, CRM, or admin backend and treat n8n as an orchestrator, not the final authority.",
+          "Build each automation step so it can be retried safely without creating duplicates or destructive side effects.",
+          "Insert approval gates before sending messages, changing customer-visible data, or triggering payments and refunds.",
+          "Add alerts, run logs, and manual replay instructions so operators can recover without reading workflow internals every time.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -641,6 +1004,16 @@ export const insights: InsightArticle[] = [
           "멱등적인 단계와 보이는 재시도 이력.",
           "파괴적이거나 고객 노출이 있는 작업 전 승인 단계.",
           "자동화가 중간에 실패해도 최종 기준이 되는 원본 시스템의 존재.",
+        ],
+      },
+      {
+        title: "초보자 기준 진행 순서",
+        steps: [
+          "먼저 현재 수작업 흐름을 그려 보고, 반복적이고 승인 기반이며 실수가 자주 나는 단계를 표시합니다. 자동화 후보는 여기서 나옵니다.",
+          "DB, CRM, 관리자 백엔드 중 하나를 원본 시스템으로 정하고 n8n은 오케스트레이터로만 둡니다.",
+          "각 단계는 재실행해도 중복이나 파괴적 부작용이 없도록 멱등적으로 만듭니다.",
+          "메시지 발송, 고객 노출 데이터 변경, 결제/환불 트리거 전에는 승인 단계를 둡니다.",
+          "알림, 실행 로그, 수동 재실행 절차를 같이 준비해서 운영자가 매번 워크플로 내부를 뜯어보지 않아도 복구할 수 있게 합니다.",
         ],
       },
     ],
@@ -673,6 +1046,23 @@ export const insights: InsightArticle[] = [
           "Admin views for payment timeline, billing status, and manual recovery actions.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "Model the core records first: customer, plan, subscription, invoice, payment, refund, and settlement. The UI will stay confused if these entities are vague.",
+          "Write the lifecycle timeline for signup, initial payment, renewal, failed rebill, grace period, cancel, refund, and expiry before implementing the screens.",
+          "Make webhook handlers idempotent and store external event IDs so retries do not corrupt subscription state.",
+          "Build an admin timeline that shows what happened in business language, not only raw gateway logs.",
+          "Reconcile settlements on a regular schedule and compare invoice totals, payment success, refunds, and payout data. Subscription systems quietly drift unless someone checks the books.",
+        ],
+      },
+      {
+        title: "Actual cases from delivery",
+        paragraphs: [
+          "In commerce operations work, I had to tie order creation, stock deduction, webhook verification, payment state transitions, SMS job queues, admin dashboards, and CSV reconciliation into one operational model.",
+          "That experience is why I treat subscriptions and settlement systems as state machines first and UI problems second.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -689,6 +1079,23 @@ export const insights: InsightArticle[] = [
           "고객, 플랜, 구독, 청구서, 결제, 환불, 정산.",
           "중복, 지연, 부분 이벤트를 처리하는 웹훅 정합성 흐름.",
           "결제 타임라인, 청구 상태, 수동 복구 동작을 보여주는 관리자 화면.",
+        ],
+      },
+      {
+        title: "초보자 기준 진행 순서",
+        steps: [
+          "먼저 고객, 플랜, 구독, 청구서, 결제, 환불, 정산 엔터티를 정의합니다. 이 구조가 흐리면 화면도 계속 흔들립니다.",
+          "가입, 첫 결제, 정기 갱신, 재결제 실패, 유예기간, 해지, 환불, 만료까지 생명주기를 먼저 적고 나서 화면을 만듭니다.",
+          "웹훅 처리부는 멱등적으로 만들고 외부 이벤트 ID를 저장해서 재전송이 와도 구독 상태가 깨지지 않게 합니다.",
+          "관리자 화면은 원시 로그가 아니라 비즈니스 언어로 무엇이 일어났는지 보여주는 타임라인이 되어야 합니다.",
+          "정기적으로 청구서 합계, 결제 성공, 환불, 실제 정산 데이터를 대조합니다. 구독 시스템은 누가 장부를 맞추지 않으면 조용히 어긋납니다.",
+        ],
+      },
+      {
+        title: "실제로 했던 일과 연결되는 이유",
+        paragraphs: [
+          "상거래 운영 프로젝트에서는 주문 생성, 재고 차감, 웹훅 검증, 결제 상태 전이, SMS 작업 큐, 관리자 대시보드, CSV 정산 대사까지 하나의 운영 모델로 묶어야 했습니다.",
+          "그래서 구독이나 정산 시스템도 화면보다 먼저 상태 머신으로 봐야 한다는 관점이 생겼습니다.",
         ],
       },
     ],
@@ -721,6 +1128,23 @@ export const insights: InsightArticle[] = [
           "Write a minimal replay case before attempting the permanent fix.",
         ],
       },
+      {
+        title: "Step by step for beginners",
+        steps: [
+          "Name the failure first: auth, permission, validation, upstream dependency, storage, concurrency, or browser-only issue. Debugging gets faster once the class of problem is clear.",
+          "Capture the exact request, response, headers, user identity, and timestamps before reproducing. Missing evidence is why many fixes turn into guesswork.",
+          "Trace the full path across browser, backend, third-party service, queue, and database so you can see where reality diverged from expectation.",
+          "Create the smallest replayable case and confirm that it fails for the same reason every time before changing architecture or adding retries.",
+          "After the fix, add one guardrail such as a log, alert, test, or timeout rule so the same failure is easier to catch next time.",
+        ],
+      },
+      {
+        title: "Actual cases from delivery",
+        paragraphs: [
+          "I have dealt with CloudFront-origin auth issues that looked like access failures until request policy and header propagation were inspected properly.",
+          "I have also debugged queue consistency and recovery in Redis-backed waiting systems, plus terminal ACK and fallback failures in kiosk payment integrations where timing mattered more than code volume.",
+        ],
+      },
     ],
     sectionsKo: [
       {
@@ -737,6 +1161,23 @@ export const insights: InsightArticle[] = [
           "정확한 요청 경로, 사용자 정체성, correlation ID, 관련 외부 의존성을 먼저 기록합니다.",
           "브라우저, 백엔드, 외부 콜백, 스토리지 계층 사이의 타임라인을 복원합니다.",
           "영구 수정 전에 최소 재현 케이스를 먼저 만듭니다.",
+        ],
+      },
+      {
+        title: "초보자 기준 진행 순서",
+        steps: [
+          "먼저 문제 이름을 붙입니다. 인증, 권한, 검증, 외부 의존성, 저장소, 동시성, 브라우저 전용 문제 중 어디에 속하는지 분류하면 디버깅이 빨라집니다.",
+          "재현 전에 정확한 요청, 응답, 헤더, 사용자 정보, 시간 정보를 수집합니다. 증거가 없으면 수정이 추측이 됩니다.",
+          "브라우저, 백엔드, 외부 서비스, 큐, DB까지 전체 경로를 따라가며 기대와 실제가 갈라진 지점을 찾습니다.",
+          "아키텍처를 바꾸거나 재시도를 넣기 전에, 같은 이유로 반복 실패하는 최소 재현 케이스를 먼저 만듭니다.",
+          "수정 후에는 로그, 알림, 테스트, 타임아웃 규칙 중 하나라도 추가해서 다음에 같은 문제가 더 빨리 보이게 만듭니다.",
+        ],
+      },
+      {
+        title: "실제로 디버깅했던 사례",
+        paragraphs: [
+          "CloudFront 인증 문제처럼 처음에는 접근 제어 실패처럼 보였지만, 실제로는 request policy와 헤더 전달 경로를 봐야 풀리는 경우를 직접 겪었습니다.",
+          "또 Redis 기반 대기열 시스템의 정합성·복구 문제와 키오스크 결제 연동의 ACK/fallback 타이밍 문제처럼, 코드 양보다 순서와 타이밍이 더 중요한 장애도 실제로 다뤘습니다.",
         ],
       },
     ],
