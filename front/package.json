@@ -17,6 +17,7 @@
     "@next/swc-wasm-nodejs": "^15.3.5",
     "@react-three/drei": "^10.5.1",
     "@react-three/fiber": "^9.2.0",
+    "@supabase/supabase-js": "^2.112.3",
     "daisyui": "^5.0.46",
     "framer-motion": "^12.23.0",
     "hls.js": "^1.6.15",

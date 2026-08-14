@@ -36,18 +36,29 @@ import PrintRounded from "@mui/icons-material/PrintRounded";
 import CatProfileDialog from "@/components/senior-cat/CatProfileDialog";
 import CareCalendar from "@/components/senior-cat/CareCalendar";
 import CareSchedulePanel from "@/components/senior-cat/CareSchedulePanel";
+import CareReminderPanel from "@/components/senior-cat/CareReminderPanel";
+import CloudSyncPanel from "@/components/senior-cat/CloudSyncPanel";
 import DailyRecordForm from "@/components/senior-cat/DailyRecordForm";
+import EmergencyCardPanel from "@/components/senior-cat/EmergencyCardPanel";
+import HouseholdLitterPanel from "@/components/senior-cat/HouseholdLitterPanel";
 import LabReportPanel from "@/components/senior-cat/LabReportPanel";
+import LabTrendCharts from "@/components/senior-cat/LabTrendCharts";
 import QuickRecordDialog from "@/components/senior-cat/QuickRecordDialog";
 import TrendCharts from "@/components/senior-cat/TrendCharts";
+import WeeklyWellnessPanel from "@/components/senior-cat/WeeklyWellnessPanel";
 import type {
   AlertLevel,
   CareSchedule,
   CareState,
   CatProfile,
   DailyRecord,
+  EmergencyInfo,
   HealthAlert,
+  HouseholdLitterRecord,
   LabReport,
+  Medication,
+  NotificationSettings,
+  WeeklyWellnessCheck,
 } from "@/types/cat-care";
 import { MAX_CATS } from "@/types/cat-care";
 import {
@@ -55,6 +66,7 @@ import {
   exportCareCsv,
   exportCareJson,
   loadCareState,
+  normalizeCareState,
   saveCareState,
   toLocalDateKey,
 } from "@/lib/cat-care/storage";
@@ -283,8 +295,9 @@ export default function SeniorCatPage() {
     const recordCount = care.records.filter(record => record.catId === cat.id).length;
     const scheduleCount = care.schedules.filter(schedule => schedule.catId === cat.id).length;
     const labReportCount = care.labReports.filter(report => report.catId === cat.id).length;
+    const weeklyCheckCount = care.weeklyChecks.filter(check => check.catId === cat.id).length;
     const confirmed = window.confirm(
-      `${cat.name} 프로필과 건강 기록 ${recordCount}개, 케어 일정 ${scheduleCount}개, 검사결과 ${labReportCount}개를 이 기기에서 삭제할까요? 삭제 전 JSON 백업을 권장합니다.`,
+      `${cat.name} 프로필과 건강 기록 ${recordCount}개, 케어 일정 ${scheduleCount}개, 검사결과 ${labReportCount}개, 주간 체크 ${weeklyCheckCount}개를 이 기기에서 삭제할까요? 삭제 전 JSON 백업을 권장합니다.`,
     );
     if (!confirmed) return;
 
@@ -294,6 +307,9 @@ export default function SeniorCatPage() {
       records: current.records.filter(record => record.catId !== cat.id),
       schedules: current.schedules.filter(schedule => schedule.catId !== cat.id),
       labReports: current.labReports.filter(report => report.catId !== cat.id),
+      weeklyChecks: current.weeklyChecks.filter(check => check.catId !== cat.id),
+      householdLitterRecords: current.householdLitterRecords.map(record => record.catId === cat.id ? { ...record, catId: null, confidence: "low" } : record),
+      emergencyInfo: current.emergencyInfo.filter(info => info.catId !== cat.id),
     }));
     const next = orderedCats.find(item => item.id !== cat.id);
     setSelectedCatId(next?.id ?? null);
@@ -354,6 +370,18 @@ export default function SeniorCatPage() {
     const completed = schedule.completedDates.includes(date);
     setCare(current => ({
       ...current,
+      cats: current.cats.map(cat => {
+        if (cat.id !== schedule.catId || schedule.type !== "medication") return cat;
+        const medicationIndex = cat.medications.findIndex(medication => schedule.title.includes(medication.name) || medication.name.includes(schedule.title));
+        if (medicationIndex < 0 || cat.medications[medicationIndex].stockCount == null) return cat;
+        return {
+          ...cat,
+          medications: cat.medications.map((medication, index) => index === medicationIndex
+            ? { ...medication, stockCount: Math.max(0, medication.stockCount! + (completed ? 1 : -1)) }
+            : medication),
+          updatedAt: new Date().toISOString(),
+        };
+      }),
       schedules: current.schedules.map(item => item.id === schedule.id
         ? {
             ...item,
@@ -377,6 +405,61 @@ export default function SeniorCatPage() {
     setMessage("검사결과를 삭제했습니다.");
   };
 
+  const saveWeeklyCheck = (check: WeeklyWellnessCheck) => {
+    setCare(current => ({
+      ...current,
+      weeklyChecks: current.weeklyChecks.some(item => item.catId === check.catId && item.date === check.date)
+        ? current.weeklyChecks.map(item => item.catId === check.catId && item.date === check.date ? { ...check, id: item.id } : item)
+        : [...current.weeklyChecks, check],
+    }));
+    setMessage(`${formatDate(check.date)} 주간 상태 체크를 저장했습니다.`);
+  };
+
+  const saveLitterRecord = (record: HouseholdLitterRecord) => {
+    setCare(current => ({
+      ...current,
+      householdLitterRecords: current.householdLitterRecords.some(item => item.id === record.id)
+        ? current.householdLitterRecords.map(item => item.id === record.id ? record : item)
+        : [...current.householdLitterRecords, record],
+    }));
+    setMessage("공동 화장실 기록을 저장했습니다.");
+  };
+
+  const deleteLitterRecord = (record: HouseholdLitterRecord) => {
+    setCare(current => ({ ...current, householdLitterRecords: current.householdLitterRecords.filter(item => item.id !== record.id) }));
+    setMessage("공동 화장실 기록을 삭제했습니다.");
+  };
+
+  const saveEmergencyInfo = (info: EmergencyInfo) => {
+    setCare(current => ({
+      ...current,
+      emergencyInfo: current.emergencyInfo.some(item => item.catId === info.catId)
+        ? current.emergencyInfo.map(item => item.catId === info.catId ? info : item)
+        : [...current.emergencyInfo, info],
+    }));
+    setMessage("응급·병원 정보를 저장했습니다.");
+  };
+
+  const updateNotificationSettings = (notificationSettings: NotificationSettings) => {
+    setCare(current => ({ ...current, notificationSettings }));
+  };
+
+  const updateMedication = (catId: string, medication: Medication) => {
+    setCare(current => ({
+      ...current,
+      cats: current.cats.map(cat => cat.id === catId
+        ? { ...cat, medications: cat.medications.map(item => item.id === medication.id ? medication : item), updatedAt: new Date().toISOString() }
+        : cat),
+    }));
+  };
+
+  const restoreCloudCare = (nextCare: CareState) => {
+    const normalized = normalizeCareState(nextCare);
+    setCare(normalized);
+    setSelectedCatId(current => normalized.cats.some(cat => cat.id === current) ? current : normalized.cats[0]?.id ?? null);
+    setMessage("클라우드 건강 기록을 이 기기에 적용했습니다.");
+  };
+
   const showVetReport = () => {
     if (!selectedCat) return;
     const opened = openVetReport({
@@ -385,6 +468,8 @@ export default function SeniorCatPage() {
       alerts: selectedAlerts,
       schedules: care.schedules,
       labReports: care.labReports,
+      weeklyChecks: care.weeklyChecks,
+      emergencyInfo: care.emergencyInfo.find(info => info.catId === selectedCat.id) ?? null,
       days: reportRange,
     });
     if (!opened) setMessage("팝업이 차단되었습니다. 이 사이트의 팝업을 허용한 뒤 다시 시도해 주세요.");
@@ -479,7 +564,7 @@ export default function SeniorCatPage() {
             <Stack direction="row" spacing={1} alignItems="center">
               <LockRounded sx={{ fontSize: 16, color: "text.secondary" }} />
               <Typography variant="caption" color="text.secondary">
-                1차 버전의 기록은 서버로 전송되지 않고 현재 브라우저에만 저장됩니다. 정기적으로 JSON 백업을 내려받아 주세요.
+                기본값은 현재 브라우저에만 저장됩니다. 클라우드 동기화를 직접 켠 경우에만 로그인한 가족 공간으로 전송됩니다.
               </Typography>
             </Stack>
           </Stack>
@@ -488,6 +573,18 @@ export default function SeniorCatPage() {
 
       <Container maxWidth="xl" sx={{ mt: { xs: 4, md: 6 } }}>
         <Stack spacing={5}>
+          <Box component="section" aria-label="백업과 알림 도구">
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", xl: "minmax(0, 0.85fr) minmax(0, 1.15fr)" }, gap: 3 }}>
+              <CloudSyncPanel care={care} onRestore={restoreCloudCare} onMessage={setMessage} />
+              <CareReminderPanel
+                care={care}
+                onSettingsChange={updateNotificationSettings}
+                onMedicationChange={updateMedication}
+                onMessage={setMessage}
+              />
+            </Box>
+          </Box>
+
           {care.cats.length === 0 ? (
             <Paper
               elevation={0}
@@ -570,6 +667,13 @@ export default function SeniorCatPage() {
                 )}
               </Box>
 
+              <HouseholdLitterPanel
+                cats={orderedCats}
+                records={care.householdLitterRecords}
+                onSave={saveLitterRecord}
+                onDelete={deleteLitterRecord}
+              />
+
               {selectedCat && (
                 <Box component="section" aria-labelledby="selected-cat-heading">
                   <Paper
@@ -633,6 +737,23 @@ export default function SeniorCatPage() {
                       {selectedAlerts.slice(0, 4).map(alert => <AlertItem key={alert.id} alert={alert} />)}
                     </Stack>
                   )}
+
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" },
+                      gap: 3,
+                      mb: 3,
+                    }}
+                  >
+                    <WeeklyWellnessPanel cat={selectedCat} checks={care.weeklyChecks} onSave={saveWeeklyCheck} />
+                    <EmergencyCardPanel
+                      cat={selectedCat}
+                      info={care.emergencyInfo.find(info => info.catId === selectedCat.id) ?? null}
+                      onSave={saveEmergencyInfo}
+                      onMessage={setMessage}
+                    />
+                  </Box>
 
                   <Box
                     sx={{
@@ -733,6 +854,10 @@ export default function SeniorCatPage() {
                       onSave={saveLabReport}
                       onDelete={deleteLabReport}
                     />
+                  </Box>
+
+                  <Box sx={{ mt: 4 }}>
+                    <LabTrendCharts catId={selectedCat.id} reports={care.labReports} />
                   </Box>
 
                   <Paper

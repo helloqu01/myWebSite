@@ -1,4 +1,4 @@
-import type { CareSchedule, CatProfile, DailyRecord, HealthAlert, LabReport } from "@/types/cat-care";
+import type { CareSchedule, CatProfile, DailyRecord, EmergencyInfo, HealthAlert, LabReport, WeeklyWellnessCheck } from "@/types/cat-care";
 import { getCatAge } from "./insights";
 import { scheduleRepeatLabel, scheduleTypeLabel } from "./schedules";
 import { toLocalDateKey } from "./storage";
@@ -42,10 +42,12 @@ interface VetReportInput {
   alerts: HealthAlert[];
   schedules: CareSchedule[];
   labReports: LabReport[];
+  weeklyChecks: WeeklyWellnessCheck[];
+  emergencyInfo: EmergencyInfo | null;
   days: number;
 }
 
-export function openVetReport({ cat, records, alerts, schedules, labReports, days }: VetReportInput): boolean {
+export function openVetReport({ cat, records, alerts, schedules, labReports, weeklyChecks, emergencyInfo, days }: VetReportInput): boolean {
   const reportWindow = window.open("", "_blank");
   if (!reportWindow) return false;
   reportWindow.opener = null;
@@ -109,6 +111,12 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, day
       <td>${item.referenceLow == null && item.referenceHigh == null ? "—" : `${escapeHtml(item.referenceLow ?? "")}-${escapeHtml(item.referenceHigh ?? "")}`}</td>
       <td>${escapeHtml({ low: "낮음", normal: "기준 내", high: "높음", unknown: "확인 필요" }[item.flag])}</td>
     </tr>`)).join("");
+  const observationText = { usual: "평소", changed: "변화", concerning: "주의" } as const;
+  const weeklyRows = weeklyChecks
+    .filter(check => check.catId === cat.id && check.date >= startKey)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(check => `<tr><td>${escapeHtml(check.date)}</td><td>${observationText[check.mobility]}</td><td>${observationText[check.grooming]}</td><td>${observationText[check.sleep]}</td><td>${observationText[check.interaction]}</td><td>${observationText[check.litterBoxUse]}</td><td>${observationText[check.painResponse]}</td><td>${check.bodyConditionScore ?? "—"}/${check.muscleConditionScore ?? "—"}</td><td>${check.systolicBloodPressure ?? "—"}${check.diastolicBloodPressure != null ? `/${check.diastolicBloodPressure}` : ""}</td><td>${escapeHtml(check.notes || "—")}</td></tr>`)
+    .join("");
 
   reportWindow.document.write(`<!doctype html>
 <html lang="ko">
@@ -145,6 +153,7 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, day
     <p><strong>현재 체중</strong> ${escapeHtml(displayNumber(cat.currentWeightKg, "kg"))}</p><p><strong>목표 체중</strong> ${escapeHtml(displayNumber(cat.targetWeightKg, "kg"))}</p>
     <p><strong>질환·관심 항목</strong> ${escapeHtml(cat.conditions.join(", ") || "—")}</p><p><strong>복용약</strong> ${escapeHtml(cat.medications.map(item => item.name).join(", ") || "—")}</p>
     <p><strong>주치의 목표</strong> ${escapeHtml(cat.vetTargets || "—")}</p><p><strong>보호자 메모</strong> ${escapeHtml(cat.notes || "—")}</p>
+    <p><strong>알레르기</strong> ${escapeHtml(emergencyInfo?.allergies || "—")}</p><p><strong>병원 연락처</strong> ${escapeHtml(emergencyInfo ? `${emergencyInfo.primaryVetName} ${emergencyInfo.primaryVetPhone}`.trim() || "—" : "—")}</p>
   </section>
   <section class="summary">
     <div><span>기록 일수</span><strong>${records.length}일</strong></div>
@@ -156,6 +165,8 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, day
   <h2>현재 케어 일정</h2><ul>${scheduleRows}</ul>
   <h2>병원 검사결과</h2>
   <div class="table-wrap"><table><thead><tr><th>검사일</th><th>병원</th><th>항목</th><th>결과</th><th>검사표 기준범위</th><th>표시</th></tr></thead><tbody>${labRows || '<tr><td colspan="6">해당 기간에 저장된 검사결과가 없습니다.</td></tr>'}</tbody></table></div>
+  <h2>주간 노묘 상태 체크</h2>
+  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>이동</th><th>그루밍</th><th>수면</th><th>상호작용</th><th>화장실</th><th>통증</th><th>BCS/MCS</th><th>혈압</th><th>메모</th></tr></thead><tbody>${weeklyRows || '<tr><td colspan="10">해당 기간에 주간 체크 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <h2>일별 상세 기록</h2>
   <div class="table-wrap"><table><thead><tr><th>날짜</th><th>음수량</th><th>소변</th><th>대변</th><th>식욕</th><th>체중</th><th>투약</th><th>이상 징후</th><th>메모</th></tr></thead><tbody>${recordRows || '<tr><td colspan="9">해당 기간에 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <div class="notice"><strong>안내:</strong> 이 리포트는 보호자가 입력한 관찰 기록을 정리한 자료이며 수의사의 진단을 대신하지 않습니다.</div>

@@ -1,0 +1,18 @@
+{
+  "name": "우리 고양이 노묘 건강관리",
+  "short_name": "고양이 건강",
+  "description": "다묘 가정의 노묘 건강 기록, 검사결과, 투약과 케어 일정을 관리합니다.",
+  "start_url": "/senior-cat/",
+  "display": "standalone",
+  "background_color": "#060912",
+  "theme_color": "#7c3aed",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "/icons/cat-care.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

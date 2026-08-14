@@ -6,6 +6,7 @@ import { siteConfig } from "@/lib/siteConfig";
 
 export const metadata = {
   title: "Oh Hyunji | Freelance Full-stack Developer",
+  manifest: "/manifest.webmanifest",
   description:
     "프리랜서 풀스택 개발자 오현지의 포트폴리오 및 서비스 소개 사이트입니다. 기업 사이트, 관리자 도구, 운영형 웹 서비스, AI 연동 작업을 다룹니다.",
   openGraph: {

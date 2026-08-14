@@ -1,14 +1,75 @@
-import type { CareSchedule, CareState, CatProfile, DailyRecord, LabReport } from "@/types/cat-care";
+import type {
+  CareSchedule,
+  CareState,
+  CatProfile,
+  DailyRecord,
+  EmergencyInfo,
+  HouseholdLitterRecord,
+  LabReport,
+  Medication,
+  NotificationSettings,
+  WeeklyWellnessCheck,
+} from "@/types/cat-care";
 
 export const CAT_CARE_STORAGE_KEY = "ohj-senior-cat-care-v1";
 
 export const EMPTY_CARE_STATE: CareState = {
-  version: 3,
+  version: 4,
   cats: [],
   records: [],
   schedules: [],
   labReports: [],
+  weeklyChecks: [],
+  householdLitterRecords: [],
+  emergencyInfo: [],
+  notificationSettings: {
+    browserEnabled: false,
+    scheduleAlerts: true,
+    missingRecordAlerts: true,
+    refillAlerts: true,
+    missingRecordHour: 20,
+    reminderLeadMinutes: 30,
+    lastNotifiedKeys: [],
+  },
 };
+
+function normalizeMedication(medication: Medication): Medication {
+  return {
+    ...medication,
+    stockCount: typeof medication.stockCount === "number" ? medication.stockCount : null,
+    refillThreshold: typeof medication.refillThreshold === "number" ? medication.refillThreshold : null,
+    stockUnit: typeof medication.stockUnit === "string" && medication.stockUnit ? medication.stockUnit : "회분",
+  };
+}
+
+function normalizeNotificationSettings(settings?: Partial<NotificationSettings>): NotificationSettings {
+  return {
+    ...EMPTY_CARE_STATE.notificationSettings,
+    ...settings,
+    lastNotifiedKeys: Array.isArray(settings?.lastNotifiedKeys) ? settings.lastNotifiedKeys : [],
+  };
+}
+
+export function normalizeCareState(input: Partial<CareState>): CareState {
+  return {
+    version: 4,
+    cats: Array.isArray(input.cats)
+      ? (input.cats as CatProfile[]).map(cat => ({
+          ...cat,
+          medications: Array.isArray(cat.medications) ? cat.medications.map(normalizeMedication) : [],
+        }))
+      : [],
+    records: Array.isArray(input.records) ? input.records as DailyRecord[] : [],
+    schedules: Array.isArray(input.schedules) ? input.schedules as CareSchedule[] : [],
+    labReports: Array.isArray(input.labReports) ? input.labReports as LabReport[] : [],
+    weeklyChecks: Array.isArray(input.weeklyChecks) ? input.weeklyChecks as WeeklyWellnessCheck[] : [],
+    householdLitterRecords: Array.isArray(input.householdLitterRecords)
+      ? input.householdLitterRecords as HouseholdLitterRecord[]
+      : [],
+    emergencyInfo: Array.isArray(input.emergencyInfo) ? input.emergencyInfo as EmergencyInfo[] : [],
+    notificationSettings: normalizeNotificationSettings(input.notificationSettings),
+  };
+}
 
 export function createId(prefix: string): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -30,17 +91,7 @@ export function loadCareState(): CareState {
       return EMPTY_CARE_STATE;
     }
 
-    return {
-      version: 3,
-      cats: parsed.cats as CatProfile[],
-      records: parsed.records as DailyRecord[],
-      schedules: Array.isArray(parsed.schedules)
-        ? parsed.schedules as CareSchedule[]
-        : [],
-      labReports: Array.isArray(parsed.labReports)
-        ? parsed.labReports as LabReport[]
-        : [],
-    };
+    return normalizeCareState(parsed);
   } catch {
     return EMPTY_CARE_STATE;
   }

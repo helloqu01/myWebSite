@@ -98,6 +98,9 @@ function parseMedications(value: string, existing: Medication[]): Medication[] {
         id: old?.id ?? createId("med"),
         name,
         scheduleNote: scheduleParts.join(" | "),
+        stockCount: old?.stockCount ?? null,
+        refillThreshold: old?.refillThreshold ?? null,
+        stockUnit: old?.stockUnit ?? "회분",
       };
     });
 }
@@ -303,4 +306,3 @@ export default function CatProfileDialog({
     </Dialog>
   );
 }
-

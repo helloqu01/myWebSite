@@ -9,11 +9,17 @@ export type AlertLevel = "info" | "watch" | "consult" | "urgent";
 export type CareScheduleType = "medication" | "weight" | "vet" | "care";
 export type CareScheduleRepeat = "none" | "daily" | "weekly" | "monthly";
 export type LabResultFlag = "low" | "normal" | "high" | "unknown";
+export type ObservationLevel = "usual" | "changed" | "concerning";
+export type LitterRecordType = "urine" | "stool" | "both";
+export type CloudMemberRole = "owner" | "editor" | "viewer";
 
 export interface Medication {
   id: string;
   name: string;
   scheduleNote: string;
+  stockCount: number | null;
+  refillThreshold: number | null;
+  stockUnit: string;
 }
 
 export interface CatProfile {
@@ -99,12 +105,77 @@ export interface LabReport {
   updatedAt: string;
 }
 
+export interface WeeklyWellnessCheck {
+  id: string;
+  catId: string;
+  date: string;
+  mobility: ObservationLevel;
+  grooming: ObservationLevel;
+  sleep: ObservationLevel;
+  interaction: ObservationLevel;
+  litterBoxUse: ObservationLevel;
+  painResponse: ObservationLevel;
+  bodyConditionScore: number | null;
+  muscleConditionScore: number | null;
+  systolicBloodPressure: number | null;
+  diastolicBloodPressure: number | null;
+  notes: string;
+  updatedAt: string;
+}
+
+export interface HouseholdLitterRecord {
+  id: string;
+  catId: string | null;
+  date: string;
+  time: string;
+  type: LitterRecordType;
+  urineAmount: SizeLevel | null;
+  stoolAmount: SizeLevel | null;
+  confidence: MeasurementConfidence;
+  notes: string;
+  updatedAt: string;
+}
+
+export interface EmergencyInfo {
+  catId: string;
+  primaryVetName: string;
+  primaryVetPhone: string;
+  emergencyVetName: string;
+  emergencyVetPhone: string;
+  allergies: string;
+  caregiverContacts: string;
+  emergencyNotes: string;
+  updatedAt: string;
+}
+
+export interface NotificationSettings {
+  browserEnabled: boolean;
+  scheduleAlerts: boolean;
+  missingRecordAlerts: boolean;
+  refillAlerts: boolean;
+  missingRecordHour: number;
+  reminderLeadMinutes: number;
+  lastNotifiedKeys: string[];
+}
+
 export interface CareState {
-  version: 3;
+  version: 4;
   cats: CatProfile[];
   records: DailyRecord[];
   schedules: CareSchedule[];
   labReports: LabReport[];
+  weeklyChecks: WeeklyWellnessCheck[];
+  householdLitterRecords: HouseholdLitterRecord[];
+  emergencyInfo: EmergencyInfo[];
+  notificationSettings: NotificationSettings;
+}
+
+export interface CloudHousehold {
+  id: string;
+  name: string;
+  inviteCode: string;
+  role: CloudMemberRole;
+  updatedAt: string;
 }
 
 export interface HealthAlert {
