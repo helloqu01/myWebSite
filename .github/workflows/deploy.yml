@@ -4,6 +4,16 @@ name: Deploy to AWS
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      resume_public:
+        description: "이력서 공개 상태 (true=공개, false=비공개)"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 jobs:
   deploy-web:
@@ -35,6 +45,8 @@ jobs:
           NEXT_PUBLIC_ADSENSE_CLIENT: ${{ secrets.NEXT_PUBLIC_ADSENSE_CLIENT }}
           NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
           NEXT_PUBLIC_CLARITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID }}
+          NEXT_PUBLIC_RESUME_PUBLIC: ${{ github.event_name == 'workflow_dispatch' && inputs.resume_public || vars.RESUME_PUBLIC || 'false' }}
+          NEXT_PUBLIC_RESUME_ACCESS_HASH: ${{ secrets.RESUME_ACCESS_HASH }}
         run: npm run build
         
 

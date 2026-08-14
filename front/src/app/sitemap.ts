@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { insights } from "@/lib/insights";
 import { siteConfig } from "@/lib/siteConfig";
+import { isResumePublic } from "@/lib/featureFlags";
 
 export const dynamic = "force-static";
 
@@ -42,12 +43,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.5,
     },
-    {
-      url: `${siteConfig.siteUrl}/resume`,
-      lastModified: "2026-03-14",
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
+    ...(isResumePublic
+      ? [{
+          url: `${siteConfig.siteUrl}/resume`,
+          lastModified: "2026-03-14",
+          changeFrequency: "monthly" as const,
+          priority: 0.6,
+        }]
+      : []),
     {
       url: `${siteConfig.siteUrl}/summary`,
       lastModified: "2026-03-14",

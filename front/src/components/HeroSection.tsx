@@ -11,6 +11,7 @@ import en from "@/locales/en/common.json";
 import ko from "@/locales/ko/common.json";
 import { useLocale } from "@/context/LocaleContext";
 import { trackEvent } from "@/lib/analytics";
+import { isResumePublic } from "@/lib/featureFlags";
 import ThreeScene from "./ThreeScene";
 
 export default function HeroSection() {
@@ -281,7 +282,9 @@ export default function HeroSection() {
                     },
                   }}
                 >
-                  {t.resumeCTA}
+                  {isResumePublic
+                    ? t.resumeCTA
+                    : lang === "en" ? "Open resume 🔒" : "이력서 열기 🔒"}
                 </Button>
               </Stack>
             </motion.div>

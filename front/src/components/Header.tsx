@@ -31,12 +31,14 @@ import {
   Psychology,
   ContactPage,
   Summarize,
+  Pets,
 } from "@mui/icons-material";
 
 import en from "@/locales/en/common.json";
 import ko from "@/locales/ko/common.json";
 import { useLocale } from "@/context/LocaleContext";
 import { ColorModeContext } from "@/app/context/ColorModeContext";
+import { isResumePublic } from "@/lib/featureFlags";
 
 export default function Header() {
   const theme = useTheme();
@@ -63,9 +65,14 @@ export default function Header() {
     { label: t.nav.caseStudies, href: "#case-studies", icon: <Article fontSize="small" /> },
     { label: t.nav.skills, href: "#skills", icon: <Psychology fontSize="small" /> },
     { label: t.nav.summary, href: "#summary", icon: <Summarize fontSize="small" /> },
+    { label: lang === "en" ? "Senior cat care" : "노묘 건강관리", href: "/senior-cat", icon: <Pets fontSize="small" /> },
     { label: t.nav.insights, href: "/insights", icon: <Article fontSize="small" /> },
     { label: t.nav.faq, href: "/faq", icon: <QuestionAnswer fontSize="small" /> },
-    { label: t.nav.resume, href: "/resume", icon: <ContactPage fontSize="small" /> },
+    {
+      label: isResumePublic ? t.nav.resume : `${t.nav.resume} 🔒`,
+      href: "/resume",
+      icon: <ContactPage fontSize="small" />,
+    },
   ];
 
   const handleNavClick = (href: string) => {
