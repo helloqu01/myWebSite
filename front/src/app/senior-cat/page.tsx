@@ -40,6 +40,7 @@ import CareReminderPanel from "@/components/senior-cat/CareReminderPanel";
 import CloudSyncPanel from "@/components/senior-cat/CloudSyncPanel";
 import DailyRecordForm from "@/components/senior-cat/DailyRecordForm";
 import EmergencyCardPanel from "@/components/senior-cat/EmergencyCardPanel";
+import FoodHistoryPanel from "@/components/senior-cat/FoodHistoryPanel";
 import HealthCheckupPanel from "@/components/senior-cat/HealthCheckupPanel";
 import HouseholdLitterPanel from "@/components/senior-cat/HouseholdLitterPanel";
 import LabReportPanel from "@/components/senior-cat/LabReportPanel";
@@ -54,12 +55,14 @@ import type {
   CatProfile,
   DailyRecord,
   EmergencyInfo,
+  FoodItem,
   HealthAlert,
   HealthCheckup,
   HouseholdLitterRecord,
   LabReport,
   Medication,
   NotificationSettings,
+  TimedCareEvent,
   WeeklyWellnessCheck,
 } from "@/types/cat-care";
 import { MAX_CATS } from "@/types/cat-care";
@@ -81,6 +84,7 @@ import {
   recordsForCat,
 } from "@/lib/cat-care/insights";
 import { openVetReport } from "@/lib/cat-care/reports";
+import type { CareReminder } from "@/lib/cat-care/reminders";
 
 const statusStyle: Record<AlertLevel | "stable", { label: string; color: "default" | "info" | "warning" | "error" | "success" }> = {
   stable: { label: "안정적", color: "success" },
@@ -104,6 +108,15 @@ function formatDate(date: string): string {
 function latestValue(record: DailyRecord | undefined, key: "waterMl" | "urineCount" | "stoolCount" | "weightKg", unit: string) {
   const value = record?.[key];
   return value == null ? "—" : `${value}${unit}`;
+}
+
+function timedCareEventText(event: TimedCareEvent, foodItems: FoodItem[]): string {
+  const label = { meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
+  const amount = event.type === "meal" && event.amountGrams != null ? ` ${event.amountGrams}g` : "";
+  const duration = event.type === "seizure" && event.durationSeconds != null ? ` ${event.durationSeconds}초` : "";
+  const food = event.foodItemId ? foodItems.find(item => item.id === event.foodItemId) : null;
+  const foodName = food ? ` ${food.brand}${food.productName ? ` ${food.productName}` : ""}` : "";
+  return `${event.time || "--:--"} ${label}${amount}${duration}${foodName}`;
 }
 
 interface CatCardProps {
@@ -222,6 +235,7 @@ export default function SeniorCatPage() {
   const [quickRecordDate, setQuickRecordDate] = useState(() => toLocalDateKey(new Date()));
   const [range, setRange] = useState<7 | 30>(7);
   const [reportRange, setReportRange] = useState<7 | 30 | 90>(30);
+  const [foodDialogRequest, setFoodDialogRequest] = useState(0);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -320,6 +334,7 @@ export default function SeniorCatPage() {
       ...current,
       cats: current.cats.filter(item => item.id !== cat.id),
       records: current.records.filter(record => record.catId !== cat.id),
+      foodItems: current.foodItems.filter(item => item.catId !== cat.id),
       schedules: current.schedules.filter(schedule => schedule.catId !== cat.id),
       labReports: current.labReports.filter(report => report.catId !== cat.id),
       healthCheckups: current.healthCheckups.filter(checkup => checkup.catId !== cat.id),
@@ -364,6 +379,29 @@ export default function SeniorCatPage() {
   const saveQuickRecords = (records: DailyRecord[]) => {
     saveRecords(records);
     setMessage(`${formatDate(quickRecordDate)} 기록을 ${records.length}마리에게 저장했습니다.`);
+  };
+
+  const saveFoodItem = (item: FoodItem) => {
+    setCare(current => ({
+      ...current,
+      foodItems: current.foodItems.some(existing => existing.id === item.id)
+        ? current.foodItems.map(existing => existing.id === item.id ? item : existing)
+        : [...current.foodItems, item],
+    }));
+    setMessage(`${item.brand}${item.productName ? ` · ${item.productName}` : ""} 급여 이력을 저장했습니다.`);
+  };
+
+  const deleteFoodItem = (item: FoodItem) => {
+    if (!window.confirm(`${item.brand}${item.productName ? ` · ${item.productName}` : ""} 급여 이력을 삭제할까요?`)) return;
+    setCare(current => ({
+      ...current,
+      foodItems: current.foodItems.filter(existing => existing.id !== item.id),
+      records: current.records.map(record => ({
+        ...record,
+        timedEvents: record.timedEvents.map(event => event.foodItemId === item.id ? { ...event, foodItemId: null } : event),
+      })),
+    }));
+    setMessage("사료·간식 급여 이력을 삭제했습니다.");
   };
 
   const saveSchedule = (schedule: CareSchedule) => {
@@ -507,11 +545,38 @@ export default function SeniorCatPage() {
     }));
   };
 
+  const handleReminderAction = (reminder: CareReminder) => {
+    if (reminder.catId) setSelectedCatId(reminder.catId);
+    if (reminder.targetDate) setSelectedDate(reminder.targetDate);
+    if (reminder.action === "food_history") setFoodDialogRequest(current => current + 1);
+
+    const targetId = {
+      daily_record: "daily-record-section",
+      schedule: "schedule-care-section",
+      weekly_check: "weekly-care-section",
+      medication_stock: "medication-stock-section",
+      food_history: "food-history-section",
+    }[reminder.action];
+    window.setTimeout(() => {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
+
   const restoreCloudCare = (nextCare: CareState) => {
     const normalized = normalizeCareState(nextCare);
     setCare(normalized);
     setSelectedCatId(current => normalized.cats.some(cat => cat.id === current) ? current : normalized.cats[0]?.id ?? null);
     setMessage("클라우드 건강 기록을 이 기기에 적용했습니다.");
+  };
+
+  const clearLocalCareAfterLogout = () => {
+    const cleared = normalizeCareState(EMPTY_CARE_STATE);
+    saveCareState(cleared);
+    setCare(cleared);
+    setSelectedCatId(null);
+    setEditingProfile(null);
+    setProfileDialogOpen(false);
+    setQuickRecordOpen(false);
   };
 
   const showVetReport = () => {
@@ -521,6 +586,7 @@ export default function SeniorCatPage() {
       records: getRecordsInRange(care.records, selectedCat.id, reportRange),
       alerts: selectedAlerts,
       schedules: care.schedules,
+      foodItems: care.foodItems,
       labReports: care.labReports,
       healthCheckups: care.healthCheckups,
       weeklyChecks: care.weeklyChecks,
@@ -630,11 +696,12 @@ export default function SeniorCatPage() {
         <Stack spacing={5}>
           <Box component="section" aria-label="백업과 알림 도구">
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", xl: "minmax(0, 0.85fr) minmax(0, 1.15fr)" }, gap: 3 }}>
-              <CloudSyncPanel care={care} onRestore={restoreCloudCare} onMessage={setMessage} />
+              <CloudSyncPanel care={care} onRestore={restoreCloudCare} onLogout={clearLocalCareAfterLogout} onMessage={setMessage} />
               <CareReminderPanel
                 care={care}
                 onSettingsChange={updateNotificationSettings}
                 onMedicationChange={updateMedication}
+                onReminderAction={handleReminderAction}
                 onMessage={setMessage}
               />
             </Box>
@@ -801,7 +868,9 @@ export default function SeniorCatPage() {
                       mb: 3,
                     }}
                   >
-                    <WeeklyWellnessPanel cat={selectedCat} checks={care.weeklyChecks} onSave={saveWeeklyCheck} />
+                    <Box id="weekly-care-section" sx={{ scrollMarginTop: 96 }}>
+                      <WeeklyWellnessPanel cat={selectedCat} checks={care.weeklyChecks} onSave={saveWeeklyCheck} />
+                    </Box>
                     <EmergencyCardPanel
                       cat={selectedCat}
                       info={care.emergencyInfo.find(info => info.catId === selectedCat.id) ?? null}
@@ -825,23 +894,38 @@ export default function SeniorCatPage() {
                       selectedDate={selectedDate}
                       onSelectDate={setSelectedDate}
                     />
-                    <CareSchedulePanel
+                    <Box id="schedule-care-section" sx={{ scrollMarginTop: 96 }}>
+                      <CareSchedulePanel
+                        cat={selectedCat}
+                        date={selectedDate}
+                        schedules={care.schedules}
+                        onSave={saveSchedule}
+                        onDelete={deleteSchedule}
+                        onToggle={toggleSchedule}
+                      />
+                    </Box>
+                  </Box>
+
+                  <Box id="food-history-section" sx={{ mb: 3, scrollMarginTop: 96 }}>
+                    <FoodHistoryPanel
                       cat={selectedCat}
-                      date={selectedDate}
-                      schedules={care.schedules}
-                      onSave={saveSchedule}
-                      onDelete={deleteSchedule}
-                      onToggle={toggleSchedule}
+                      items={care.foodItems.filter(item => item.catId === selectedCat.id)}
+                      openRequestKey={foodDialogRequest}
+                      onSave={saveFoodItem}
+                      onDelete={deleteFoodItem}
                     />
                   </Box>
 
-                  <DailyRecordForm
-                    cat={selectedCat}
-                    date={selectedDate}
-                    record={selectedRecord}
-                    onDateChange={setSelectedDate}
-                    onSave={saveRecord}
-                  />
+                  <Box id="daily-record-section" sx={{ scrollMarginTop: 96 }}>
+                    <DailyRecordForm
+                      cat={selectedCat}
+                      foodItems={care.foodItems.filter(item => item.catId === selectedCat.id)}
+                      date={selectedDate}
+                      record={selectedRecord}
+                      onDateChange={setSelectedDate}
+                      onSave={saveRecord}
+                    />
+                  </Box>
 
                   <Box sx={{ mt: 4 }}>
                     <Stack
@@ -935,10 +1019,10 @@ export default function SeniorCatPage() {
                     </Stack>
                     {selectedCatRecords.length ? (
                       <Box sx={{ overflowX: "auto" }}>
-                        <Box component="table" sx={{ width: "100%", minWidth: 680, borderCollapse: "collapse" }}>
+                        <Box component="table" sx={{ width: "100%", minWidth: 860, borderCollapse: "collapse" }}>
                           <Box component="thead">
                             <Box component="tr">
-                              {["날짜", "음수량", "소변", "대변", "식욕", "체중", "투약"].map(label => (
+                              {["날짜", "음수량", "소변", "대변", "식욕", "체중", "시간 기록", "투약"].map(label => (
                                 <Box component="th" key={label} sx={{ textAlign: "left", py: 1.25, px: 1, color: "text.secondary", fontSize: 13, borderBottom: "1px solid", borderColor: "divider" }}>
                                   {label}
                                 </Box>
@@ -961,6 +1045,11 @@ export default function SeniorCatPage() {
                                   <Box component="td" sx={{ py: 1.25, px: 1 }}>{record.stoolCount == null ? "—" : `${record.stoolCount}회`}</Box>
                                   <Box component="td" sx={{ py: 1.25, px: 1 }}>{{ good: "좋음", normal: "평소", low: "감소", none: "없음" }[record.appetite]}</Box>
                                   <Box component="td" sx={{ py: 1.25, px: 1 }}>{record.weightKg == null ? "—" : `${record.weightKg}kg`}</Box>
+                                  <Box component="td" sx={{ py: 1.25, px: 1, minWidth: 180 }}>
+                                    {record.timedEvents.length
+                                      ? record.timedEvents.slice().sort((a, b) => a.time.localeCompare(b.time)).map(event => timedCareEventText(event, care.foodItems)).join(" · ")
+                                      : "—"}
+                                  </Box>
                                   <Box component="td" sx={{ py: 1.25, px: 1 }}>{selectedCat.medications.length ? `${done}/${selectedCat.medications.length}` : "—"}</Box>
                                 </Box>
                               );

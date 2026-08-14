@@ -1,4 +1,4 @@
-import type { CareSchedule, CatProfile, DailyRecord, EmergencyInfo, HealthAlert, HealthCheckup, LabReport, WeeklyWellnessCheck } from "@/types/cat-care";
+import type { CareSchedule, CatProfile, DailyRecord, EmergencyInfo, FoodItem, HealthAlert, HealthCheckup, LabReport, WeeklyWellnessCheck } from "@/types/cat-care";
 import { getCatAge } from "./insights";
 import { scheduleRepeatLabel, scheduleTypeLabel } from "./schedules";
 import { toLocalDateKey } from "./storage";
@@ -41,6 +41,7 @@ interface VetReportInput {
   records: DailyRecord[];
   alerts: HealthAlert[];
   schedules: CareSchedule[];
+  foodItems: FoodItem[];
   labReports: LabReport[];
   healthCheckups: HealthCheckup[];
   weeklyChecks: WeeklyWellnessCheck[];
@@ -48,7 +49,7 @@ interface VetReportInput {
   days: number;
 }
 
-export function openVetReport({ cat, records, alerts, schedules, labReports, healthCheckups, weeklyChecks, emergencyInfo, days }: VetReportInput): boolean {
+export function openVetReport({ cat, records, alerts, schedules, foodItems, labReports, healthCheckups, weeklyChecks, emergencyInfo, days }: VetReportInput): boolean {
   const reportWindow = window.open("", "_blank");
   if (!reportWindow) return false;
   reportWindow.opener = null;
@@ -60,6 +61,10 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, hea
     ? `${sortedRecords.at(-1)!.date} ~ ${sortedRecords[0].date}`
     : `최근 ${days}일 (기록 없음)`;
   const activeSchedules = schedules.filter(schedule => schedule.catId === cat.id && schedule.enabled);
+  const catFoodItems = foodItems
+    .filter(item => item.catId === cat.id)
+    .sort((a, b) => b.startDate.localeCompare(a.startDate));
+  const foodById = new Map(catFoodItems.map(item => [item.id, item]));
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - (days - 1));
@@ -98,6 +103,21 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, hea
     record.breathingDifficulty && "호흡 곤란",
     record.collapseOrSeizure && "쓰러짐/경련",
   ].filter(Boolean).join(", ") || "—";
+  const timedEventSummary = (record: DailyRecord) => record.timedEvents
+    .slice()
+    .sort((a, b) => a.time.localeCompare(b.time))
+    .map(event => {
+      const label = { meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
+      const amount = event.type === "meal" && event.amountGrams != null ? ` ${event.amountGrams}g` : "";
+      const duration = event.type === "seizure" && event.durationSeconds != null ? ` ${event.durationSeconds}초` : "";
+      const severity = event.type === "seizure" && event.severity
+        ? ` · ${{ mild: "경미", moderate: "중간", severe: "심함" }[event.severity]}`
+        : "";
+      const food = event.foodItemId ? foodById.get(event.foodItemId) : null;
+      const foodName = food ? ` · ${food.brand}${food.productName ? ` ${food.productName}` : ""}` : "";
+      return `${escapeHtml(event.time || "시각 미기록")} ${escapeHtml(label)}${escapeHtml(amount)}${escapeHtml(duration)}${escapeHtml(severity)}${escapeHtml(foodName)}${event.notes ? `<br /><small>${escapeHtml(event.notes)}</small>` : ""}`;
+    })
+    .join("<br />") || "—";
 
   const recordRows = sortedRecords.map(record => {
     const medicationDone = Object.values(record.medicationChecks).filter(Boolean).length;
@@ -110,6 +130,7 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, hea
         <td>${escapeHtml(appetiteLabel[record.appetite])}</td>
         <td>${escapeHtml(displayNumber(record.weightKg, "kg"))}</td>
         <td>${cat.medications.length ? `${medicationDone}/${cat.medications.length}` : "—"}</td>
+        <td>${timedEventSummary(record)}</td>
         <td>${escapeHtml(symptoms(record))}</td>
         <td>${escapeHtml(record.notes || "—")}</td>
       </tr>`;
@@ -126,6 +147,16 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, hea
       <li><strong>${escapeHtml(schedule.title)}</strong> · ${escapeHtml(scheduleTypeLabel[schedule.type])} · ${escapeHtml(scheduleRepeatLabel[schedule.repeat])}
       ${schedule.time ? ` · ${escapeHtml(schedule.time)}` : ""}${schedule.notes ? `<br /><small>${escapeHtml(schedule.notes)}</small>` : ""}</li>`).join("")
     : "<li>활성화된 케어 일정이 없습니다.</li>";
+
+  const foodCategoryLabel = { dry: "건사료", wet: "습식사료", prescription: "처방식", treat: "간식", other: "기타" } as const;
+  const foodRows = catFoodItems.map(item => `
+    <tr>
+      <td>${escapeHtml(foodCategoryLabel[item.category])}</td>
+      <td>${escapeHtml(item.brand)}</td>
+      <td>${escapeHtml(item.productName || "—")}</td>
+      <td>${escapeHtml(item.startDate)} ~ ${escapeHtml(item.endDate || "현재")}</td>
+      <td>${escapeHtml(item.notes || "—")}</td>
+    </tr>`).join("");
 
   const labRows = recentLabReports.flatMap(report => report.items.map(item => `
     <tr>
@@ -218,6 +249,8 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, hea
   </section>
   <h2>자동 감지 요약</h2><ul>${alertRows}</ul>
   <h2>현재 케어 일정</h2><ul>${scheduleRows}</ul>
+  <h2>사료·간식 급여 이력</h2>
+  <div class="table-wrap"><table><thead><tr><th>종류</th><th>브랜드</th><th>제품명</th><th>급여 기간</th><th>메모</th></tr></thead><tbody>${foodRows || '<tr><td colspan="5">등록된 사료·간식 급여 이력이 없습니다.</td></tr>'}</tbody></table></div>
   <h2>건강검진·진료 이력</h2>
   <div class="table-wrap"><table><thead><tr><th>날짜·구분</th><th>병원·수의사</th><th>사유</th><th>종합소견·진단</th><th>검사·시술</th><th>처치·처방</th><th>권고·다음 진료</th><th>메모</th></tr></thead><tbody>${checkupRows || '<tr><td colspan="8">해당 기간에 저장된 건강검진·진료 기록이 없습니다.</td></tr>'}</tbody></table></div>
   ${checkupOcrBlocks ? `<h2>병원 차트 OCR 원문</h2>${checkupOcrBlocks}` : ""}
@@ -229,7 +262,7 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, hea
   <h2>주간 노묘 상태 체크</h2>
   <div class="table-wrap"><table><thead><tr><th>날짜</th><th>이동</th><th>그루밍</th><th>수면</th><th>상호작용</th><th>화장실</th><th>통증</th><th>BCS/MCS</th><th>혈압</th><th>메모</th></tr></thead><tbody>${weeklyRows || '<tr><td colspan="10">해당 기간에 주간 체크 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <h2>일별 상세 기록</h2>
-  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>음수량</th><th>소변</th><th>대변</th><th>식욕</th><th>체중</th><th>투약</th><th>이상 징후</th><th>메모</th></tr></thead><tbody>${recordRows || '<tr><td colspan="9">해당 기간에 기록이 없습니다.</td></tr>'}</tbody></table></div>
+  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>음수량</th><th>소변</th><th>대변</th><th>식욕</th><th>체중</th><th>투약</th><th>시간별 식사·배변·발작</th><th>이상 징후</th><th>메모</th></tr></thead><tbody>${recordRows || '<tr><td colspan="10">해당 기간에 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <div class="notice"><strong>안내:</strong> 이 리포트는 보호자가 입력한 관찰 기록을 정리한 자료이며 수의사의 진단을 대신하지 않습니다.</div>
 </body>
 </html>`);

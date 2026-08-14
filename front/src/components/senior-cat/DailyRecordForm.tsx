@@ -10,6 +10,7 @@ import {
   Divider,
   FormControl,
   FormControlLabel,
+  IconButton,
   InputAdornment,
   InputLabel,
   MenuItem,
@@ -20,6 +21,8 @@ import {
   Typography,
 } from "@mui/material";
 import SaveRounded from "@mui/icons-material/SaveRounded";
+import AccessTimeRounded from "@mui/icons-material/AccessTimeRounded";
+import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import MedicationRounded from "@mui/icons-material/MedicationRounded";
 import WarningAmberRounded from "@mui/icons-material/WarningAmberRounded";
 import type {
@@ -27,13 +30,18 @@ import type {
   AppetiteLevel,
   CatProfile,
   DailyRecord,
+  FoodItem,
   MeasurementConfidence,
+  SeizureSeverity,
   SizeLevel,
+  TimedCareEvent,
+  TimedCareEventType,
 } from "@/types/cat-care";
 import { createId } from "@/lib/cat-care/storage";
 
 interface DailyRecordFormProps {
   cat: CatProfile;
+  foodItems: FoodItem[];
   date: string;
   record: DailyRecord | null;
   onDateChange: (date: string) => void;
@@ -62,8 +70,46 @@ function emptyRecord(cat: CatProfile, date: string): DailyRecord {
     bloodInUrine: false,
     breathingDifficulty: false,
     collapseOrSeizure: false,
+    timedEvents: [],
     notes: "",
     updatedAt: new Date().toISOString(),
+  };
+}
+
+const timedEventLabels: Record<TimedCareEventType, string> = {
+  meal: "밥 먹음",
+  urine: "소변",
+  stool: "대변",
+  seizure: "발작",
+};
+
+const seizureSeverityLabels: Record<SeizureSeverity, string> = {
+  mild: "경미",
+  moderate: "중간",
+  severe: "심함",
+};
+
+function currentTime(): string {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
+
+function syncTimedEventCounts(record: DailyRecord, timedEvents: TimedCareEvent[]): DailyRecord {
+  const previousUrineCount = record.timedEvents.filter(event => event.type === "urine").length;
+  const previousStoolCount = record.timedEvents.filter(event => event.type === "stool").length;
+  const urineEventCount = timedEvents.filter(event => event.type === "urine").length;
+  const stoolEventCount = timedEvents.filter(event => event.type === "stool").length;
+  const syncCount = (aggregate: number | null, previousCount: number, nextCount: number) => {
+    if (previousCount === 0 && nextCount === 0) return aggregate;
+    return aggregate == null || aggregate === previousCount || aggregate < nextCount ? nextCount : aggregate;
+  };
+
+  return {
+    ...record,
+    timedEvents,
+    urineCount: syncCount(record.urineCount, previousUrineCount, urineEventCount),
+    stoolCount: syncCount(record.stoolCount, previousStoolCount, stoolEventCount),
+    collapseOrSeizure: record.collapseOrSeizure || timedEvents.some(event => event.type === "seizure"),
   };
 }
 
@@ -75,6 +121,7 @@ function numberOrNull(value: string): number | null {
 
 export default function DailyRecordForm({
   cat,
+  foodItems,
   date,
   record,
   onDateChange,
@@ -93,13 +140,52 @@ export default function DailyRecordForm({
     setSaved(false);
   };
 
+  const addTimedEvent = (type: TimedCareEventType) => {
+    const event: TimedCareEvent = {
+      id: createId("care-event"),
+      type,
+      time: currentTime(),
+      amountGrams: null,
+      durationSeconds: null,
+      severity: null,
+      foodItemId: type === "meal"
+        ? foodItems.find(item => item.category !== "treat" && item.startDate <= date && (!item.endDate || item.endDate >= date))?.id ?? null
+        : null,
+      notes: "",
+    };
+    setDraft(current => syncTimedEventCounts(current, [...current.timedEvents, event]));
+    setSaved(false);
+  };
+
+  const updateTimedEvent = (id: string, patch: Partial<TimedCareEvent>) => {
+    setDraft(current => ({
+      ...current,
+      timedEvents: current.timedEvents.map(event => event.id === id ? { ...event, ...patch } : event),
+    }));
+    setSaved(false);
+  };
+
+  const removeTimedEvent = (id: string) => {
+    setDraft(current => syncTimedEventCounts(current, current.timedEvents.filter(event => event.id !== id)));
+    setSaved(false);
+  };
+
   const handleSave = () => {
-    onSave({ ...draft, date, catId: cat.id, updatedAt: new Date().toISOString() });
+    onSave({
+      ...draft,
+      date,
+      catId: cat.id,
+      timedEvents: [...draft.timedEvents].sort((a, b) => a.time.localeCompare(b.time)),
+      updatedAt: new Date().toISOString(),
+    });
     setSaved(true);
   };
 
   const emergencySelected =
-    draft.urineNotProduced || draft.breathingDifficulty || draft.collapseOrSeizure;
+    draft.urineNotProduced
+    || draft.breathingDifficulty
+    || draft.collapseOrSeizure
+    || draft.timedEvents.some(event => event.type === "seizure");
 
   return (
     <Paper
@@ -276,6 +362,55 @@ export default function DailyRecordForm({
         <Divider />
 
         <Box>
+          <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={1.5} sx={{ mb: 1.5 }}>
+            <Box>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <AccessTimeRounded color="primary" fontSize="small" />
+                <Typography variant="subtitle1" fontWeight={800}>시간별 식사·배변·발작 기록</Typography>
+              </Stack>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                버튼을 누르면 현재 시각이 입력됩니다. 과거 기록은 시각을 직접 수정할 수 있습니다.
+              </Typography>
+            </Box>
+            <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+              <Button size="small" variant="outlined" onClick={() => addTimedEvent("meal")}>+ 밥 먹음</Button>
+              <Button size="small" variant="outlined" onClick={() => addTimedEvent("urine")}>+ 소변</Button>
+              <Button size="small" variant="outlined" onClick={() => addTimedEvent("stool")}>+ 대변</Button>
+              <Button size="small" variant="outlined" color="error" onClick={() => addTimedEvent("seizure")}>+ 발작</Button>
+            </Stack>
+          </Stack>
+
+          {draft.timedEvents.some(event => event.type === "seizure") && (
+            <Alert severity="error" sx={{ mb: 1.5 }}>
+              발작이 5분 이상 지속되거나 짧은 시간에 반복되면 즉시 동물병원에 연락하세요. 발생 시각과 지속시간을 실제로 재서 기록하는 것이 중요합니다.
+            </Alert>
+          )}
+
+          {draft.timedEvents.length ? (
+            <Stack spacing={1}>
+              {[...draft.timedEvents].sort((a, b) => a.time.localeCompare(b.time)).map(event => (
+                <Box key={event.id} sx={{ p: 1.5, border: "1px solid", borderColor: event.type === "seizure" ? "error.light" : "divider", borderRadius: 2.5 }}>
+                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: event.type === "seizure" ? "110px 130px 150px 150px 1fr auto" : event.type === "meal" ? "110px 130px minmax(180px, 1fr) 150px minmax(180px, 1fr) auto" : "110px 130px 1fr auto" }, gap: 1, alignItems: "center" }}>
+                    <Chip label={timedEventLabels[event.type]} size="small" color={event.type === "seizure" ? "error" : "primary"} variant={event.type === "seizure" ? "filled" : "outlined"} />
+                    <TextField label="발생 시각" type="time" size="small" value={event.time} onChange={change => updateTimedEvent(event.id, { time: change.target.value })} slotProps={{ inputLabel: { shrink: true } }} />
+                    {event.type === "meal" && <TextField select label="먹인 사료·간식" size="small" value={event.foodItemId ?? ""} onChange={change => updateTimedEvent(event.id, { foodItemId: change.target.value || null })}><MenuItem value=""><em>미선택</em></MenuItem>{foodItems.map(item => <MenuItem key={item.id} value={item.id}>{item.brand}{item.productName ? ` · ${item.productName}` : ""}</MenuItem>)}</TextField>}
+                    {event.type === "meal" && <TextField label="먹은 양" type="number" size="small" value={event.amountGrams ?? ""} onChange={change => updateTimedEvent(event.id, { amountGrams: numberOrNull(change.target.value) })} slotProps={{ htmlInput: { min: 0, step: 1 } }} InputProps={{ endAdornment: <InputAdornment position="end">g</InputAdornment> }} />}
+                    {event.type === "seizure" && <TextField label="지속시간" type="number" size="small" value={event.durationSeconds ?? ""} onChange={change => updateTimedEvent(event.id, { durationSeconds: numberOrNull(change.target.value) })} slotProps={{ htmlInput: { min: 0, step: 1 } }} InputProps={{ endAdornment: <InputAdornment position="end">초</InputAdornment> }} />}
+                    {event.type === "seizure" && <TextField select label="강도" size="small" value={event.severity ?? ""} onChange={change => updateTimedEvent(event.id, { severity: (change.target.value || null) as SeizureSeverity | null })}><MenuItem value=""><em>미기록</em></MenuItem>{Object.entries(seizureSeverityLabels).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>}
+                    <TextField label={event.type === "seizure" ? "발작 전후·회복 상태 메모" : "메모"} size="small" value={event.notes} onChange={change => updateTimedEvent(event.id, { notes: change.target.value })} placeholder={event.type === "seizure" ? "경련 양상, 의식, 회복까지 걸린 시간" : "선택 입력"} />
+                    <IconButton aria-label={`${timedEventLabels[event.type]} 시간 기록 삭제`} color="error" onClick={() => removeTimedEvent(event.id)}><DeleteOutlineRounded /></IconButton>
+                  </Box>
+                </Box>
+              ))}
+            </Stack>
+          ) : (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>아직 시간별 기록이 없습니다.</Typography>
+          )}
+        </Box>
+
+        <Divider />
+
+        <Box>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
             <WarningAmberRounded color="warning" fontSize="small" />
             <Typography variant="subtitle1" fontWeight={700}>이상 징후</Typography>
@@ -377,4 +512,3 @@ export default function DailyRecordForm({
     </Paper>
   );
 }
-

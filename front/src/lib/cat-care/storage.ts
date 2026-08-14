@@ -4,6 +4,7 @@ import type {
   CatProfile,
   DailyRecord,
   EmergencyInfo,
+  FoodItem,
   HealthCheckup,
   HouseholdLitterRecord,
   LabReport,
@@ -15,9 +16,10 @@ import type {
 export const CAT_CARE_STORAGE_KEY = "ohj-senior-cat-care-v1";
 
 export const EMPTY_CARE_STATE: CareState = {
-  version: 7,
+  version: 9,
   cats: [],
   records: [],
+  foodItems: [],
   schedules: [],
   labReports: [],
   healthCheckups: [],
@@ -54,14 +56,46 @@ function normalizeNotificationSettings(settings?: Partial<NotificationSettings>)
 
 export function normalizeCareState(input: Partial<CareState>): CareState {
   return {
-    version: 7,
+    version: 9,
     cats: Array.isArray(input.cats)
       ? (input.cats as CatProfile[]).map(cat => ({
           ...cat,
           medications: Array.isArray(cat.medications) ? cat.medications.map(normalizeMedication) : [],
         }))
       : [],
-    records: Array.isArray(input.records) ? input.records as DailyRecord[] : [],
+    records: Array.isArray(input.records)
+      ? (input.records as DailyRecord[]).map(record => {
+          const timedEvents = Array.isArray(record.timedEvents)
+            ? record.timedEvents
+                .filter(event => ["meal", "urine", "stool", "seizure"].includes(event.type))
+                .map(event => ({
+                  ...event,
+                  time: typeof event.time === "string" ? event.time : "",
+                  amountGrams: typeof event.amountGrams === "number" ? event.amountGrams : null,
+                  durationSeconds: typeof event.durationSeconds === "number" ? event.durationSeconds : null,
+                  severity: event.severity && ["mild", "moderate", "severe"].includes(event.severity) ? event.severity : null,
+                  foodItemId: typeof event.foodItemId === "string" ? event.foodItemId : null,
+                  notes: event.notes ?? "",
+                }))
+            : [];
+          return {
+            ...record,
+            timedEvents,
+            collapseOrSeizure: Boolean(record.collapseOrSeizure) || timedEvents.some(event => event.type === "seizure"),
+          };
+        })
+      : [],
+    foodItems: Array.isArray(input.foodItems)
+      ? (input.foodItems as FoodItem[]).map(item => ({
+          ...item,
+          category: item.category ?? "other",
+          brand: item.brand ?? "",
+          productName: item.productName ?? "",
+          startDate: item.startDate ?? "",
+          endDate: item.endDate ?? "",
+          notes: item.notes ?? "",
+        }))
+      : [],
     schedules: Array.isArray(input.schedules) ? input.schedules as CareSchedule[] : [],
     labReports: Array.isArray(input.labReports)
       ? (input.labReports as LabReport[]).map(report => ({
@@ -165,6 +199,7 @@ function csvCell(value: unknown): string {
 
 export function exportCareCsv(state: CareState): void {
   const catsById = new Map(state.cats.map(cat => [cat.id, cat]));
+  const foodById = new Map(state.foodItems.map(item => [item.id, item]));
   const headers = [
     "날짜",
     "고양이",
@@ -184,6 +219,7 @@ export function exportCareCsv(state: CareState): void {
     "혈뇨",
     "호흡 곤란",
     "쓰러짐/경련",
+    "시간별 식사·배변·발작",
     "투약 완료 수",
     "메모",
   ];
@@ -212,6 +248,24 @@ export function exportCareCsv(state: CareState): void {
         record.bloodInUrine,
         record.breathingDifficulty,
         record.collapseOrSeizure,
+        record.timedEvents
+          .slice()
+          .sort((a, b) => a.time.localeCompare(b.time))
+          .map(event => {
+            const label = { meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
+            const details = event.type === "meal" && event.amountGrams != null
+              ? ` ${event.amountGrams}g`
+              : event.type === "seizure" && event.durationSeconds != null
+                ? ` ${event.durationSeconds}초`
+                : "";
+            const severity = event.type === "seizure" && event.severity
+              ? ` ${{ mild: "경미", moderate: "중간", severe: "심함" }[event.severity]}`
+              : "";
+            const food = event.foodItemId ? foodById.get(event.foodItemId) : null;
+            const foodName = food ? ` ${food.brand}${food.productName ? ` ${food.productName}` : ""}` : "";
+            return `${event.time} ${label}${details}${severity}${foodName}${event.notes ? ` (${event.notes})` : ""}`;
+          })
+          .join(" / "),
         medicationDone,
         record.notes,
       ]

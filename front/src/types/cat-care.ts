@@ -25,6 +25,9 @@ export type ObservationLevel = "usual" | "changed" | "concerning";
 export type LitterRecordType = "urine" | "stool" | "both";
 export type CloudMemberRole = "owner" | "editor" | "viewer";
 export type HealthCheckupType = "routine" | "follow_up" | "symptom" | "emergency" | "vaccination" | "other";
+export type TimedCareEventType = "meal" | "urine" | "stool" | "seizure";
+export type SeizureSeverity = "mild" | "moderate" | "severe";
+export type FoodCategory = "dry" | "wet" | "prescription" | "treat" | "other";
 
 export interface Medication {
   id: string;
@@ -53,6 +56,30 @@ export interface CatProfile {
   updatedAt: string;
 }
 
+export interface TimedCareEvent {
+  id: string;
+  type: TimedCareEventType;
+  time: string;
+  amountGrams: number | null;
+  durationSeconds: number | null;
+  severity: SeizureSeverity | null;
+  foodItemId: string | null;
+  notes: string;
+}
+
+export interface FoodItem {
+  id: string;
+  catId: string;
+  category: FoodCategory;
+  brand: string;
+  productName: string;
+  startDate: string;
+  endDate: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DailyRecord {
   id: string;
   catId: string;
@@ -74,6 +101,7 @@ export interface DailyRecord {
   bloodInUrine: boolean;
   breathingDifficulty: boolean;
   collapseOrSeizure: boolean;
+  timedEvents: TimedCareEvent[];
   notes: string;
   updatedAt: string;
 }
@@ -217,9 +245,10 @@ export interface NotificationSettings {
 }
 
 export interface CareState {
-  version: 7;
+  version: 9;
   cats: CatProfile[];
   records: DailyRecord[];
+  foodItems: FoodItem[];
   schedules: CareSchedule[];
   labReports: LabReport[];
   healthCheckups: HealthCheckup[];

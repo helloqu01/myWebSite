@@ -95,6 +95,7 @@ function recordFor(cat: CatProfile, date: string, draft: QuickDraft, existing?: 
     bloodInUrine: existing?.bloodInUrine ?? false,
     breathingDifficulty: existing?.breathingDifficulty ?? false,
     collapseOrSeizure: existing?.collapseOrSeizure ?? false,
+    timedEvents: existing?.timedEvents ?? [],
     notes: existing?.notes ?? "",
     updatedAt: new Date().toISOString(),
   };
