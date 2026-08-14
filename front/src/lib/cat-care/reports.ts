@@ -1,4 +1,4 @@
-import type { CareSchedule, CatProfile, DailyRecord, EmergencyInfo, HealthAlert, LabReport, WeeklyWellnessCheck } from "@/types/cat-care";
+import type { CareSchedule, CatProfile, DailyRecord, EmergencyInfo, HealthAlert, HealthCheckup, LabReport, WeeklyWellnessCheck } from "@/types/cat-care";
 import { getCatAge } from "./insights";
 import { scheduleRepeatLabel, scheduleTypeLabel } from "./schedules";
 import { toLocalDateKey } from "./storage";
@@ -42,12 +42,13 @@ interface VetReportInput {
   alerts: HealthAlert[];
   schedules: CareSchedule[];
   labReports: LabReport[];
+  healthCheckups: HealthCheckup[];
   weeklyChecks: WeeklyWellnessCheck[];
   emergencyInfo: EmergencyInfo | null;
   days: number;
 }
 
-export function openVetReport({ cat, records, alerts, schedules, labReports, weeklyChecks, emergencyInfo, days }: VetReportInput): boolean {
+export function openVetReport({ cat, records, alerts, schedules, labReports, healthCheckups, weeklyChecks, emergencyInfo, days }: VetReportInput): boolean {
   const reportWindow = window.open("", "_blank");
   if (!reportWindow) return false;
   reportWindow.opener = null;
@@ -65,6 +66,30 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, wee
   const startKey = toLocalDateKey(start);
   const recentLabReports = labReports
     .filter(report => report.catId === cat.id && report.date >= startKey)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const checkupTypeLabel = {
+    routine: "정기 건강검진",
+    follow_up: "추적 진료",
+    symptom: "증상 진료",
+    emergency: "응급 진료",
+    vaccination: "예방접종",
+    other: "기타",
+  } as const;
+  const examinationTypeLabel = {
+    blood: "혈액검사",
+    urine: "소변검사",
+    stool: "분변검사",
+    xray: "엑스레이·방사선",
+    ultrasound: "초음파",
+    cardiac: "심장검사",
+    blood_pressure: "혈압검사",
+    thyroid: "갑상선검사",
+    pathology: "세포·조직검사",
+    dental: "치과검사",
+    other: "기타 검사",
+  } as const;
+  const recentHealthCheckups = healthCheckups
+    .filter(checkup => checkup.catId === cat.id && checkup.date >= startKey)
     .sort((a, b) => b.date.localeCompare(a.date));
   const symptoms = (record: DailyRecord) => [
     record.urinationStraining && "배뇨 힘주기",
@@ -111,6 +136,34 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, wee
       <td>${item.referenceLow == null && item.referenceHigh == null ? "—" : `${escapeHtml(item.referenceLow ?? "")}-${escapeHtml(item.referenceHigh ?? "")}`}</td>
       <td>${escapeHtml({ low: "낮음", normal: "기준 내", high: "높음", unknown: "확인 필요" }[item.flag])}</td>
     </tr>`)).join("");
+  const examinationRows = recentLabReports.map(report => `
+    <tr>
+      <td>${escapeHtml(report.date)}<br /><small>${escapeHtml(examinationTypeLabel[report.type])}</small></td>
+      <td>${escapeHtml(report.hospital || "—")}</td>
+      <td>${escapeHtml(report.title || examinationTypeLabel[report.type])}${report.sourceFileName ? `<br /><small>자료: ${escapeHtml(report.sourceFileName)}</small>` : ""}</td>
+      <td>${escapeHtml(report.findings || "—")}</td>
+      <td>${escapeHtml(report.interpretation || "—")}</td>
+      <td>${escapeHtml(report.recommendations || "—")}${report.notes ? `<br /><small>메모: ${escapeHtml(report.notes)}</small>` : ""}</td>
+    </tr>`).join("");
+  const examinationOcrBlocks = recentLabReports
+    .filter(report => report.rawText)
+    .map(report => `<article><h3>${escapeHtml(report.date)} · ${escapeHtml(report.title || examinationTypeLabel[report.type])}</h3><pre>${escapeHtml(report.rawText)}</pre></article>`)
+    .join("");
+  const checkupRows = recentHealthCheckups.map(checkup => `
+    <tr>
+      <td>${escapeHtml(checkup.date)}<br /><small>${escapeHtml(checkupTypeLabel[checkup.type])}</small></td>
+      <td>${escapeHtml(checkup.hospital || "—")}${checkup.veterinarian ? `<br /><small>${escapeHtml(checkup.veterinarian)}</small>` : ""}</td>
+      <td>${escapeHtml(checkup.reason || "—")}</td>
+      <td>${escapeHtml(checkup.summary || "—")}${checkup.diagnoses.length ? `<br /><small>진단: ${escapeHtml(checkup.diagnoses.join(", "))}</small>` : ""}</td>
+      <td>${escapeHtml(checkup.testsAndProcedures || "—")}</td>
+      <td>${escapeHtml(checkup.treatments || "—")}${checkup.prescriptions ? `<br /><small>처방: ${escapeHtml(checkup.prescriptions)}</small>` : ""}</td>
+      <td>${escapeHtml(checkup.recommendations || "—")}${checkup.nextVisitDate ? `<br /><small>다음 진료: ${escapeHtml(checkup.nextVisitDate)}</small>` : ""}</td>
+      <td>${escapeHtml(checkup.notes || checkup.documentNotes || "—")}${checkup.sourceFileName ? `<br /><small>차트: ${escapeHtml(checkup.sourceFileName)}</small>` : ""}</td>
+    </tr>`).join("");
+  const checkupOcrBlocks = recentHealthCheckups
+    .filter(checkup => checkup.chartRawText)
+    .map(checkup => `<article><h3>${escapeHtml(checkup.date)} · 진료 차트${checkup.hospital ? ` · ${escapeHtml(checkup.hospital)}` : ""}</h3><pre>${escapeHtml(checkup.chartRawText)}</pre></article>`)
+    .join("");
   const observationText = { usual: "평소", changed: "변화", concerning: "주의" } as const;
   const weeklyRows = weeklyChecks
     .filter(check => check.catId === cat.id && check.date >= startKey)
@@ -138,6 +191,8 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, wee
     ul { padding-left: 22px; } li { margin: 9px 0; }
     table { width: 100%; border-collapse: collapse; font-size: 12px; } th, td { border: 1px solid #d9dce3; padding: 7px; text-align: left; vertical-align: top; }
     th { background: #f3f0ff; white-space: nowrap; }
+    article { border: 1px solid #d9dce3; border-radius: 10px; padding: 12px; margin: 10px 0; } article h3 { margin: 0 0 8px; font-size: 14px; }
+    pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 11px; }
     .notice { margin-top: 28px; border: 1px solid #f0b429; background: #fff8e6; border-radius: 10px; padding: 12px; font-size: 12px; }
     @media (max-width: 720px) { body { padding: 18px; } .summary, .profile { grid-template-columns: 1fr 1fr; } .table-wrap { overflow-x: auto; } }
     @media print { body { max-width: none; padding: 0; } .print { display: none; } h2 { break-after: avoid; } table { font-size: 10px; } tr { break-inside: avoid; } }
@@ -163,8 +218,14 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, wee
   </section>
   <h2>자동 감지 요약</h2><ul>${alertRows}</ul>
   <h2>현재 케어 일정</h2><ul>${scheduleRows}</ul>
-  <h2>병원 검사결과</h2>
-  <div class="table-wrap"><table><thead><tr><th>검사일</th><th>병원</th><th>항목</th><th>결과</th><th>검사표 기준범위</th><th>표시</th></tr></thead><tbody>${labRows || '<tr><td colspan="6">해당 기간에 저장된 검사결과가 없습니다.</td></tr>'}</tbody></table></div>
+  <h2>건강검진·진료 이력</h2>
+  <div class="table-wrap"><table><thead><tr><th>날짜·구분</th><th>병원·수의사</th><th>사유</th><th>종합소견·진단</th><th>검사·시술</th><th>처치·처방</th><th>권고·다음 진료</th><th>메모</th></tr></thead><tbody>${checkupRows || '<tr><td colspan="8">해당 기간에 저장된 건강검진·진료 기록이 없습니다.</td></tr>'}</tbody></table></div>
+  ${checkupOcrBlocks ? `<h2>병원 차트 OCR 원문</h2>${checkupOcrBlocks}` : ""}
+  <h2>병원 검사 이력</h2>
+  <div class="table-wrap"><table><thead><tr><th>검사일·종류</th><th>병원</th><th>검사명·자료</th><th>판독 소견</th><th>결론·의심 진단</th><th>권고·메모</th></tr></thead><tbody>${examinationRows || '<tr><td colspan="6">해당 기간에 저장된 검사 기록이 없습니다.</td></tr>'}</tbody></table></div>
+  <h2>검사 수치 상세</h2>
+  <div class="table-wrap"><table><thead><tr><th>검사일</th><th>병원</th><th>항목</th><th>결과</th><th>검사표 기준범위</th><th>표시</th></tr></thead><tbody>${labRows || '<tr><td colspan="6">해당 기간에 저장된 수치형 검사결과가 없습니다.</td></tr>'}</tbody></table></div>
+  ${examinationOcrBlocks ? `<h2>검사 문서 OCR 원문</h2>${examinationOcrBlocks}` : ""}
   <h2>주간 노묘 상태 체크</h2>
   <div class="table-wrap"><table><thead><tr><th>날짜</th><th>이동</th><th>그루밍</th><th>수면</th><th>상호작용</th><th>화장실</th><th>통증</th><th>BCS/MCS</th><th>혈압</th><th>메모</th></tr></thead><tbody>${weeklyRows || '<tr><td colspan="10">해당 기간에 주간 체크 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <h2>일별 상세 기록</h2>

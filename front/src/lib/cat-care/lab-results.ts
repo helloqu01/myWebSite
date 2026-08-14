@@ -31,6 +31,20 @@ const MARKERS: Record<string, MarkerDefinition> = {
   T4: { name: "총 T4", aliases: ["TT4"], explanation: "갑상선 호르몬 수치입니다. 노묘의 갑상선 기능 평가에 활용하며 증상과 추가 검사를 함께 봅니다." },
   USG: { name: "요비중", aliases: ["SG"], explanation: "소변이 얼마나 농축되었는지를 나타냅니다. 수분 상태와 신장 기능 평가에서 혈액검사와 함께 봅니다." },
   UPC: { name: "요단백/크레아티닌 비", aliases: ["UPCR"], explanation: "소변 단백질 손실 정도를 평가하는 비율입니다. 요침사와 혈압, 반복 결과를 함께 확인합니다." },
+  NA: { name: "나트륨", aliases: ["SODIUM"], explanation: "체액과 전해질 균형을 보는 지표입니다. 수분 상태와 다른 전해질을 함께 확인합니다." },
+  K: { name: "칼륨", aliases: ["POTASSIUM"], explanation: "신장, 근육, 심장 기능과 관련된 전해질입니다. 낮거나 높은 경우 다른 수치와 증상을 함께 평가합니다." },
+  CL: { name: "염소", aliases: ["CHLORIDE"], explanation: "산·염기와 체액 균형을 보는 전해질로 나트륨, 칼륨과 함께 확인합니다." },
+  CA: { name: "칼슘", aliases: ["CALCIUM"], explanation: "뼈, 신장, 내분비 상태와 관련된 지표입니다. 필요하면 이온화 칼슘을 추가로 확인합니다." },
+  MG: { name: "마그네슘", aliases: ["MAGNESIUM"], explanation: "근육과 신경, 전해질 균형과 관련된 수치입니다." },
+  CHOL: { name: "콜레스테롤", aliases: ["CHOLESTEROL"], explanation: "지질 대사와 간·담도, 내분비 상태 등을 함께 평가할 때 활용합니다." },
+  TG: { name: "중성지방", aliases: ["TRIGLYCERIDE"], explanation: "혈중 지방 수치로 식이, 대사 및 내분비 상태와 함께 해석합니다." },
+  AMYL: { name: "아밀라아제", aliases: ["AMYLASE"], explanation: "소화효소 관련 지표이며 고양이에서는 단독으로 췌장 질환을 확정하지 않습니다." },
+  LIPA: { name: "리파아제", aliases: ["LIPASE"], explanation: "췌장과 관련될 수 있는 효소입니다. 증상과 고양이 췌장 특이 검사, 영상검사를 함께 봅니다." },
+  CK: { name: "크레아틴키나아제", aliases: ["CPK"], explanation: "근육 손상이나 주사, 보정 과정의 영향을 받을 수 있는 효소입니다." },
+  RETIC: { name: "망상적혈구", aliases: ["RETICULOCYTE"], explanation: "빈혈에 대한 골수의 적혈구 생성 반응을 평가할 때 사용합니다." },
+  MCV: { name: "평균 적혈구 용적", explanation: "적혈구 크기를 나타내며 빈혈 유형을 평가할 때 다른 적혈구 지표와 함께 봅니다." },
+  MCHC: { name: "평균 적혈구 혈색소 농도", explanation: "적혈구 내 혈색소 농도 지표로 HCT, HGB와 함께 해석합니다." },
+  FPL: { name: "고양이 췌장 특이 리파아제", aliases: ["FPLI", "SPEC FPL"], explanation: "고양이 췌장염 평가에 활용하며 증상과 초음파 등 다른 검사 결과를 함께 봅니다." },
 };
 
 const aliasToCode = new Map<string, string>();
@@ -56,7 +70,7 @@ function flagFrom(value: number | null, low: number | null, high: number | null,
 }
 
 function extractUnit(text: string): string {
-  const match = text.match(/(?:mg\/dL|mmol\/L|µmol\/L|umol\/L|g\/dL|g\/L|U\/L|IU\/L|mEq\/L|10\^?[369]\/µL|K\/µL|M\/µL|%|ng\/dL|µg\/dL|ug\/dL)/i);
+  const match = text.match(/(?:mg\/dL|mmol\/L|µmol\/L|umol\/L|g\/dL|g\/L|U\/L|IU\/L|mEq\/L|10\^?[369]\/µL|K\/µL|M\/µL|fL|pg|ng\/mL|ng\/dL|µg\/dL|ug\/dL|mmHg|%)/i);
   return match?.[0] ?? "";
 }
 
@@ -78,18 +92,22 @@ export function markerDetails(inputCode: string): { code: string; name: string; 
 export function parseLabText(rawText: string): LabResultItem[] {
   const found = new Map<string, LabResultItem>();
   const aliases = [...aliasToCode.keys()].sort((a, b) => b.length - a.length);
+  const ignoredGenericCodes = new Set(["DATE", "TIME", "PAGE", "AGE", "ID", "TEL", "PHONE"]);
 
   rawText.split(/\r?\n/).forEach(rawLine => {
     const line = rawLine.replaceAll("|", " ").replace(/\s+/g, " ").trim();
     if (!line) return;
     const upper = line.toUpperCase();
     const alias = aliases.find(candidate => new RegExp(`(^|[^A-Z0-9])${candidate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^A-Z0-9]|$)`).test(upper));
-    if (!alias) return;
+    const generic = alias ? null : line.match(/^([A-Za-z][A-Za-z0-9%.-]{1,12})\s+[<>]?\s*(\d+(?:[.,]\d+)?)/);
+    if (!alias && !generic) return;
 
-    const code = aliasToCode.get(alias)!;
+    const code = alias ? aliasToCode.get(alias)! : generic![1].toUpperCase();
+    if (ignoredGenericCodes.has(code)) return;
     if (found.has(code)) return;
-    const markerIndex = upper.indexOf(alias);
-    const afterMarker = line.slice(markerIndex + alias.length);
+    const markerIndex = alias ? upper.indexOf(alias) : 0;
+    const markerLength = alias?.length ?? generic![1].length;
+    const afterMarker = line.slice(markerIndex + markerLength);
     // 이 화면에서 다루는 기본 혈액·소변 지표는 음수가 아니므로 범위 구분용 '-'를 숫자 부호로 읽지 않습니다.
     const numberMatches = [...afterMarker.matchAll(/\d+(?:[.,]\d+)?/g)].map(match => match[0]);
     const value = toNumber(numberMatches[0]);

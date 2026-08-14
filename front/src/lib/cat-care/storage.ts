@@ -4,6 +4,7 @@ import type {
   CatProfile,
   DailyRecord,
   EmergencyInfo,
+  HealthCheckup,
   HouseholdLitterRecord,
   LabReport,
   Medication,
@@ -14,11 +15,12 @@ import type {
 export const CAT_CARE_STORAGE_KEY = "ohj-senior-cat-care-v1";
 
 export const EMPTY_CARE_STATE: CareState = {
-  version: 4,
+  version: 6,
   cats: [],
   records: [],
   schedules: [],
   labReports: [],
+  healthCheckups: [],
   weeklyChecks: [],
   householdLitterRecords: [],
   emergencyInfo: [],
@@ -52,7 +54,7 @@ function normalizeNotificationSettings(settings?: Partial<NotificationSettings>)
 
 export function normalizeCareState(input: Partial<CareState>): CareState {
   return {
-    version: 4,
+    version: 6,
     cats: Array.isArray(input.cats)
       ? (input.cats as CatProfile[]).map(cat => ({
           ...cat,
@@ -61,7 +63,36 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
       : [],
     records: Array.isArray(input.records) ? input.records as DailyRecord[] : [],
     schedules: Array.isArray(input.schedules) ? input.schedules as CareSchedule[] : [],
-    labReports: Array.isArray(input.labReports) ? input.labReports as LabReport[] : [],
+    labReports: Array.isArray(input.labReports)
+      ? (input.labReports as LabReport[]).map(report => ({
+          ...report,
+          type: report.type ?? "blood",
+          title: report.title ?? "",
+          sourceFileName: report.sourceFileName ?? "",
+          rawText: report.rawText ?? "",
+          items: Array.isArray(report.items) ? report.items : [],
+          findings: report.findings ?? "",
+          interpretation: report.interpretation ?? "",
+          recommendations: report.recommendations ?? "",
+          notes: report.notes ?? "",
+        }))
+      : [],
+    healthCheckups: Array.isArray(input.healthCheckups)
+      ? (input.healthCheckups as HealthCheckup[]).map(checkup => ({
+          ...checkup,
+          diagnoses: Array.isArray(checkup.diagnoses) ? checkup.diagnoses : [],
+          relatedLabReportIds: Array.isArray(checkup.relatedLabReportIds) ? checkup.relatedLabReportIds : [],
+          testsAndProcedures: checkup.testsAndProcedures ?? "",
+          treatments: checkup.treatments ?? "",
+          prescriptions: checkup.prescriptions ?? "",
+          recommendations: checkup.recommendations ?? "",
+          sourceFileName: checkup.sourceFileName ?? "",
+          chartRawText: checkup.chartRawText ?? "",
+          chartDetectedFields: Array.isArray(checkup.chartDetectedFields) ? checkup.chartDetectedFields : [],
+          documentNotes: checkup.documentNotes ?? "",
+          notes: checkup.notes ?? "",
+        }))
+      : [],
     weeklyChecks: Array.isArray(input.weeklyChecks) ? input.weeklyChecks as WeeklyWellnessCheck[] : [],
     householdLitterRecords: Array.isArray(input.householdLitterRecords)
       ? input.householdLitterRecords as HouseholdLitterRecord[]

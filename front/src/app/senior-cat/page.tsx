@@ -40,6 +40,7 @@ import CareReminderPanel from "@/components/senior-cat/CareReminderPanel";
 import CloudSyncPanel from "@/components/senior-cat/CloudSyncPanel";
 import DailyRecordForm from "@/components/senior-cat/DailyRecordForm";
 import EmergencyCardPanel from "@/components/senior-cat/EmergencyCardPanel";
+import HealthCheckupPanel from "@/components/senior-cat/HealthCheckupPanel";
 import HouseholdLitterPanel from "@/components/senior-cat/HouseholdLitterPanel";
 import LabReportPanel from "@/components/senior-cat/LabReportPanel";
 import LabTrendCharts from "@/components/senior-cat/LabTrendCharts";
@@ -54,6 +55,7 @@ import type {
   DailyRecord,
   EmergencyInfo,
   HealthAlert,
+  HealthCheckup,
   HouseholdLitterRecord,
   LabReport,
   Medication,
@@ -295,9 +297,10 @@ export default function SeniorCatPage() {
     const recordCount = care.records.filter(record => record.catId === cat.id).length;
     const scheduleCount = care.schedules.filter(schedule => schedule.catId === cat.id).length;
     const labReportCount = care.labReports.filter(report => report.catId === cat.id).length;
+    const healthCheckupCount = care.healthCheckups.filter(checkup => checkup.catId === cat.id).length;
     const weeklyCheckCount = care.weeklyChecks.filter(check => check.catId === cat.id).length;
     const confirmed = window.confirm(
-      `${cat.name} 프로필과 건강 기록 ${recordCount}개, 케어 일정 ${scheduleCount}개, 검사결과 ${labReportCount}개, 주간 체크 ${weeklyCheckCount}개를 이 기기에서 삭제할까요? 삭제 전 JSON 백업을 권장합니다.`,
+      `${cat.name} 프로필과 건강 기록 ${recordCount}개, 케어 일정 ${scheduleCount}개, 건강검진 ${healthCheckupCount}개, 검사결과 ${labReportCount}개, 주간 체크 ${weeklyCheckCount}개를 이 기기에서 삭제할까요? 삭제 전 JSON 백업을 권장합니다.`,
     );
     if (!confirmed) return;
 
@@ -307,6 +310,7 @@ export default function SeniorCatPage() {
       records: current.records.filter(record => record.catId !== cat.id),
       schedules: current.schedules.filter(schedule => schedule.catId !== cat.id),
       labReports: current.labReports.filter(report => report.catId !== cat.id),
+      healthCheckups: current.healthCheckups.filter(checkup => checkup.catId !== cat.id),
       weeklyChecks: current.weeklyChecks.filter(check => check.catId !== cat.id),
       householdLitterRecords: current.householdLitterRecords.map(record => record.catId === cat.id ? { ...record, catId: null, confidence: "low" } : record),
       emergencyInfo: current.emergencyInfo.filter(info => info.catId !== cat.id),
@@ -401,8 +405,34 @@ export default function SeniorCatPage() {
 
   const deleteLabReport = (report: LabReport) => {
     if (!window.confirm(`${formatDate(report.date)} 검사결과를 삭제할까요?`)) return;
-    setCare(current => ({ ...current, labReports: current.labReports.filter(item => item.id !== report.id) }));
+    setCare(current => ({
+      ...current,
+      labReports: current.labReports.filter(item => item.id !== report.id),
+      healthCheckups: current.healthCheckups.map(checkup => ({
+        ...checkup,
+        relatedLabReportIds: checkup.relatedLabReportIds.filter(id => id !== report.id),
+      })),
+    }));
     setMessage("검사결과를 삭제했습니다.");
+  };
+
+  const saveHealthCheckup = (checkup: HealthCheckup) => {
+    setCare(current => ({
+      ...current,
+      cats: current.cats.map(cat => cat.id === checkup.catId && checkup.weightKg != null
+        ? { ...cat, currentWeightKg: checkup.weightKg, updatedAt: checkup.updatedAt }
+        : cat),
+      healthCheckups: current.healthCheckups.some(item => item.id === checkup.id)
+        ? current.healthCheckups.map(item => item.id === checkup.id ? checkup : item)
+        : [...current.healthCheckups, checkup],
+    }));
+    setMessage(`${formatDate(checkup.date)} 건강검진·진료 내용을 저장했습니다.`);
+  };
+
+  const deleteHealthCheckup = (checkup: HealthCheckup) => {
+    if (!window.confirm(`${formatDate(checkup.date)} 건강검진·진료 기록을 삭제할까요?`)) return;
+    setCare(current => ({ ...current, healthCheckups: current.healthCheckups.filter(item => item.id !== checkup.id) }));
+    setMessage("건강검진·진료 기록을 삭제했습니다.");
   };
 
   const saveWeeklyCheck = (check: WeeklyWellnessCheck) => {
@@ -468,6 +498,7 @@ export default function SeniorCatPage() {
       alerts: selectedAlerts,
       schedules: care.schedules,
       labReports: care.labReports,
+      healthCheckups: care.healthCheckups,
       weeklyChecks: care.weeklyChecks,
       emergencyInfo: care.emergencyInfo.find(info => info.catId === selectedCat.id) ?? null,
       days: reportRange,
@@ -846,6 +877,16 @@ export default function SeniorCatPage() {
                       </Stack>
                     </Stack>
                   </Paper>
+
+                  <Box sx={{ mt: 4 }}>
+                    <HealthCheckupPanel
+                      cat={selectedCat}
+                      checkups={care.healthCheckups}
+                      labReports={care.labReports}
+                      onSave={saveHealthCheckup}
+                      onDelete={deleteHealthCheckup}
+                    />
+                  </Box>
 
                   <Box sx={{ mt: 4 }}>
                     <LabReportPanel

@@ -9,9 +9,22 @@ export type AlertLevel = "info" | "watch" | "consult" | "urgent";
 export type CareScheduleType = "medication" | "weight" | "vet" | "care";
 export type CareScheduleRepeat = "none" | "daily" | "weekly" | "monthly";
 export type LabResultFlag = "low" | "normal" | "high" | "unknown";
+export type ExaminationType =
+  | "blood"
+  | "urine"
+  | "stool"
+  | "xray"
+  | "ultrasound"
+  | "cardiac"
+  | "blood_pressure"
+  | "thyroid"
+  | "pathology"
+  | "dental"
+  | "other";
 export type ObservationLevel = "usual" | "changed" | "concerning";
 export type LitterRecordType = "urine" | "stool" | "both";
 export type CloudMemberRole = "owner" | "editor" | "viewer";
+export type HealthCheckupType = "routine" | "follow_up" | "symptom" | "emergency" | "vaccination" | "other";
 
 export interface Medication {
   id: string;
@@ -96,10 +109,45 @@ export interface LabReport {
   id: string;
   catId: string;
   date: string;
+  type: ExaminationType;
+  title: string;
   hospital: string;
   sourceFileName: string;
   rawText: string;
   items: LabResultItem[];
+  findings: string;
+  interpretation: string;
+  recommendations: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HealthCheckup {
+  id: string;
+  catId: string;
+  date: string;
+  type: HealthCheckupType;
+  hospital: string;
+  veterinarian: string;
+  reason: string;
+  summary: string;
+  diagnoses: string[];
+  testsAndProcedures: string;
+  treatments: string;
+  prescriptions: string;
+  recommendations: string;
+  nextVisitDate: string;
+  weightKg: number | null;
+  temperatureC: number | null;
+  systolicBloodPressure: number | null;
+  diastolicBloodPressure: number | null;
+  costWon: number | null;
+  relatedLabReportIds: string[];
+  sourceFileName: string;
+  chartRawText: string;
+  chartDetectedFields: string[];
+  documentNotes: string;
   notes: string;
   createdAt: string;
   updatedAt: string;
@@ -159,11 +207,12 @@ export interface NotificationSettings {
 }
 
 export interface CareState {
-  version: 4;
+  version: 6;
   cats: CatProfile[];
   records: DailyRecord[];
   schedules: CareSchedule[];
   labReports: LabReport[];
+  healthCheckups: HealthCheckup[];
   weeklyChecks: WeeklyWellnessCheck[];
   householdLitterRecords: HouseholdLitterRecord[];
   emergencyInfo: EmergencyInfo[];
