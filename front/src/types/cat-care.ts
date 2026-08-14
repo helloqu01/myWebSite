@@ -105,6 +105,14 @@ export interface LabResultItem {
   explanation: string;
 }
 
+export interface MedicalDocumentReference {
+  storagePath: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt: string;
+}
+
 export interface LabReport {
   id: string;
   catId: string;
@@ -114,6 +122,7 @@ export interface LabReport {
   hospital: string;
   sourceFileName: string;
   rawText: string;
+  originalDocument: MedicalDocumentReference | null;
   items: LabResultItem[];
   findings: string;
   interpretation: string;
@@ -147,6 +156,7 @@ export interface HealthCheckup {
   sourceFileName: string;
   chartRawText: string;
   chartDetectedFields: string[];
+  originalDocument: MedicalDocumentReference | null;
   documentNotes: string;
   notes: string;
   createdAt: string;
@@ -207,7 +217,7 @@ export interface NotificationSettings {
 }
 
 export interface CareState {
-  version: 6;
+  version: 7;
   cats: CatProfile[];
   records: DailyRecord[];
   schedules: CareSchedule[];

@@ -26,8 +26,10 @@ import CameraAltRounded from "@mui/icons-material/CameraAltRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import EditRounded from "@mui/icons-material/EditRounded";
 import LocalHospitalRounded from "@mui/icons-material/LocalHospitalRounded";
+import OpenInNewRounded from "@mui/icons-material/OpenInNewRounded";
 import type { CatProfile, HealthCheckup, HealthCheckupType, LabReport } from "@/types/cat-care";
 import { parseMedicalChartText } from "@/lib/cat-care/medical-chart";
+import { createMedicalDocumentSignedUrl, deleteMedicalDocument, uploadMedicalDocument } from "@/lib/cat-care/medical-documents";
 import { createId, toLocalDateKey } from "@/lib/cat-care/storage";
 
 interface HealthCheckupPanelProps {
@@ -79,6 +81,7 @@ function blankCheckup(catId: string): HealthCheckup {
     sourceFileName: "",
     chartRawText: "",
     chartDetectedFields: [],
+    originalDocument: null,
     documentNotes: "",
     notes: "",
     createdAt: now,
@@ -95,6 +98,7 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("");
 
@@ -204,7 +208,20 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
     }
   };
 
-  const save = () => {
+  const viewOriginalDocument = async (storagePath: string) => {
+    const popup = window.open("", "_blank");
+    if (popup) popup.opener = null;
+    try {
+      const signedUrl = await createMedicalDocumentSignedUrl(storagePath);
+      if (popup) popup.location.href = signedUrl;
+      else window.open(signedUrl, "_blank", "noopener,noreferrer");
+    } catch (caught) {
+      popup?.close();
+      window.alert(caught instanceof Error ? caught.message : "원본 사진을 열지 못했습니다.");
+    }
+  };
+
+  const save = async () => {
     if (!draft.date) {
       setError("검진 날짜를 입력해 주세요.");
       return;
@@ -213,23 +230,40 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
       setError("검진 사유, 종합소견 또는 진단 내용을 한 가지 이상 입력해 주세요.");
       return;
     }
-    onSave({
-      ...draft,
-      catId: cat.id,
-      hospital: draft.hospital.trim(),
-      veterinarian: draft.veterinarian.trim(),
-      reason: draft.reason.trim(),
-      summary: draft.summary.trim(),
-      diagnoses: diagnosesText.split(",").map(value => value.trim()).filter(Boolean),
-      testsAndProcedures: draft.testsAndProcedures.trim(),
-      treatments: draft.treatments.trim(),
-      prescriptions: draft.prescriptions.trim(),
-      recommendations: draft.recommendations.trim(),
-      documentNotes: draft.documentNotes.trim(),
-      notes: draft.notes.trim(),
-      updatedAt: new Date().toISOString(),
-    });
-    setDialogOpen(false);
+    setUploading(Boolean(file));
+    setError("");
+    try {
+      const previousDocument = draft.originalDocument;
+      const originalDocument = file
+        ? await uploadMedicalDocument({ file, catId: cat.id, recordId: draft.id, kind: "chart" })
+        : previousDocument;
+      onSave({
+        ...draft,
+        catId: cat.id,
+        hospital: draft.hospital.trim(),
+        veterinarian: draft.veterinarian.trim(),
+        reason: draft.reason.trim(),
+        summary: draft.summary.trim(),
+        diagnoses: diagnosesText.split(",").map(value => value.trim()).filter(Boolean),
+        testsAndProcedures: draft.testsAndProcedures.trim(),
+        treatments: draft.treatments.trim(),
+        prescriptions: draft.prescriptions.trim(),
+        recommendations: draft.recommendations.trim(),
+        sourceFileName: file?.name || draft.sourceFileName || "",
+        originalDocument,
+        documentNotes: draft.documentNotes.trim(),
+        notes: draft.notes.trim(),
+        updatedAt: new Date().toISOString(),
+      });
+      if (file && previousDocument && previousDocument.storagePath !== originalDocument?.storagePath) {
+        void deleteMedicalDocument(previousDocument.storagePath).catch(console.error);
+      }
+      setDialogOpen(false);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "원본 사진을 저장하지 못했습니다.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -261,6 +295,7 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
                       {checkup.hospital && <Chip label={checkup.hospital} size="small" variant="outlined" />}
                       {checkup.nextVisitDate && <Chip label={`다음 진료 ${checkup.nextVisitDate}`} size="small" color="warning" />}
                       {checkup.chartRawText && <Chip label="차트 OCR 저장됨" size="small" color="secondary" variant="outlined" />}
+                      {checkup.originalDocument && <Chip label="원본 사진 비공개 저장됨" size="small" color="success" variant="outlined" />}
                     </Stack>
                     {checkup.summary && <Typography sx={{ mt: 1, whiteSpace: "pre-wrap" }}>{checkup.summary}</Typography>}
                     {checkup.diagnoses.length > 0 && (
@@ -274,6 +309,7 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
                       {checkup.systolicBloodPressure != null && <Chip label={`혈압 ${checkup.systolicBloodPressure}${checkup.diastolicBloodPressure != null ? `/${checkup.diastolicBloodPressure}` : ""}`} size="small" />}
                       {relatedLabs.map(report => <Chip key={report.id} label={`검사 ${report.date} · ${report.items.length}항목`} size="small" color="secondary" variant="outlined" />)}
                     </Stack>
+                    {checkup.originalDocument && <Button size="small" startIcon={<OpenInNewRounded />} onClick={() => viewOriginalDocument(checkup.originalDocument!.storagePath)} sx={{ mt: 1 }}>원본 사진 보기</Button>}
                   </Box>
                   <Stack direction="row" sx={{ alignSelf: { xs: "flex-end", sm: "flex-start" } }}>
                     <Tooltip title="검진 기록 수정"><IconButton size="small" onClick={() => openEdit(checkup)}><EditRounded fontSize="small" /></IconButton></Tooltip>
@@ -288,11 +324,11 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
         <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>아직 저장된 건강검진·진료 기록이 없습니다.</Typography>
       )}
 
-      <Dialog open={dialogOpen} onClose={() => { if (!analyzing) setDialogOpen(false); }} fullWidth maxWidth="md">
+      <Dialog open={dialogOpen} onClose={() => { if (!analyzing && !uploading) setDialogOpen(false); }} fullWidth maxWidth="md">
         <DialogTitle>{cat.name} 건강검진·진료 기록</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2.5}>
-            <Alert severity="info">병원 차트 사진을 분석하면 OCR 원문과 감지한 항목을 이 기록에 저장합니다. 원본 사진 파일은 저장하지 않으며, 자동 입력 내용은 차트와 대조해 주세요.</Alert>
+            <Alert severity="info">병원 차트 사진은 OCR 분석 후 로그인한 가족 공간의 비공개 Storage에 원본으로 저장됩니다. 가족 구성원만 열람할 수 있으며 자동 입력 내용은 차트와 대조해 주세요.</Alert>
             {error && <Alert severity="warning">{error}</Alert>}
             <input
               ref={fileInputRef}
@@ -302,11 +338,11 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
               onChange={event => setFile(event.target.files?.[0] ?? null)}
             />
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} alignItems={{ sm: "center" }}>
-              <Button variant="outlined" startIcon={<CameraAltRounded />} onClick={() => fileInputRef.current?.click()} disabled={analyzing}>
+              <Button variant="outlined" startIcon={<CameraAltRounded />} onClick={() => fileInputRef.current?.click()} disabled={analyzing || uploading}>
                 {file ? "다른 차트 사진 선택" : "병원 차트 사진 선택·촬영"}
               </Button>
               <Typography variant="body2" color="text.secondary">{file?.name ?? (draft.sourceFileName || "JPG, PNG, WebP 지원")}</Typography>
-              <Button variant="contained" onClick={analyzeChart} disabled={!file || analyzing} sx={{ ml: { sm: "auto" } }}>
+              <Button variant="contained" onClick={analyzeChart} disabled={!file || analyzing || uploading} sx={{ ml: { sm: "auto" } }}>
                 {analyzing ? <><CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />분석 중</> : "차트 내용 자동 분석"}
               </Button>
             </Stack>
@@ -370,8 +406,8 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button color="inherit" onClick={() => setDialogOpen(false)} disabled={analyzing}>취소</Button>
-          <Button variant="contained" onClick={save} disabled={analyzing}>검진 기록 저장</Button>
+          <Button color="inherit" onClick={() => setDialogOpen(false)} disabled={analyzing || uploading}>취소</Button>
+          <Button variant="contained" onClick={save} disabled={analyzing || uploading}>{uploading ? <><CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />원본 사진 저장 중</> : "검진 기록 저장"}</Button>
         </DialogActions>
       </Dialog>
     </Paper>

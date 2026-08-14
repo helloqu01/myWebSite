@@ -140,7 +140,7 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, hea
     <tr>
       <td>${escapeHtml(report.date)}<br /><small>${escapeHtml(examinationTypeLabel[report.type])}</small></td>
       <td>${escapeHtml(report.hospital || "—")}</td>
-      <td>${escapeHtml(report.title || examinationTypeLabel[report.type])}${report.sourceFileName ? `<br /><small>자료: ${escapeHtml(report.sourceFileName)}</small>` : ""}</td>
+      <td>${escapeHtml(report.title || examinationTypeLabel[report.type])}${report.sourceFileName ? `<br /><small>자료: ${escapeHtml(report.sourceFileName)}</small>` : ""}${report.originalDocument ? "<br /><small>비공개 원본 사진 저장됨</small>" : ""}</td>
       <td>${escapeHtml(report.findings || "—")}</td>
       <td>${escapeHtml(report.interpretation || "—")}</td>
       <td>${escapeHtml(report.recommendations || "—")}${report.notes ? `<br /><small>메모: ${escapeHtml(report.notes)}</small>` : ""}</td>
@@ -158,7 +158,7 @@ export function openVetReport({ cat, records, alerts, schedules, labReports, hea
       <td>${escapeHtml(checkup.testsAndProcedures || "—")}</td>
       <td>${escapeHtml(checkup.treatments || "—")}${checkup.prescriptions ? `<br /><small>처방: ${escapeHtml(checkup.prescriptions)}</small>` : ""}</td>
       <td>${escapeHtml(checkup.recommendations || "—")}${checkup.nextVisitDate ? `<br /><small>다음 진료: ${escapeHtml(checkup.nextVisitDate)}</small>` : ""}</td>
-      <td>${escapeHtml(checkup.notes || checkup.documentNotes || "—")}${checkup.sourceFileName ? `<br /><small>차트: ${escapeHtml(checkup.sourceFileName)}</small>` : ""}</td>
+      <td>${escapeHtml(checkup.notes || checkup.documentNotes || "—")}${checkup.sourceFileName ? `<br /><small>차트: ${escapeHtml(checkup.sourceFileName)}</small>` : ""}${checkup.originalDocument ? "<br /><small>비공개 원본 사진 저장됨</small>" : ""}</td>
     </tr>`).join("");
   const checkupOcrBlocks = recentHealthCheckups
     .filter(checkup => checkup.chartRawText)

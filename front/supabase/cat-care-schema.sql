@@ -295,3 +295,103 @@ begin
   end if;
 end;
 $$;
+
+-- 병원 차트·검사결과 원본은 공개 URL이 없는 전용 Storage 버킷에 저장합니다.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'cat-medical-documents',
+  'cat-medical-documents',
+  false,
+  10485760,
+  array['image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do update
+set public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+
+create or replace function private.can_access_cat_medical_object(
+  object_name text,
+  require_edit boolean
+)
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  current_user_id uuid := (select auth.uid());
+  path_parts text[] := storage.foldername(object_name);
+  target_household_id uuid;
+begin
+  if current_user_id is null
+     or coalesce(array_length(path_parts, 1), 0) < 4
+     or path_parts[3] not in ('chart', 'examination') then
+    return false;
+  end if;
+
+  begin
+    target_household_id := path_parts[1]::uuid;
+  exception when invalid_text_representation then
+    return false;
+  end;
+
+  return exists (
+    select 1
+    from public.cat_care_members as member
+    where member.household_id = target_household_id
+      and member.user_id = current_user_id
+      and (not require_edit or member.role in ('owner', 'editor'))
+  );
+end;
+$$;
+
+revoke all on function private.can_access_cat_medical_object(text, boolean)
+  from public, anon, authenticated;
+grant execute on function private.can_access_cat_medical_object(text, boolean)
+  to authenticated;
+
+drop policy if exists "cat medical members read" on storage.objects;
+create policy "cat medical members read"
+on storage.objects
+for select
+to authenticated
+using (
+  bucket_id = 'cat-medical-documents'
+  and private.can_access_cat_medical_object(name, false)
+);
+
+drop policy if exists "cat medical editors insert" on storage.objects;
+create policy "cat medical editors insert"
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'cat-medical-documents'
+  and private.can_access_cat_medical_object(name, true)
+);
+
+drop policy if exists "cat medical editors update" on storage.objects;
+create policy "cat medical editors update"
+on storage.objects
+for update
+to authenticated
+using (
+  bucket_id = 'cat-medical-documents'
+  and private.can_access_cat_medical_object(name, true)
+)
+with check (
+  bucket_id = 'cat-medical-documents'
+  and private.can_access_cat_medical_object(name, true)
+);
+
+drop policy if exists "cat medical editors delete" on storage.objects;
+create policy "cat medical editors delete"
+on storage.objects
+for delete
+to authenticated
+using (
+  bucket_id = 'cat-medical-documents'
+  and private.can_access_cat_medical_object(name, true)
+);

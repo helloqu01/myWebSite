@@ -25,8 +25,10 @@ import {
 import AddRounded from "@mui/icons-material/AddRounded";
 import CameraAltRounded from "@mui/icons-material/CameraAltRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
+import OpenInNewRounded from "@mui/icons-material/OpenInNewRounded";
 import ScienceRounded from "@mui/icons-material/ScienceRounded";
 import type { CatProfile, ExaminationType, LabReport, LabResultItem } from "@/types/cat-care";
+import { createMedicalDocumentSignedUrl, uploadMedicalDocument } from "@/lib/cat-care/medical-documents";
 import { createId, toLocalDateKey } from "@/lib/cat-care/storage";
 import { labMarkerOptions, markerDetails, parseLabText, updateLabFlag } from "@/lib/cat-care/lab-results";
 
@@ -94,6 +96,7 @@ function blankItem(): LabResultItem {
 export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabReportPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [reportId, setReportId] = useState(() => createId("lab-report"));
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [date, setDate] = useState(() => toLocalDateKey(new Date()));
@@ -107,6 +110,7 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
   const [rawText, setRawText] = useState("");
   const [items, setItems] = useState<LabResultItem[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("");
   const [error, setError] = useState("");
@@ -126,6 +130,7 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
   }, [file]);
 
   const reset = () => {
+    setReportId(createId("lab-report"));
     setFile(null);
     setDate(toLocalDateKey(new Date()));
     setType("blood");
@@ -148,7 +153,7 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
   };
 
   const close = () => {
-    if (analyzing) return;
+    if (analyzing || uploading) return;
     setDialogOpen(false);
   };
 
@@ -203,31 +208,56 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
     updateItem(id, markerDetails(code));
   };
 
-  const save = () => {
+  const viewOriginalDocument = async (storagePath: string) => {
+    const popup = window.open("", "_blank");
+    if (popup) popup.opener = null;
+    try {
+      const signedUrl = await createMedicalDocumentSignedUrl(storagePath);
+      if (popup) popup.location.href = signedUrl;
+      else window.open(signedUrl, "_blank", "noopener,noreferrer");
+    } catch (caught) {
+      popup?.close();
+      window.alert(caught instanceof Error ? caught.message : "원본 사진을 열지 못했습니다.");
+    }
+  };
+
+  const save = async () => {
     const validItems = items.filter(item => item.code.trim() && item.value != null);
-    if (!validItems.length && !rawText.trim() && !findings.trim() && !interpretation.trim()) {
+    if (!validItems.length && !rawText.trim() && !findings.trim() && !interpretation.trim() && !file) {
       setError("검사 수치, OCR 원문, 판독 소견 또는 결론 중 하나 이상을 입력해 주세요.");
       return;
     }
-    const now = new Date().toISOString();
-    onSave({
-      id: createId("lab-report"),
-      catId: cat.id,
-      date,
-      type,
-      title: title.trim() || examinationTypeLabels[type],
-      hospital: hospital.trim(),
-      sourceFileName: file?.name ?? "직접 입력",
-      rawText: rawText.trim(),
-      items: validItems,
-      findings: findings.trim(),
-      interpretation: interpretation.trim(),
-      recommendations: recommendations.trim(),
-      notes: notes.trim(),
-      createdAt: now,
-      updatedAt: now,
-    });
-    setDialogOpen(false);
+    setUploading(Boolean(file));
+    setError("");
+    try {
+      const originalDocument = file
+        ? await uploadMedicalDocument({ file, catId: cat.id, recordId: reportId, kind: "examination" })
+        : null;
+      const now = new Date().toISOString();
+      onSave({
+        id: reportId,
+        catId: cat.id,
+        date,
+        type,
+        title: title.trim() || examinationTypeLabels[type],
+        hospital: hospital.trim(),
+        sourceFileName: file?.name ?? "직접 입력",
+        rawText: rawText.trim(),
+        originalDocument,
+        items: validItems,
+        findings: findings.trim(),
+        interpretation: interpretation.trim(),
+        recommendations: recommendations.trim(),
+        notes: notes.trim(),
+        createdAt: now,
+        updatedAt: now,
+      });
+      setDialogOpen(false);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "원본 사진을 저장하지 못했습니다.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -239,7 +269,7 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
             <Typography variant="h6" fontWeight={800}>병원 검사결과</Typography>
           </Stack>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            피검사부터 소변·분변·엑스레이·초음파·병리검사까지 수치와 판독 내용을 고양이별로 저장합니다. 원본 사진은 저장하지 않습니다.
+            피검사부터 소변·분변·엑스레이·초음파·병리검사까지 수치와 판독 내용, 원본 사진을 고양이별로 저장합니다.
           </Typography>
         </Box>
         <Button variant="contained" startIcon={<CameraAltRounded />} onClick={open}>검사 기록 추가·사진 분석</Button>
@@ -256,6 +286,7 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
                     <Chip size="small" label={examinationTypeLabels[report.type]} color="primary" variant="outlined" />
                     {report.title && report.title !== examinationTypeLabels[report.type] && <Chip size="small" label={report.title} variant="outlined" />}
                     {report.rawText && <Chip size="small" label="OCR 원문 저장됨" color="secondary" variant="outlined" />}
+                    {report.originalDocument && <Chip size="small" label="원본 사진 비공개 저장됨" color="success" variant="outlined" />}
                   </Stack>
                   <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
                     {report.items.slice(0, 8).map(item => (
@@ -271,6 +302,7 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
                   </Stack>
                   {report.findings && <Typography variant="body2" sx={{ mt: 1, whiteSpace: "pre-wrap" }}><strong>판독 소견:</strong> {report.findings}</Typography>}
                   {report.interpretation && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}><strong>결론:</strong> {report.interpretation}</Typography>}
+                  {report.originalDocument && <Button size="small" startIcon={<OpenInNewRounded />} onClick={() => viewOriginalDocument(report.originalDocument!.storagePath)} sx={{ mt: 1 }}>원본 사진 보기</Button>}
                 </Box>
                 <Tooltip title="검사 기록 삭제">
                   <IconButton size="small" color="error" onClick={() => onDelete(report)}><DeleteOutlineRounded fontSize="small" /></IconButton>
@@ -288,7 +320,7 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
         <DialogContent dividers>
           <Stack spacing={2.5}>
             <Alert severity="info">
-              OCR 값과 분류는 사진 품질에 따라 틀릴 수 있습니다. 검사표 원본과 수치·소수점·단위·판독 내용을 반드시 대조한 뒤 저장하세요.
+              원본 사진은 로그인한 가족 공간의 비공개 Storage에 저장되며 가족 구성원만 열람할 수 있습니다. OCR 값과 분류는 사진 품질에 따라 틀릴 수 있으니 검사표와 반드시 대조하세요.
             </Alert>
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "0.8fr 1fr 1.2fr 1.2fr" }, gap: 2 }}>
               <TextField label="검사일" type="date" value={date} onChange={event => setDate(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} fullWidth />
@@ -306,11 +338,11 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
               onChange={event => setFile(event.target.files?.[0] ?? null)}
             />
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} alignItems={{ sm: "center" }}>
-              <Button variant="outlined" startIcon={<CameraAltRounded />} onClick={() => fileInputRef.current?.click()} disabled={analyzing}>
+              <Button variant="outlined" startIcon={<CameraAltRounded />} onClick={() => fileInputRef.current?.click()} disabled={analyzing || uploading}>
                 {file ? "다른 사진 선택" : "사진 선택 또는 촬영"}
               </Button>
-              <Typography variant="body2" color="text.secondary">{file?.name ?? "JPG, PNG, WebP 지원"}</Typography>
-              <Button variant="contained" onClick={analyze} disabled={!file || analyzing} sx={{ ml: { sm: "auto" } }}>
+              <Typography variant="body2" color="text.secondary">{file?.name ?? "JPG, PNG, WebP · 최대 10MB"}</Typography>
+              <Button variant="contained" onClick={analyze} disabled={!file || analyzing || uploading} sx={{ ml: { sm: "auto" } }}>
                 {analyzing ? <><CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />분석 중</> : "사진에서 값 읽기"}
               </Button>
             </Stack>
@@ -363,8 +395,8 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={close} color="inherit" disabled={analyzing}>취소</Button>
-          <Button onClick={save} variant="contained" disabled={analyzing}>검토한 결과 저장</Button>
+          <Button onClick={close} color="inherit" disabled={analyzing || uploading}>취소</Button>
+          <Button onClick={save} variant="contained" disabled={analyzing || uploading}>{uploading ? <><CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />원본 사진 저장 중</> : "검토한 결과 저장"}</Button>
         </DialogActions>
       </Dialog>
     </Paper>

@@ -72,6 +72,7 @@ import {
   saveCareState,
   toLocalDateKey,
 } from "@/lib/cat-care/storage";
+import { deleteMedicalDocument, deleteMedicalDocuments } from "@/lib/cat-care/medical-documents";
 import {
   buildCatAlerts,
   getCatAge,
@@ -293,7 +294,7 @@ export default function SeniorCatPage() {
     setMessage(`${profile.name} 프로필을 저장했습니다.`);
   };
 
-  const deleteProfile = (cat: CatProfile) => {
+  const deleteProfile = async (cat: CatProfile) => {
     const recordCount = care.records.filter(record => record.catId === cat.id).length;
     const scheduleCount = care.schedules.filter(schedule => schedule.catId === cat.id).length;
     const labReportCount = care.labReports.filter(report => report.catId === cat.id).length;
@@ -303,6 +304,17 @@ export default function SeniorCatPage() {
       `${cat.name} 프로필과 건강 기록 ${recordCount}개, 케어 일정 ${scheduleCount}개, 건강검진 ${healthCheckupCount}개, 검사결과 ${labReportCount}개, 주간 체크 ${weeklyCheckCount}개를 이 기기에서 삭제할까요? 삭제 전 JSON 백업을 권장합니다.`,
     );
     if (!confirmed) return;
+
+    const originalDocumentPaths = [
+      ...care.labReports.filter(report => report.catId === cat.id).map(report => report.originalDocument?.storagePath),
+      ...care.healthCheckups.filter(checkup => checkup.catId === cat.id).map(checkup => checkup.originalDocument?.storagePath),
+    ].filter((path): path is string => Boolean(path));
+    try {
+      await deleteMedicalDocuments(originalDocumentPaths);
+    } catch (caught) {
+      window.alert(caught instanceof Error ? caught.message : "저장된 원본 사진을 삭제하지 못했습니다.");
+      return;
+    }
 
     setCare(current => ({
       ...current,
@@ -403,8 +415,14 @@ export default function SeniorCatPage() {
     setMessage(`${formatDate(report.date)} 검사결과 ${report.items.length}개를 저장했습니다.`);
   };
 
-  const deleteLabReport = (report: LabReport) => {
+  const deleteLabReport = async (report: LabReport) => {
     if (!window.confirm(`${formatDate(report.date)} 검사결과를 삭제할까요?`)) return;
+    try {
+      if (report.originalDocument) await deleteMedicalDocument(report.originalDocument.storagePath);
+    } catch (caught) {
+      window.alert(caught instanceof Error ? caught.message : "저장된 원본 사진을 삭제하지 못했습니다.");
+      return;
+    }
     setCare(current => ({
       ...current,
       labReports: current.labReports.filter(item => item.id !== report.id),
@@ -429,8 +447,14 @@ export default function SeniorCatPage() {
     setMessage(`${formatDate(checkup.date)} 건강검진·진료 내용을 저장했습니다.`);
   };
 
-  const deleteHealthCheckup = (checkup: HealthCheckup) => {
+  const deleteHealthCheckup = async (checkup: HealthCheckup) => {
     if (!window.confirm(`${formatDate(checkup.date)} 건강검진·진료 기록을 삭제할까요?`)) return;
+    try {
+      if (checkup.originalDocument) await deleteMedicalDocument(checkup.originalDocument.storagePath);
+    } catch (caught) {
+      window.alert(caught instanceof Error ? caught.message : "저장된 원본 사진을 삭제하지 못했습니다.");
+      return;
+    }
     setCare(current => ({ ...current, healthCheckups: current.healthCheckups.filter(item => item.id !== checkup.id) }));
     setMessage("건강검진·진료 기록을 삭제했습니다.");
   };

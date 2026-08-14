@@ -15,7 +15,7 @@ import type {
 export const CAT_CARE_STORAGE_KEY = "ohj-senior-cat-care-v1";
 
 export const EMPTY_CARE_STATE: CareState = {
-  version: 6,
+  version: 7,
   cats: [],
   records: [],
   schedules: [],
@@ -54,7 +54,7 @@ function normalizeNotificationSettings(settings?: Partial<NotificationSettings>)
 
 export function normalizeCareState(input: Partial<CareState>): CareState {
   return {
-    version: 6,
+    version: 7,
     cats: Array.isArray(input.cats)
       ? (input.cats as CatProfile[]).map(cat => ({
           ...cat,
@@ -70,6 +70,7 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
           title: report.title ?? "",
           sourceFileName: report.sourceFileName ?? "",
           rawText: report.rawText ?? "",
+          originalDocument: report.originalDocument?.storagePath ? report.originalDocument : null,
           items: Array.isArray(report.items) ? report.items : [],
           findings: report.findings ?? "",
           interpretation: report.interpretation ?? "",
@@ -89,6 +90,7 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
           sourceFileName: checkup.sourceFileName ?? "",
           chartRawText: checkup.chartRawText ?? "",
           chartDetectedFields: Array.isArray(checkup.chartDetectedFields) ? checkup.chartDetectedFields : [],
+          originalDocument: checkup.originalDocument?.storagePath ? checkup.originalDocument : null,
           documentNotes: checkup.documentNotes ?? "",
           notes: checkup.notes ?? "",
         }))
