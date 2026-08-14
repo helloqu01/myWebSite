@@ -9,17 +9,24 @@ import type {
   HouseholdLitterRecord,
   LabReport,
   Medication,
+  MedicationAdministration,
   NotificationSettings,
+  ObservationMediaRecord,
+  QualityOfLifeCheck,
   WeeklyWellnessCheck,
 } from "@/types/cat-care";
+import { EMPTY_FOOD_NUTRIENTS } from "./food-label";
 
 export const CAT_CARE_STORAGE_KEY = "ohj-senior-cat-care-v1";
 
 export const EMPTY_CARE_STATE: CareState = {
-  version: 9,
+  version: 11,
   cats: [],
   records: [],
   foodItems: [],
+  medicationAdministrations: [],
+  qualityOfLifeChecks: [],
+  observationMedia: [],
   schedules: [],
   labReports: [],
   healthCheckups: [],
@@ -56,7 +63,7 @@ function normalizeNotificationSettings(settings?: Partial<NotificationSettings>)
 
 export function normalizeCareState(input: Partial<CareState>): CareState {
   return {
-    version: 9,
+    version: 11,
     cats: Array.isArray(input.cats)
       ? (input.cats as CatProfile[]).map(cat => ({
           ...cat,
@@ -67,10 +74,11 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
       ? (input.records as DailyRecord[]).map(record => {
           const timedEvents = Array.isArray(record.timedEvents)
             ? record.timedEvents
-                .filter(event => ["meal", "urine", "stool", "seizure"].includes(event.type))
+                .filter(event => ["water", "meal", "urine", "stool", "seizure"].includes(event.type))
                 .map(event => ({
                   ...event,
                   time: typeof event.time === "string" ? event.time : "",
+                  amountMl: typeof event.amountMl === "number" ? event.amountMl : null,
                   amountGrams: typeof event.amountGrams === "number" ? event.amountGrams : null,
                   durationSeconds: typeof event.durationSeconds === "number" ? event.durationSeconds : null,
                   severity: event.severity && ["mild", "moderate", "severe"].includes(event.severity) ? event.severity : null,
@@ -93,8 +101,57 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
           productName: item.productName ?? "",
           startDate: item.startDate ?? "",
           endDate: item.endDate ?? "",
+          openedDate: item.openedDate ?? "",
+          expiresDate: item.expiresDate ?? "",
+          packageSizeGrams: typeof item.packageSizeGrams === "number" ? item.packageSizeGrams : null,
+          remainingGrams: typeof item.remainingGrams === "number" ? item.remainingGrams : null,
+          dailyTargetGrams: typeof item.dailyTargetGrams === "number" ? item.dailyTargetGrams : null,
+          caloriesPer100g: typeof item.caloriesPer100g === "number" ? item.caloriesPer100g : null,
+          nutrients: Object.fromEntries(
+            Object.keys(EMPTY_FOOD_NUTRIENTS).map(key => {
+              const value = item.nutrients?.[key as keyof typeof EMPTY_FOOD_NUTRIENTS];
+              return [key, typeof value === "number" ? value : null];
+            }),
+          ) as unknown as FoodItem["nutrients"],
+          ingredients: item.ingredients ?? "",
+          vitaminsMinerals: item.vitaminsMinerals ?? "",
+          additives: item.additives ?? "",
+          labelRawText: item.labelRawText ?? "",
+          labelDocuments: Array.isArray(item.labelDocuments) ? item.labelDocuments : [],
           notes: item.notes ?? "",
         }))
+      : [],
+    medicationAdministrations: Array.isArray(input.medicationAdministrations)
+      ? (input.medicationAdministrations as MedicationAdministration[]).map(item => ({
+          ...item,
+          scheduledTime: item.scheduledTime ?? "",
+          actualTime: item.actualTime ?? "",
+          dose: typeof item.dose === "number" ? item.dose : null,
+          doseUnit: item.doseUnit ?? "정",
+          administeredBy: item.administeredBy ?? "",
+          sideEffects: item.sideEffects ?? "",
+          notes: item.notes ?? "",
+          linkedScheduleId: item.linkedScheduleId ?? null,
+          stockDeducted: Boolean(item.stockDeducted),
+          scheduleCompletedByLog: Boolean(item.scheduleCompletedByLog),
+        }))
+      : [],
+    qualityOfLifeChecks: Array.isArray(input.qualityOfLifeChecks)
+      ? (input.qualityOfLifeChecks as QualityOfLifeCheck[]).map(item => ({
+          ...item,
+          appetite: Math.min(4, Math.max(0, Number(item.appetite) || 0)),
+          painComfort: Math.min(4, Math.max(0, Number(item.painComfort) || 0)),
+          hygiene: Math.min(4, Math.max(0, Number(item.hygiene) || 0)),
+          mobility: Math.min(4, Math.max(0, Number(item.mobility) || 0)),
+          interaction: Math.min(4, Math.max(0, Number(item.interaction) || 0)),
+          sleep: Math.min(4, Math.max(0, Number(item.sleep) || 0)),
+          notes: item.notes ?? "",
+        }))
+      : [],
+    observationMedia: Array.isArray(input.observationMedia)
+      ? (input.observationMedia as ObservationMediaRecord[])
+          .filter(item => Boolean(item.document?.storagePath))
+          .map(item => ({ ...item, title: item.title ?? "", notes: item.notes ?? "" }))
       : [],
     schedules: Array.isArray(input.schedules) ? input.schedules as CareSchedule[] : [],
     labReports: Array.isArray(input.labReports)
@@ -129,7 +186,17 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
           notes: checkup.notes ?? "",
         }))
       : [],
-    weeklyChecks: Array.isArray(input.weeklyChecks) ? input.weeklyChecks as WeeklyWellnessCheck[] : [],
+    weeklyChecks: Array.isArray(input.weeklyChecks)
+      ? (input.weeklyChecks as WeeklyWellnessCheck[]).map(check => ({
+          ...check,
+          jumpingDifficulty: Boolean(check.jumpingDifficulty),
+          stairDifficulty: Boolean(check.stairDifficulty),
+          limping: Boolean(check.limping),
+          disorientation: Boolean(check.disorientation),
+          nightVocalizationCount: typeof check.nightVocalizationCount === "number" ? check.nightVocalizationCount : null,
+          hidingHours: typeof check.hidingHours === "number" ? check.hidingHours : null,
+        }))
+      : [],
     householdLitterRecords: Array.isArray(input.householdLitterRecords)
       ? input.householdLitterRecords as HouseholdLitterRecord[]
       : [],
@@ -219,7 +286,7 @@ export function exportCareCsv(state: CareState): void {
     "혈뇨",
     "호흡 곤란",
     "쓰러짐/경련",
-    "시간별 식사·배변·발작",
+    "시간별 음수·식사·배변·발작",
     "투약 완료 수",
     "메모",
   ];
@@ -252,9 +319,11 @@ export function exportCareCsv(state: CareState): void {
           .slice()
           .sort((a, b) => a.time.localeCompare(b.time))
           .map(event => {
-            const label = { meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
-            const details = event.type === "meal" && event.amountGrams != null
-              ? ` ${event.amountGrams}g`
+            const label = { water: "음수", meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
+            const details = event.type === "water" && event.amountMl != null
+              ? ` ${event.amountMl}ml`
+              : event.type === "meal" && event.amountGrams != null
+                ? ` ${event.amountGrams}g`
               : event.type === "seizure" && event.durationSeconds != null
                 ? ` ${event.durationSeconds}초`
                 : "";
@@ -273,7 +342,56 @@ export function exportCareCsv(state: CareState): void {
         .join(",");
     });
 
-  const csv = `\uFEFF${headers.map(csvCell).join(",")}\n${rows.join("\n")}`;
+  const foodRows = state.foodItems.map(item => [
+    catsById.get(item.catId)?.name ?? "삭제된 고양이",
+    item.category,
+    item.brand,
+    item.productName,
+    item.startDate,
+    item.endDate,
+    item.openedDate,
+    item.expiresDate,
+    item.packageSizeGrams,
+    item.remainingGrams,
+    item.dailyTargetGrams,
+    item.caloriesPer100g,
+    item.nutrients.proteinMinPercent,
+    item.nutrients.fatMinPercent,
+    item.nutrients.fiberMaxPercent,
+    item.nutrients.ashMaxPercent,
+    item.nutrients.moistureMaxPercent,
+    item.nutrients.calciumMinPercent,
+    item.nutrients.phosphorusMinPercent,
+    item.nutrients.omega6Percent,
+    item.nutrients.omega3Percent,
+    item.nutrients.magnesiumPercent,
+    item.nutrients.sodiumPercent,
+    item.nutrients.energyKcalPerKg,
+    item.ingredients,
+    item.vitaminsMinerals,
+    item.additives,
+    item.labelDocuments.length,
+    item.notes,
+  ].map(csvCell).join(","));
+  const medicationRows = state.medicationAdministrations.map(log => {
+    const cat = catsById.get(log.catId);
+    const medication = cat?.medications.find(item => item.id === log.medicationId);
+    return [log.date, cat?.name ?? "삭제된 고양이", medication?.name ?? "삭제된 약", log.status, log.scheduledTime, log.actualTime, log.dose, log.doseUnit, log.administeredBy, log.sideEffects, log.notes].map(csvCell).join(",");
+  });
+  const qualityRows = state.qualityOfLifeChecks.map(check => {
+    const score = Math.round((check.appetite + check.painComfort + check.hygiene + check.mobility + check.interaction + check.sleep) / 24 * 100);
+    return [check.date, catsById.get(check.catId)?.name ?? "삭제된 고양이", score, check.appetite, check.painComfort, check.hygiene, check.mobility, check.interaction, check.sleep, check.notes].map(csvCell).join(",");
+  });
+  const mediaRows = state.observationMedia.map(record => [record.date, record.time, catsById.get(record.catId)?.name ?? "삭제된 고양이", record.category, record.title, record.document.fileName, record.document.mimeType, record.notes].map(csvCell).join(","));
+
+  const sections = [
+    `${headers.map(csvCell).join(",")}\n${rows.join("\n")}`,
+    `${["고양이", "종류", "브랜드", "제품명", "급여 시작일", "종료일", "개봉일", "유통기한", "포장용량(g)", "남은양(g)", "하루목표(g)", "kcal/100g", "조단백(%)", "조지방(%)", "조섬유(%)", "조회분(%)", "수분(%)", "칼슘(%)", "인(%)", "오메가6(%)", "오메가3(%)", "마그네슘(%)", "나트륨(%)", "대사에너지(kcal/kg)", "사용 원재료", "비타민·미네랄", "첨가제", "라벨 사진 수", "메모"].map(csvCell).join(",")}\n${foodRows.join("\n")}`,
+    `${["날짜", "고양이", "약", "결과", "예정시각", "실제시각", "용량", "단위", "투약자", "이상반응", "메모"].map(csvCell).join(",")}\n${medicationRows.join("\n")}`,
+    `${["날짜", "고양이", "총점", "식욕", "편안함", "청결", "이동", "교감", "수면", "메모"].map(csvCell).join(",")}\n${qualityRows.join("\n")}`,
+    `${["날짜", "시각", "고양이", "관찰종류", "제목", "파일명", "파일형식", "메모"].map(csvCell).join(",")}\n${mediaRows.join("\n")}`,
+  ];
+  const csv = `\uFEFF${sections.join("\n\n")}`;
   downloadText(
     `senior-cat-care-${toLocalDateKey(new Date())}.csv`,
     csv,

@@ -3,10 +3,12 @@ import { getCloudClient } from "./cloud";
 
 export const MEDICAL_DOCUMENT_BUCKET = "cat-medical-documents";
 export const MEDICAL_DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
+export const OBSERVATION_MEDIA_MAX_BYTES = 30 * 1024 * 1024;
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const ALLOWED_OBSERVATION_TYPES = new Set([...ALLOWED_IMAGE_TYPES, "video/mp4", "video/webm", "video/quicktime"]);
 
-type MedicalDocumentKind = "chart" | "examination";
+type MedicalDocumentKind = "chart" | "examination" | "observation" | "food-label";
 
 interface UploadMedicalDocumentInput {
   file: File;
@@ -57,11 +59,16 @@ export async function uploadMedicalDocument({
   recordId,
   kind,
 }: UploadMedicalDocumentInput): Promise<MedicalDocumentReference> {
-  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-    throw uploadError("원본 사진은 JPG, PNG, WebP 형식만 저장할 수 있습니다.");
+  const observation = kind === "observation";
+  const allowedTypes = observation ? ALLOWED_OBSERVATION_TYPES : ALLOWED_IMAGE_TYPES;
+  const maxBytes = observation ? OBSERVATION_MEDIA_MAX_BYTES : MEDICAL_DOCUMENT_MAX_BYTES;
+  if (!allowedTypes.has(file.type)) {
+    throw uploadError(observation
+      ? "관찰 자료는 JPG, PNG, WebP, MP4, WebM, MOV 형식만 저장할 수 있습니다."
+      : "원본 사진은 JPG, PNG, WebP 형식만 저장할 수 있습니다.");
   }
-  if (file.size > MEDICAL_DOCUMENT_MAX_BYTES) {
-    throw uploadError("원본 사진은 한 장당 10MB 이하여야 합니다.");
+  if (file.size > maxBytes) {
+    throw uploadError(observation ? "관찰 사진·영상은 파일당 30MB 이하여야 합니다." : "원본 사진은 한 장당 10MB 이하여야 합니다.");
   }
 
   const { client, household } = await getUploadContext();

@@ -77,6 +77,7 @@ function emptyRecord(cat: CatProfile, date: string): DailyRecord {
 }
 
 const timedEventLabels: Record<TimedCareEventType, string> = {
+  water: "물 마심",
   meal: "밥 먹음",
   urine: "소변",
   stool: "대변",
@@ -95,6 +96,12 @@ function currentTime(): string {
 }
 
 function syncTimedEventCounts(record: DailyRecord, timedEvents: TimedCareEvent[]): DailyRecord {
+  const previousWaterMl = record.timedEvents
+    .filter(event => event.type === "water")
+    .reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
+  const waterEventMl = timedEvents
+    .filter(event => event.type === "water")
+    .reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
   const previousUrineCount = record.timedEvents.filter(event => event.type === "urine").length;
   const previousStoolCount = record.timedEvents.filter(event => event.type === "stool").length;
   const urineEventCount = timedEvents.filter(event => event.type === "urine").length;
@@ -107,6 +114,9 @@ function syncTimedEventCounts(record: DailyRecord, timedEvents: TimedCareEvent[]
   return {
     ...record,
     timedEvents,
+    waterMl: previousWaterMl > 0 || waterEventMl > 0
+      ? Math.max(0, (record.waterMl ?? 0) - previousWaterMl) + waterEventMl
+      : record.waterMl,
     urineCount: syncCount(record.urineCount, previousUrineCount, urineEventCount),
     stoolCount: syncCount(record.stoolCount, previousStoolCount, stoolEventCount),
     collapseOrSeizure: record.collapseOrSeizure || timedEvents.some(event => event.type === "seizure"),
@@ -145,6 +155,7 @@ export default function DailyRecordForm({
       id: createId("care-event"),
       type,
       time: currentTime(),
+      amountMl: null,
       amountGrams: null,
       durationSeconds: null,
       severity: null,
@@ -158,10 +169,10 @@ export default function DailyRecordForm({
   };
 
   const updateTimedEvent = (id: string, patch: Partial<TimedCareEvent>) => {
-    setDraft(current => ({
-      ...current,
-      timedEvents: current.timedEvents.map(event => event.id === id ? { ...event, ...patch } : event),
-    }));
+    setDraft(current => syncTimedEventCounts(
+      current,
+      current.timedEvents.map(event => event.id === id ? { ...event, ...patch } : event),
+    ));
     setSaved(false);
   };
 
@@ -186,6 +197,17 @@ export default function DailyRecordForm({
     || draft.breathingDifficulty
     || draft.collapseOrSeizure
     || draft.timedEvents.some(event => event.type === "seizure");
+  const mealEvents = draft.timedEvents.filter(event => event.type === "meal");
+  const waterEvents = draft.timedEvents.filter(event => event.type === "water");
+  const waterEventTotalMl = waterEvents.reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
+  const mealTotalGrams = mealEvents.reduce((sum, event) => sum + (event.amountGrams ?? 0), 0);
+  const mealCalories = mealEvents.reduce((sum, event) => {
+    const food = event.foodItemId ? foodItems.find(item => item.id === event.foodItemId) : null;
+    return sum + (event.amountGrams ?? 0) * (food?.caloriesPer100g ?? 0) / 100;
+  }, 0);
+  const dailyTargetGrams = foodItems
+    .filter(item => item.category !== "treat" && item.startDate <= date && (!item.endDate || item.endDate >= date))
+    .reduce((sum, item) => sum + (item.dailyTargetGrams ?? 0), 0);
 
   return (
     <Paper
@@ -366,13 +388,14 @@ export default function DailyRecordForm({
             <Box>
               <Stack direction="row" spacing={1} alignItems="center">
                 <AccessTimeRounded color="primary" fontSize="small" />
-                <Typography variant="subtitle1" fontWeight={800}>시간별 식사·배변·발작 기록</Typography>
+                <Typography variant="subtitle1" fontWeight={800}>시간별 음수·식사·배변·발작 기록</Typography>
               </Stack>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 버튼을 누르면 현재 시각이 입력됩니다. 과거 기록은 시각을 직접 수정할 수 있습니다.
               </Typography>
             </Box>
             <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+              <Button size="small" variant="outlined" onClick={() => addTimedEvent("water")}>+ 물 마심</Button>
               <Button size="small" variant="outlined" onClick={() => addTimedEvent("meal")}>+ 밥 먹음</Button>
               <Button size="small" variant="outlined" onClick={() => addTimedEvent("urine")}>+ 소변</Button>
               <Button size="small" variant="outlined" onClick={() => addTimedEvent("stool")}>+ 대변</Button>
@@ -390,9 +413,10 @@ export default function DailyRecordForm({
             <Stack spacing={1}>
               {[...draft.timedEvents].sort((a, b) => a.time.localeCompare(b.time)).map(event => (
                 <Box key={event.id} sx={{ p: 1.5, border: "1px solid", borderColor: event.type === "seizure" ? "error.light" : "divider", borderRadius: 2.5 }}>
-                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: event.type === "seizure" ? "110px 130px 150px 150px 1fr auto" : event.type === "meal" ? "110px 130px minmax(180px, 1fr) 150px minmax(180px, 1fr) auto" : "110px 130px 1fr auto" }, gap: 1, alignItems: "center" }}>
+                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: event.type === "seizure" ? "110px 130px 150px 150px 1fr auto" : event.type === "meal" ? "110px 130px minmax(180px, 1fr) 150px minmax(180px, 1fr) auto" : event.type === "water" ? "110px 130px 150px minmax(180px, 1fr) auto" : "110px 130px 1fr auto" }, gap: 1, alignItems: "center" }}>
                     <Chip label={timedEventLabels[event.type]} size="small" color={event.type === "seizure" ? "error" : "primary"} variant={event.type === "seizure" ? "filled" : "outlined"} />
                     <TextField label="발생 시각" type="time" size="small" value={event.time} onChange={change => updateTimedEvent(event.id, { time: change.target.value })} slotProps={{ inputLabel: { shrink: true } }} />
+                    {event.type === "water" && <TextField label="마신 양" type="number" size="small" value={event.amountMl ?? ""} onChange={change => updateTimedEvent(event.id, { amountMl: numberOrNull(change.target.value) })} slotProps={{ htmlInput: { min: 0, step: 1 } }} InputProps={{ endAdornment: <InputAdornment position="end">ml</InputAdornment> }} />}
                     {event.type === "meal" && <TextField select label="먹인 사료·간식" size="small" value={event.foodItemId ?? ""} onChange={change => updateTimedEvent(event.id, { foodItemId: change.target.value || null })}><MenuItem value=""><em>미선택</em></MenuItem>{foodItems.map(item => <MenuItem key={item.id} value={item.id}>{item.brand}{item.productName ? ` · ${item.productName}` : ""}</MenuItem>)}</TextField>}
                     {event.type === "meal" && <TextField label="먹은 양" type="number" size="small" value={event.amountGrams ?? ""} onChange={change => updateTimedEvent(event.id, { amountGrams: numberOrNull(change.target.value) })} slotProps={{ htmlInput: { min: 0, step: 1 } }} InputProps={{ endAdornment: <InputAdornment position="end">g</InputAdornment> }} />}
                     {event.type === "seizure" && <TextField label="지속시간" type="number" size="small" value={event.durationSeconds ?? ""} onChange={change => updateTimedEvent(event.id, { durationSeconds: numberOrNull(change.target.value) })} slotProps={{ htmlInput: { min: 0, step: 1 } }} InputProps={{ endAdornment: <InputAdornment position="end">초</InputAdornment> }} />}
@@ -405,6 +429,19 @@ export default function DailyRecordForm({
             </Stack>
           ) : (
             <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>아직 시간별 기록이 없습니다.</Typography>
+          )}
+          {mealEvents.length > 0 && (
+            <Alert severity="info" sx={{ mt: 1.5 }}>
+              오늘 기록된 급여량 <strong>{mealTotalGrams}g</strong>
+              {dailyTargetGrams > 0 && <> / 등록 목표 <strong>{dailyTargetGrams}g</strong></>}
+              {mealCalories > 0 && <> · 약 <strong>{Math.round(mealCalories)}kcal</strong></>}
+              <Typography component="span" variant="caption" sx={{ ml: 1 }}>저장하면 선택한 사료 재고에서 급여량이 자동 차감됩니다.</Typography>
+            </Alert>
+          )}
+          {waterEvents.length > 0 && (
+            <Alert severity="info" sx={{ mt: 1.5 }}>
+              시간별로 기록한 음수량 <strong>{waterEventTotalMl}ml</strong> · 저장하면 오늘 총 음수량에 자동 반영됩니다.
+            </Alert>
           )}
         </Box>
 

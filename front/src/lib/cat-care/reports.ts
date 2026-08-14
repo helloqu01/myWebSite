@@ -1,4 +1,5 @@
-import type { CareSchedule, CatProfile, DailyRecord, EmergencyInfo, FoodItem, HealthAlert, HealthCheckup, LabReport, WeeklyWellnessCheck } from "@/types/cat-care";
+import type { CareSchedule, CatProfile, DailyRecord, EmergencyInfo, FoodItem, HealthAlert, HealthCheckup, LabReport, MedicationAdministration, ObservationMediaRecord, QualityOfLifeCheck, WeeklyWellnessCheck } from "@/types/cat-care";
+import { createMedicalDocumentSignedUrl } from "./medical-documents";
 import { getCatAge } from "./insights";
 import { scheduleRepeatLabel, scheduleTypeLabel } from "./schedules";
 import { toLocalDateKey } from "./storage";
@@ -42,6 +43,9 @@ interface VetReportInput {
   alerts: HealthAlert[];
   schedules: CareSchedule[];
   foodItems: FoodItem[];
+  medicationAdministrations: MedicationAdministration[];
+  qualityOfLifeChecks: QualityOfLifeCheck[];
+  observationMedia: ObservationMediaRecord[];
   labReports: LabReport[];
   healthCheckups: HealthCheckup[];
   weeklyChecks: WeeklyWellnessCheck[];
@@ -49,7 +53,7 @@ interface VetReportInput {
   days: number;
 }
 
-export function openVetReport({ cat, records, alerts, schedules, foodItems, labReports, healthCheckups, weeklyChecks, emergencyInfo, days }: VetReportInput): boolean {
+export async function openVetReport({ cat, records, alerts, schedules, foodItems, medicationAdministrations, qualityOfLifeChecks, observationMedia, labReports, healthCheckups, weeklyChecks, emergencyInfo, days }: VetReportInput): Promise<boolean> {
   const reportWindow = window.open("", "_blank");
   if (!reportWindow) return false;
   reportWindow.opener = null;
@@ -69,6 +73,16 @@ export function openVetReport({ cat, records, alerts, schedules, foodItems, labR
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - (days - 1));
   const startKey = toLocalDateKey(start);
+  const recentObservationMedia = observationMedia
+    .filter(record => record.catId === cat.id && record.date >= startKey)
+    .sort((a, b) => `${b.date}T${b.time}`.localeCompare(`${a.date}T${a.time}`));
+  const observationWithUrls = await Promise.all(recentObservationMedia.map(async record => {
+    try {
+      return { record, signedUrl: await createMedicalDocumentSignedUrl(record.document.storagePath) };
+    } catch {
+      return { record, signedUrl: "" };
+    }
+  }));
   const recentLabReports = labReports
     .filter(report => report.catId === cat.id && report.date >= startKey)
     .sort((a, b) => b.date.localeCompare(a.date));
@@ -107,8 +121,12 @@ export function openVetReport({ cat, records, alerts, schedules, foodItems, labR
     .slice()
     .sort((a, b) => a.time.localeCompare(b.time))
     .map(event => {
-      const label = { meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
-      const amount = event.type === "meal" && event.amountGrams != null ? ` ${event.amountGrams}g` : "";
+      const label = { water: "음수", meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
+      const amount = event.type === "water" && event.amountMl != null
+        ? ` ${event.amountMl}ml`
+        : event.type === "meal" && event.amountGrams != null
+          ? ` ${event.amountGrams}g`
+          : "";
       const duration = event.type === "seizure" && event.durationSeconds != null ? ` ${event.durationSeconds}초` : "";
       const severity = event.type === "seizure" && event.severity
         ? ` · ${{ mild: "경미", moderate: "중간", severe: "심함" }[event.severity]}`
@@ -149,14 +167,62 @@ export function openVetReport({ cat, records, alerts, schedules, foodItems, labR
     : "<li>활성화된 케어 일정이 없습니다.</li>";
 
   const foodCategoryLabel = { dry: "건사료", wet: "습식사료", prescription: "처방식", treat: "간식", other: "기타" } as const;
-  const foodRows = catFoodItems.map(item => `
-    <tr>
-      <td>${escapeHtml(foodCategoryLabel[item.category])}</td>
-      <td>${escapeHtml(item.brand)}</td>
-      <td>${escapeHtml(item.productName || "—")}</td>
-      <td>${escapeHtml(item.startDate)} ~ ${escapeHtml(item.endDate || "현재")}</td>
-      <td>${escapeHtml(item.notes || "—")}</td>
-    </tr>`).join("");
+  const foodRows = catFoodItems.map(item => {
+    const nutrients = [
+      ["조단백", item.nutrients.proteinMinPercent, "% 이상"],
+      ["조지방", item.nutrients.fatMinPercent, "% 이상"],
+      ["조섬유", item.nutrients.fiberMaxPercent, "% 이하"],
+      ["조회분", item.nutrients.ashMaxPercent, "% 이하"],
+      ["수분", item.nutrients.moistureMaxPercent, "% 이하"],
+      ["칼슘", item.nutrients.calciumMinPercent, "% 이상"],
+      ["인", item.nutrients.phosphorusMinPercent, "% 이상"],
+      ["오메가-6", item.nutrients.omega6Percent, "%"],
+      ["오메가-3", item.nutrients.omega3Percent, "%"],
+      ["마그네슘", item.nutrients.magnesiumPercent, "%"],
+      ["나트륨", item.nutrients.sodiumPercent, "%"],
+      ["대사에너지", item.nutrients.energyKcalPerKg, "kcal/kg"],
+    ].filter(([, value]) => value != null).map(([label, value, unit]) => `${label} ${value}${unit}`).join(", ") || "—";
+    return `
+      <tr>
+        <td>${escapeHtml(foodCategoryLabel[item.category])}</td>
+        <td>${escapeHtml(item.brand)}</td>
+        <td>${escapeHtml(item.productName || "—")}</td>
+        <td>${escapeHtml(item.startDate)} ~ ${escapeHtml(item.endDate || "현재")}</td>
+        <td>${escapeHtml(item.dailyTargetGrams == null ? "—" : `${item.dailyTargetGrams}g`)}</td>
+        <td>${escapeHtml(item.remainingGrams == null ? "—" : `${Math.round(item.remainingGrams)}g`)}</td>
+        <td>${escapeHtml(item.openedDate || "—")} / ${escapeHtml(item.expiresDate || "—")}</td>
+        <td>${escapeHtml(nutrients)}</td>
+        <td>${escapeHtml(item.ingredients || "—")}</td>
+        <td>${item.labelDocuments.length}장</td>
+        <td>${escapeHtml(item.notes || "—")}</td>
+      </tr>`;
+  }).join("");
+
+  const medicationStatusLabel = { given: "복용 완료", missed: "누락", failed: "투약 실패", vomited: "복용 후 구토" } as const;
+  const medicationRows = medicationAdministrations
+    .filter(log => log.catId === cat.id && log.date >= startKey)
+    .sort((a, b) => `${b.date}T${b.actualTime}`.localeCompare(`${a.date}T${a.actualTime}`))
+    .map(log => {
+      const medication = cat.medications.find(item => item.id === log.medicationId);
+      return `<tr><td>${escapeHtml(log.date)}</td><td>${escapeHtml(medication?.name ?? "삭제된 약")}</td><td>${escapeHtml(medicationStatusLabel[log.status])}</td><td>${escapeHtml(log.scheduledTime || "—")} / ${escapeHtml(log.actualTime || "—")}</td><td>${log.dose == null ? "—" : `${escapeHtml(log.dose)}${escapeHtml(log.doseUnit)}`}</td><td>${escapeHtml(log.administeredBy || "—")}</td><td>${escapeHtml(log.sideEffects || "—")}</td><td>${escapeHtml(log.notes || "—")}</td></tr>`;
+    }).join("");
+
+  const qualityRows = qualityOfLifeChecks
+    .filter(check => check.catId === cat.id && check.date >= startKey)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(check => {
+      const score = Math.round((check.appetite + check.painComfort + check.hygiene + check.mobility + check.interaction + check.sleep) / 24 * 100);
+      return `<tr><td>${escapeHtml(check.date)}</td><td><strong>${score}점</strong></td><td>${check.appetite}/4</td><td>${check.painComfort}/4</td><td>${check.hygiene}/4</td><td>${check.mobility}/4</td><td>${check.interaction}/4</td><td>${check.sleep}/4</td><td>${escapeHtml(check.notes || "—")}</td></tr>`;
+    }).join("");
+
+  const observationCategoryLabel = { mobility: "보행·점프", behavior: "행동 변화", vomit: "구토물", stool: "대변", urine: "소변", skin: "피부 이상", wound: "상처", other: "기타" } as const;
+  const observationRows = observationWithUrls.map(({ record, signedUrl }) => `
+    <article>
+      <h3>${escapeHtml(record.date)} ${escapeHtml(record.time)} · ${escapeHtml(record.title || observationCategoryLabel[record.category])}</h3>
+      <p><strong>${escapeHtml(observationCategoryLabel[record.category])}</strong> · ${escapeHtml(record.document.fileName)}</p>
+      ${record.notes ? `<p>${escapeHtml(record.notes)}</p>` : ""}
+      ${signedUrl && record.document.mimeType.startsWith("image/") ? `<img class="evidence-img" src="${escapeHtml(signedUrl)}" alt="${escapeHtml(record.title || observationCategoryLabel[record.category])}" />` : signedUrl ? `<p><a href="${escapeHtml(signedUrl)}" target="_blank" rel="noreferrer">비공개 영상 열기</a></p>` : "<p><small>원본 파일은 비공개 Storage에 저장되어 있습니다.</small></p>"}
+    </article>`).join("");
 
   const labRows = recentLabReports.flatMap(report => report.items.map(item => `
     <tr>
@@ -199,7 +265,10 @@ export function openVetReport({ cat, records, alerts, schedules, foodItems, labR
   const weeklyRows = weeklyChecks
     .filter(check => check.catId === cat.id && check.date >= startKey)
     .sort((a, b) => b.date.localeCompare(a.date))
-    .map(check => `<tr><td>${escapeHtml(check.date)}</td><td>${observationText[check.mobility]}</td><td>${observationText[check.grooming]}</td><td>${observationText[check.sleep]}</td><td>${observationText[check.interaction]}</td><td>${observationText[check.litterBoxUse]}</td><td>${observationText[check.painResponse]}</td><td>${check.bodyConditionScore ?? "—"}/${check.muscleConditionScore ?? "—"}</td><td>${check.systolicBloodPressure ?? "—"}${check.diastolicBloodPressure != null ? `/${check.diastolicBloodPressure}` : ""}</td><td>${escapeHtml(check.notes || "—")}</td></tr>`)
+    .map(check => {
+      const behavior = [check.jumpingDifficulty && "점프 어려움", check.stairDifficulty && "계단 어려움", check.limping && "절뚝거림", check.disorientation && "방향 혼란", check.nightVocalizationCount != null && `야간 울음 ${check.nightVocalizationCount}회`, check.hidingHours != null && `숨은 시간 ${check.hidingHours}h`].filter(Boolean).join(", ") || "—";
+      return `<tr><td>${escapeHtml(check.date)}</td><td>${observationText[check.mobility]}</td><td>${observationText[check.grooming]}</td><td>${observationText[check.sleep]}</td><td>${observationText[check.interaction]}</td><td>${observationText[check.litterBoxUse]}</td><td>${observationText[check.painResponse]}</td><td>${escapeHtml(behavior)}</td><td>${check.bodyConditionScore ?? "—"}/${check.muscleConditionScore ?? "—"}</td><td>${check.systolicBloodPressure ?? "—"}${check.diastolicBloodPressure != null ? `/${check.diastolicBloodPressure}` : ""}</td><td>${escapeHtml(check.notes || "—")}</td></tr>`;
+    })
     .join("");
 
   reportWindow.document.write(`<!doctype html>
@@ -224,6 +293,7 @@ export function openVetReport({ cat, records, alerts, schedules, foodItems, labR
     th { background: #f3f0ff; white-space: nowrap; }
     article { border: 1px solid #d9dce3; border-radius: 10px; padding: 12px; margin: 10px 0; } article h3 { margin: 0 0 8px; font-size: 14px; }
     pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 11px; }
+    .evidence-img { display: block; width: 100%; max-width: 520px; max-height: 420px; object-fit: contain; margin-top: 10px; border-radius: 8px; }
     .notice { margin-top: 28px; border: 1px solid #f0b429; background: #fff8e6; border-radius: 10px; padding: 12px; font-size: 12px; }
     @media (max-width: 720px) { body { padding: 18px; } .summary, .profile { grid-template-columns: 1fr 1fr; } .table-wrap { overflow-x: auto; } }
     @media print { body { max-width: none; padding: 0; } .print { display: none; } h2 { break-after: avoid; } table { font-size: 10px; } tr { break-inside: avoid; } }
@@ -250,7 +320,13 @@ export function openVetReport({ cat, records, alerts, schedules, foodItems, labR
   <h2>자동 감지 요약</h2><ul>${alertRows}</ul>
   <h2>현재 케어 일정</h2><ul>${scheduleRows}</ul>
   <h2>사료·간식 급여 이력</h2>
-  <div class="table-wrap"><table><thead><tr><th>종류</th><th>브랜드</th><th>제품명</th><th>급여 기간</th><th>메모</th></tr></thead><tbody>${foodRows || '<tr><td colspan="5">등록된 사료·간식 급여 이력이 없습니다.</td></tr>'}</tbody></table></div>
+  <div class="table-wrap"><table><thead><tr><th>종류</th><th>브랜드</th><th>제품명</th><th>급여 기간</th><th>하루 목표</th><th>남은 재고</th><th>개봉/유통기한</th><th>보증성분</th><th>사용 원재료</th><th>라벨</th><th>메모</th></tr></thead><tbody>${foodRows || '<tr><td colspan="11">등록된 사료·간식 급여 이력이 없습니다.</td></tr>'}</tbody></table></div>
+  <h2>투약 상세 이력</h2>
+  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>약</th><th>결과</th><th>예정/실제 시각</th><th>용량</th><th>투약자</th><th>이상 반응</th><th>메모</th></tr></thead><tbody>${medicationRows || '<tr><td colspan="8">해당 기간에 투약 상세 기록이 없습니다.</td></tr>'}</tbody></table></div>
+  <h2>삶의 질 점수</h2>
+  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>총점</th><th>식욕</th><th>편안함</th><th>청결</th><th>이동</th><th>교감</th><th>수면</th><th>메모</th></tr></thead><tbody>${qualityRows || '<tr><td colspan="9">해당 기간에 삶의 질 평가가 없습니다.</td></tr>'}</tbody></table></div>
+  <h2>통증·행동·증상 사진/영상</h2>
+  ${observationRows || "<p>해당 기간에 저장된 관찰 사진·영상이 없습니다.</p>"}
   <h2>건강검진·진료 이력</h2>
   <div class="table-wrap"><table><thead><tr><th>날짜·구분</th><th>병원·수의사</th><th>사유</th><th>종합소견·진단</th><th>검사·시술</th><th>처치·처방</th><th>권고·다음 진료</th><th>메모</th></tr></thead><tbody>${checkupRows || '<tr><td colspan="8">해당 기간에 저장된 건강검진·진료 기록이 없습니다.</td></tr>'}</tbody></table></div>
   ${checkupOcrBlocks ? `<h2>병원 차트 OCR 원문</h2>${checkupOcrBlocks}` : ""}
@@ -260,9 +336,9 @@ export function openVetReport({ cat, records, alerts, schedules, foodItems, labR
   <div class="table-wrap"><table><thead><tr><th>검사일</th><th>병원</th><th>항목</th><th>결과</th><th>검사표 기준범위</th><th>표시</th></tr></thead><tbody>${labRows || '<tr><td colspan="6">해당 기간에 저장된 수치형 검사결과가 없습니다.</td></tr>'}</tbody></table></div>
   ${examinationOcrBlocks ? `<h2>검사 문서 OCR 원문</h2>${examinationOcrBlocks}` : ""}
   <h2>주간 노묘 상태 체크</h2>
-  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>이동</th><th>그루밍</th><th>수면</th><th>상호작용</th><th>화장실</th><th>통증</th><th>BCS/MCS</th><th>혈압</th><th>메모</th></tr></thead><tbody>${weeklyRows || '<tr><td colspan="10">해당 기간에 주간 체크 기록이 없습니다.</td></tr>'}</tbody></table></div>
+  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>이동</th><th>그루밍</th><th>수면</th><th>상호작용</th><th>화장실</th><th>통증</th><th>구체 행동</th><th>BCS/MCS</th><th>혈압</th><th>메모</th></tr></thead><tbody>${weeklyRows || '<tr><td colspan="11">해당 기간에 주간 체크 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <h2>일별 상세 기록</h2>
-  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>음수량</th><th>소변</th><th>대변</th><th>식욕</th><th>체중</th><th>투약</th><th>시간별 식사·배변·발작</th><th>이상 징후</th><th>메모</th></tr></thead><tbody>${recordRows || '<tr><td colspan="10">해당 기간에 기록이 없습니다.</td></tr>'}</tbody></table></div>
+  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>음수량</th><th>소변</th><th>대변</th><th>식욕</th><th>체중</th><th>투약</th><th>시간별 음수·식사·배변·발작</th><th>이상 징후</th><th>메모</th></tr></thead><tbody>${recordRows || '<tr><td colspan="10">해당 기간에 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <div class="notice"><strong>안내:</strong> 이 리포트는 보호자가 입력한 관찰 기록을 정리한 자료이며 수의사의 진단을 대신하지 않습니다.</div>
 </body>
 </html>`);

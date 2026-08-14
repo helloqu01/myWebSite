@@ -45,6 +45,10 @@ import HealthCheckupPanel from "@/components/senior-cat/HealthCheckupPanel";
 import HouseholdLitterPanel from "@/components/senior-cat/HouseholdLitterPanel";
 import LabReportPanel from "@/components/senior-cat/LabReportPanel";
 import LabTrendCharts from "@/components/senior-cat/LabTrendCharts";
+import MedicationLogPanel from "@/components/senior-cat/MedicationLogPanel";
+import MultiCatEventLogger from "@/components/senior-cat/MultiCatEventLogger";
+import ObservationMediaPanel from "@/components/senior-cat/ObservationMediaPanel";
+import QualityOfLifePanel from "@/components/senior-cat/QualityOfLifePanel";
 import QuickRecordDialog from "@/components/senior-cat/QuickRecordDialog";
 import TrendCharts from "@/components/senior-cat/TrendCharts";
 import WeeklyWellnessPanel from "@/components/senior-cat/WeeklyWellnessPanel";
@@ -61,7 +65,10 @@ import type {
   HouseholdLitterRecord,
   LabReport,
   Medication,
+  MedicationAdministration,
   NotificationSettings,
+  ObservationMediaRecord,
+  QualityOfLifeCheck,
   TimedCareEvent,
   WeeklyWellnessCheck,
 } from "@/types/cat-care";
@@ -111,8 +118,12 @@ function latestValue(record: DailyRecord | undefined, key: "waterMl" | "urineCou
 }
 
 function timedCareEventText(event: TimedCareEvent, foodItems: FoodItem[]): string {
-  const label = { meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
-  const amount = event.type === "meal" && event.amountGrams != null ? ` ${event.amountGrams}g` : "";
+  const label = { water: "음수", meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
+  const amount = event.type === "water" && event.amountMl != null
+    ? ` ${event.amountMl}ml`
+    : event.type === "meal" && event.amountGrams != null
+      ? ` ${event.amountGrams}g`
+      : "";
   const duration = event.type === "seizure" && event.durationSeconds != null ? ` ${event.durationSeconds}초` : "";
   const food = event.foodItemId ? foodItems.find(item => item.id === event.foodItemId) : null;
   const foodName = food ? ` ${food.brand}${food.productName ? ` ${food.productName}` : ""}` : "";
@@ -236,6 +247,9 @@ export default function SeniorCatPage() {
   const [range, setRange] = useState<7 | 30>(7);
   const [reportRange, setReportRange] = useState<7 | 30 | 90>(30);
   const [foodDialogRequest, setFoodDialogRequest] = useState(0);
+  const [medicationDialogRequest, setMedicationDialogRequest] = useState(0);
+  const [qualityDialogRequest, setQualityDialogRequest] = useState(0);
+  const [weeklyDialogRequest, setWeeklyDialogRequest] = useState(0);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -314,14 +328,17 @@ export default function SeniorCatPage() {
     const labReportCount = care.labReports.filter(report => report.catId === cat.id).length;
     const healthCheckupCount = care.healthCheckups.filter(checkup => checkup.catId === cat.id).length;
     const weeklyCheckCount = care.weeklyChecks.filter(check => check.catId === cat.id).length;
+    const observationMediaCount = care.observationMedia.filter(record => record.catId === cat.id).length;
     const confirmed = window.confirm(
-      `${cat.name} 프로필과 건강 기록 ${recordCount}개, 케어 일정 ${scheduleCount}개, 건강검진 ${healthCheckupCount}개, 검사결과 ${labReportCount}개, 주간 체크 ${weeklyCheckCount}개를 이 기기에서 삭제할까요? 삭제 전 JSON 백업을 권장합니다.`,
+      `${cat.name} 프로필과 건강 기록 ${recordCount}개, 케어 일정 ${scheduleCount}개, 건강검진 ${healthCheckupCount}개, 검사결과 ${labReportCount}개, 주간 체크 ${weeklyCheckCount}개, 관찰 사진·영상 ${observationMediaCount}개를 삭제할까요? 삭제 전 JSON 백업을 권장합니다.`,
     );
     if (!confirmed) return;
 
     const originalDocumentPaths = [
       ...care.labReports.filter(report => report.catId === cat.id).map(report => report.originalDocument?.storagePath),
       ...care.healthCheckups.filter(checkup => checkup.catId === cat.id).map(checkup => checkup.originalDocument?.storagePath),
+      ...care.observationMedia.filter(record => record.catId === cat.id).map(record => record.document.storagePath),
+      ...care.foodItems.filter(item => item.catId === cat.id).flatMap(item => item.labelDocuments.map(document => document.storagePath)),
     ].filter((path): path is string => Boolean(path));
     try {
       await deleteMedicalDocuments(originalDocumentPaths);
@@ -335,6 +352,9 @@ export default function SeniorCatPage() {
       cats: current.cats.filter(item => item.id !== cat.id),
       records: current.records.filter(record => record.catId !== cat.id),
       foodItems: current.foodItems.filter(item => item.catId !== cat.id),
+      medicationAdministrations: current.medicationAdministrations.filter(item => item.catId !== cat.id),
+      qualityOfLifeChecks: current.qualityOfLifeChecks.filter(item => item.catId !== cat.id),
+      observationMedia: current.observationMedia.filter(item => item.catId !== cat.id),
       schedules: current.schedules.filter(schedule => schedule.catId !== cat.id),
       labReports: current.labReports.filter(report => report.catId !== cat.id),
       healthCheckups: current.healthCheckups.filter(checkup => checkup.catId !== cat.id),
@@ -355,8 +375,16 @@ export default function SeniorCatPage() {
   const saveRecords = (incoming: DailyRecord[]) => {
     setCare(current => {
       const records = [...current.records];
+      const foodDeltas = new Map<string, number>();
+      const addFoodAmounts = (record: DailyRecord | undefined, multiplier: number) => {
+        record?.timedEvents.filter(event => event.type === "meal" && event.foodItemId && event.amountGrams != null).forEach(event => {
+          foodDeltas.set(event.foodItemId!, (foodDeltas.get(event.foodItemId!) ?? 0) + event.amountGrams! * multiplier);
+        });
+      };
       incoming.forEach(record => {
         const existingIndex = records.findIndex(item => item.catId === record.catId && item.date === record.date);
+        addFoodAmounts(existingIndex >= 0 ? records[existingIndex] : undefined, -1);
+        addFoodAmounts(record, 1);
         if (existingIndex >= 0) records[existingIndex] = { ...record, id: records[existingIndex].id };
         else records.push(record);
       });
@@ -371,6 +399,11 @@ export default function SeniorCatPage() {
             ? { ...cat, currentWeightKg: latestWeight.weightKg, updatedAt: new Date().toISOString() }
             : cat;
         }),
+        foodItems: current.foodItems.map(item => {
+          const consumedDelta = foodDeltas.get(item.id) ?? 0;
+          if (!consumedDelta || item.remainingGrams == null) return item;
+          return { ...item, remainingGrams: Math.max(0, item.remainingGrams - consumedDelta), updatedAt: new Date().toISOString() };
+        }),
         records,
       };
     });
@@ -379,6 +412,11 @@ export default function SeniorCatPage() {
   const saveQuickRecords = (records: DailyRecord[]) => {
     saveRecords(records);
     setMessage(`${formatDate(quickRecordDate)} 기록을 ${records.length}마리에게 저장했습니다.`);
+  };
+
+  const saveMultiCatEvents = (records: DailyRecord[], date: string, rowCount: number) => {
+    saveRecords(records);
+    setMessage(`${formatDate(date)} 영상 기록 ${rowCount}행을 ${records.length}마리에게 저장했습니다.`);
   };
 
   const saveFoodItem = (item: FoodItem) => {
@@ -391,8 +429,14 @@ export default function SeniorCatPage() {
     setMessage(`${item.brand}${item.productName ? ` · ${item.productName}` : ""} 급여 이력을 저장했습니다.`);
   };
 
-  const deleteFoodItem = (item: FoodItem) => {
+  const deleteFoodItem = async (item: FoodItem) => {
     if (!window.confirm(`${item.brand}${item.productName ? ` · ${item.productName}` : ""} 급여 이력을 삭제할까요?`)) return;
+    try {
+      await deleteMedicalDocuments(item.labelDocuments.map(document => document.storagePath));
+    } catch (caught) {
+      window.alert(caught instanceof Error ? caught.message : "저장된 사료 라벨 사진을 삭제하지 못했습니다.");
+      return;
+    }
     setCare(current => ({
       ...current,
       foodItems: current.foodItems.filter(existing => existing.id !== item.id),
@@ -402,6 +446,114 @@ export default function SeniorCatPage() {
       })),
     }));
     setMessage("사료·간식 급여 이력을 삭제했습니다.");
+  };
+
+  const saveMedicationAdministration = (log: MedicationAdministration) => {
+    setCare(current => {
+      const existing = current.medicationAdministrations.find(item => item.id === log.id);
+      const consumesStock = (status: MedicationAdministration["status"]) => status === "given" || status === "vomited";
+      const oldConsumes = existing ? consumesStock(existing.status) : false;
+      const newConsumes = consumesStock(log.status);
+      const linkedSchedule = log.linkedScheduleId ? current.schedules.find(item => item.id === log.linkedScheduleId) : undefined;
+      const linkedAlreadyCompleted = Boolean(linkedSchedule?.completedDates.includes(log.date));
+      const medication = current.cats.find(cat => cat.id === log.catId)?.medications.find(item => item.id === log.medicationId);
+      let stockDelta = 0;
+      let stockDeducted = existing?.stockDeducted ?? false;
+      let scheduleCompletedByLog = existing?.scheduleCompletedByLog ?? false;
+
+      if (!oldConsumes && newConsumes) {
+        if (medication?.stockCount != null && !linkedAlreadyCompleted) {
+          stockDelta = -1;
+          stockDeducted = true;
+        }
+        if (linkedSchedule && !linkedAlreadyCompleted) scheduleCompletedByLog = true;
+      } else if (oldConsumes && !newConsumes) {
+        if (existing?.stockDeducted) stockDelta = 1;
+        stockDeducted = false;
+        scheduleCompletedByLog = false;
+      }
+
+      const savedLog = { ...log, stockDeducted, scheduleCompletedByLog };
+      const medicationAdministrations = existing
+        ? current.medicationAdministrations.map(item => item.id === log.id ? savedLog : item)
+        : [...current.medicationAdministrations, savedLog];
+      const completedScheduleId = !oldConsumes && newConsumes && linkedSchedule && !linkedAlreadyCompleted ? linkedSchedule.id : null;
+      const reopenedScheduleId = oldConsumes && !newConsumes && existing?.scheduleCompletedByLog ? existing.linkedScheduleId : null;
+
+      return {
+        ...current,
+        medicationAdministrations,
+        cats: current.cats.map(cat => cat.id === log.catId
+          ? {
+              ...cat,
+              medications: cat.medications.map(item => item.id === log.medicationId && item.stockCount != null
+                ? { ...item, stockCount: Math.max(0, item.stockCount + stockDelta) }
+                : item),
+              updatedAt: new Date().toISOString(),
+            }
+          : cat),
+        schedules: current.schedules.map(schedule => {
+          if (schedule.id === completedScheduleId) return { ...schedule, completedDates: [...new Set([...schedule.completedDates, log.date])], updatedAt: new Date().toISOString() };
+          if (schedule.id === reopenedScheduleId) return { ...schedule, completedDates: schedule.completedDates.filter(date => date !== log.date), updatedAt: new Date().toISOString() };
+          return schedule;
+        }),
+        records: current.records.map(record => {
+          if (record.catId !== log.catId || record.date !== log.date) return record;
+          const completed = medicationAdministrations.some(item => item.catId === log.catId && item.date === log.date && item.medicationId === log.medicationId && consumesStock(item.status));
+          return { ...record, medicationChecks: { ...record.medicationChecks, [log.medicationId]: completed } };
+        }),
+      };
+    });
+    setMessage("투약 상세 기록을 저장하고 일정·재고에 반영했습니다.");
+  };
+
+  const deleteMedicationAdministration = (log: MedicationAdministration) => {
+    if (!window.confirm("이 투약 상세 기록을 삭제할까요? 재고와 연결 일정도 함께 되돌립니다.")) return;
+    setCare(current => {
+      const remainingLogs = current.medicationAdministrations.filter(item => item.id !== log.id);
+      const consumesStock = (status: MedicationAdministration["status"]) => status === "given" || status === "vomited";
+      return {
+        ...current,
+        medicationAdministrations: remainingLogs,
+        cats: current.cats.map(cat => cat.id === log.catId && log.stockDeducted
+          ? { ...cat, medications: cat.medications.map(item => item.id === log.medicationId && item.stockCount != null ? { ...item, stockCount: item.stockCount + 1 } : item), updatedAt: new Date().toISOString() }
+          : cat),
+        schedules: current.schedules.map(schedule => schedule.id === log.linkedScheduleId && log.scheduleCompletedByLog
+          ? { ...schedule, completedDates: schedule.completedDates.filter(date => date !== log.date), updatedAt: new Date().toISOString() }
+          : schedule),
+        records: current.records.map(record => record.catId === log.catId && record.date === log.date
+          ? { ...record, medicationChecks: { ...record.medicationChecks, [log.medicationId]: remainingLogs.some(item => item.catId === log.catId && item.date === log.date && item.medicationId === log.medicationId && consumesStock(item.status)) } }
+          : record),
+      };
+    });
+    setMessage("투약 기록을 삭제하고 재고·일정을 되돌렸습니다.");
+  };
+
+  const saveQualityOfLifeCheck = (check: QualityOfLifeCheck) => {
+    setCare(current => ({
+      ...current,
+      qualityOfLifeChecks: current.qualityOfLifeChecks.some(item => item.catId === check.catId && item.date === check.date)
+        ? current.qualityOfLifeChecks.map(item => item.catId === check.catId && item.date === check.date ? { ...check, id: item.id } : item)
+        : [...current.qualityOfLifeChecks, check],
+    }));
+    setMessage(`${formatDate(check.date)} 삶의 질 평가를 저장했습니다.`);
+  };
+
+  const saveObservationMedia = (record: ObservationMediaRecord) => {
+    setCare(current => ({ ...current, observationMedia: [...current.observationMedia, record] }));
+    setMessage("관찰 사진·영상을 비공개 저장했습니다.");
+  };
+
+  const deleteObservationMedia = async (record: ObservationMediaRecord) => {
+    if (!window.confirm(`${record.document.fileName} 관찰 자료를 삭제할까요?`)) return;
+    try {
+      await deleteMedicalDocument(record.document.storagePath);
+    } catch (caught) {
+      window.alert(caught instanceof Error ? caught.message : "관찰 사진·영상을 삭제하지 못했습니다.");
+      return;
+    }
+    setCare(current => ({ ...current, observationMedia: current.observationMedia.filter(item => item.id !== record.id) }));
+    setMessage("관찰 사진·영상을 삭제했습니다.");
   };
 
   const saveSchedule = (schedule: CareSchedule) => {
@@ -548,7 +700,12 @@ export default function SeniorCatPage() {
   const handleReminderAction = (reminder: CareReminder) => {
     if (reminder.catId) setSelectedCatId(reminder.catId);
     if (reminder.targetDate) setSelectedDate(reminder.targetDate);
-    if (reminder.action === "food_history") setFoodDialogRequest(current => current + 1);
+    if (reminder.action === "food_history" && !reminder.id.startsWith("food-stock-") && !reminder.id.startsWith("food-expiry-")) {
+      setFoodDialogRequest(current => current + 1);
+    }
+    if (reminder.action === "medication_log") setMedicationDialogRequest(current => current + 1);
+    if (reminder.action === "quality_of_life") setQualityDialogRequest(current => current + 1);
+    if (reminder.action === "weekly_check") setWeeklyDialogRequest(current => current + 1);
 
     const targetId = {
       daily_record: "daily-record-section",
@@ -556,6 +713,8 @@ export default function SeniorCatPage() {
       weekly_check: "weekly-care-section",
       medication_stock: "medication-stock-section",
       food_history: "food-history-section",
+      medication_log: "medication-log-section",
+      quality_of_life: "quality-of-life-section",
     }[reminder.action];
     window.setTimeout(() => {
       document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -577,16 +736,23 @@ export default function SeniorCatPage() {
     setEditingProfile(null);
     setProfileDialogOpen(false);
     setQuickRecordOpen(false);
+    setFoodDialogRequest(0);
+    setMedicationDialogRequest(0);
+    setQualityDialogRequest(0);
+    setWeeklyDialogRequest(0);
   };
 
-  const showVetReport = () => {
+  const showVetReport = async () => {
     if (!selectedCat) return;
-    const opened = openVetReport({
+    const opened = await openVetReport({
       cat: selectedCat,
       records: getRecordsInRange(care.records, selectedCat.id, reportRange),
       alerts: selectedAlerts,
       schedules: care.schedules,
       foodItems: care.foodItems,
+      medicationAdministrations: care.medicationAdministrations,
+      qualityOfLifeChecks: care.qualityOfLifeChecks,
+      observationMedia: care.observationMedia,
       labReports: care.labReports,
       healthCheckups: care.healthCheckups,
       weeklyChecks: care.weeklyChecks,
@@ -771,6 +937,13 @@ export default function SeniorCatPage() {
                 </Box>
               </Box>
 
+              <MultiCatEventLogger
+                cats={orderedCats}
+                records={care.records}
+                foodItems={care.foodItems}
+                onSave={saveMultiCatEvents}
+              />
+
               <Box component="section" aria-labelledby="attention-heading">
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
                   <MonitorHeartRounded color="warning" />
@@ -869,13 +1042,30 @@ export default function SeniorCatPage() {
                     }}
                   >
                     <Box id="weekly-care-section" sx={{ scrollMarginTop: 96 }}>
-                      <WeeklyWellnessPanel cat={selectedCat} checks={care.weeklyChecks} onSave={saveWeeklyCheck} />
+                      <WeeklyWellnessPanel cat={selectedCat} checks={care.weeklyChecks} openRequestKey={weeklyDialogRequest} onSave={saveWeeklyCheck} />
                     </Box>
                     <EmergencyCardPanel
                       cat={selectedCat}
                       info={care.emergencyInfo.find(info => info.catId === selectedCat.id) ?? null}
                       onSave={saveEmergencyInfo}
                       onMessage={setMessage}
+                    />
+                  </Box>
+
+                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", xl: "repeat(2, minmax(0, 1fr))" }, gap: 3, mb: 3 }}>
+                    <Box id="quality-of-life-section" sx={{ scrollMarginTop: 96 }}>
+                      <QualityOfLifePanel
+                        cat={selectedCat}
+                        checks={care.qualityOfLifeChecks}
+                        openRequestKey={qualityDialogRequest}
+                        onSave={saveQualityOfLifeCheck}
+                      />
+                    </Box>
+                    <ObservationMediaPanel
+                      cat={selectedCat}
+                      records={care.observationMedia}
+                      onSave={saveObservationMedia}
+                      onDelete={deleteObservationMedia}
                     />
                   </Box>
 
@@ -906,10 +1096,23 @@ export default function SeniorCatPage() {
                     </Box>
                   </Box>
 
+                  <Box id="medication-log-section" sx={{ mb: 3, scrollMarginTop: 96 }}>
+                    <MedicationLogPanel
+                      cat={selectedCat}
+                      date={selectedDate}
+                      schedules={care.schedules}
+                      logs={care.medicationAdministrations}
+                      openRequestKey={medicationDialogRequest}
+                      onSave={saveMedicationAdministration}
+                      onDelete={deleteMedicationAdministration}
+                    />
+                  </Box>
+
                   <Box id="food-history-section" sx={{ mb: 3, scrollMarginTop: 96 }}>
                     <FoodHistoryPanel
                       cat={selectedCat}
                       items={care.foodItems.filter(item => item.catId === selectedCat.id)}
+                      records={selectedCatRecords}
                       openRequestKey={foodDialogRequest}
                       onSave={saveFoodItem}
                       onDelete={deleteFoodItem}

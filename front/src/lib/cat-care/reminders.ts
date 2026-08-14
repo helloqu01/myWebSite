@@ -2,7 +2,7 @@ import type { CareState, DailyRecord } from "@/types/cat-care";
 import { isScheduleCompleted, isScheduleDue } from "./schedules";
 import { toLocalDateKey } from "./storage";
 
-export type CareReminderAction = "daily_record" | "schedule" | "weekly_check" | "medication_stock" | "food_history";
+export type CareReminderAction = "daily_record" | "schedule" | "weekly_check" | "medication_stock" | "food_history" | "medication_log" | "quality_of_life";
 
 export interface CareReminder {
   id: string;
@@ -33,6 +33,10 @@ function missingDailyItems(record: DailyRecord | undefined): string[] {
   return missing;
 }
 
+function qualityScore(check: CareState["qualityOfLifeChecks"][number]): number {
+  return Math.round((check.appetite + check.painComfort + check.hygiene + check.mobility + check.interaction + check.sleep) / 24 * 100);
+}
+
 export function buildCareReminders(care: CareState, now = new Date()): CareReminder[] {
   const today = toLocalDateKey(now);
   const reminders: CareReminder[] = [];
@@ -52,8 +56,8 @@ export function buildCareReminders(care: CareState, now = new Date()): CareRemin
       title: `${cat.name} · ${schedule.title}`,
       detail: `${schedule.time || "시간 미지정"} 일정이 아직 완료되지 않았습니다.`,
       severity: schedule.type === "medication" ? "warning" : "info",
-      action: "schedule",
-      actionLabel: "일정 확인",
+      action: schedule.type === "medication" ? "medication_log" : "schedule",
+      actionLabel: schedule.type === "medication" ? "투약 기록" : "일정 확인",
       notifyNow,
       catId: cat.id,
       targetDate: today,
@@ -109,23 +113,102 @@ export function buildCareReminders(care: CareState, now = new Date()): CareRemin
         targetDate: today,
       });
     }
+
+    const qualityChecks = care.qualityOfLifeChecks.filter(check => check.catId === cat.id).sort((a, b) => b.date.localeCompare(a.date));
+    const latestQuality = qualityChecks[0];
+    if (!latestQuality || latestQuality.date < datePlus(now, -7)) {
+      reminders.push({
+        id: `quality-due-${cat.id}-${today}`,
+        title: `${cat.name} 삶의 질 평가 필요`,
+        detail: latestQuality ? `마지막 평가는 ${latestQuality.date}입니다.` : "아직 삶의 질 평가 기록이 없습니다.",
+        severity: "info",
+        action: "quality_of_life",
+        actionLabel: "오늘 평가",
+        notifyNow: true,
+        catId: cat.id,
+        targetDate: today,
+      });
+    }
+    if (latestQuality) {
+      const latestScore = qualityScore(latestQuality);
+      const previousScore = qualityChecks[1] ? qualityScore(qualityChecks[1]) : null;
+      if (latestScore < 50 || (previousScore != null && latestScore <= previousScore - 20)) {
+        reminders.push({
+          id: `quality-change-${cat.id}-${latestQuality.id}-${latestScore}`,
+          title: `${cat.name} 삶의 질 점수 변화`,
+          detail: `최근 점수 ${latestScore}점${previousScore != null ? ` · 이전 ${previousScore}점` : ""}. 변화 항목을 확인해 주세요.`,
+          severity: latestScore < 35 ? "error" : "warning",
+          action: "quality_of_life",
+          actionLabel: "평가 확인",
+          notifyNow: true,
+          catId: cat.id,
+        });
+      }
+    }
   });
 
   care.cats.forEach(cat => {
-    const hasCurrentFood = care.foodItems.some(item => item.catId === cat.id
+    const currentFoods = care.foodItems.filter(item => item.catId === cat.id
       && item.category !== "treat"
       && item.startDate <= today
       && (!item.endDate || item.endDate >= today));
-    if (hasCurrentFood) return;
+    if (!currentFoods.length) {
+      reminders.push({
+        id: `food-${cat.id}-${today}`,
+        title: `${cat.name} 현재 사료 정보 미등록`,
+        detail: "먹이고 있는 사료의 브랜드·제품과 급여 시작일을 기록해 주세요.",
+        severity: "info",
+        action: "food_history",
+        actionLabel: "사료 추가",
+        notifyNow: true,
+        catId: cat.id,
+      });
+      return;
+    }
+    currentFoods.forEach(food => {
+      const lowThreshold = Math.max((food.dailyTargetGrams ?? 0) * 3, (food.packageSizeGrams ?? 0) * 0.1);
+      if (food.remainingGrams != null && lowThreshold > 0 && food.remainingGrams <= lowThreshold) {
+        reminders.push({
+          id: `food-stock-${food.id}-${Math.round(food.remainingGrams)}`,
+          title: `${cat.name} · ${food.brand} 재고 부족`,
+          detail: `남은 양 약 ${Math.round(food.remainingGrams)}g. 새 사료 준비가 필요합니다.`,
+          severity: food.remainingGrams <= 0 ? "error" : "warning",
+          action: "food_history",
+          actionLabel: "재고 확인",
+          notifyNow: true,
+          catId: cat.id,
+        });
+      }
+      const expiryLimit = datePlus(new Date(`${today}T00:00:00`), 7);
+      if (food.expiresDate && food.expiresDate >= today && food.expiresDate <= expiryLimit) {
+        reminders.push({
+          id: `food-expiry-${food.id}-${food.expiresDate}`,
+          title: `${cat.name} · ${food.brand} 유통기한 임박`,
+          detail: `${food.expiresDate}까지입니다. 포장 상태와 제품 안내를 확인해 주세요.`,
+          severity: "warning",
+          action: "food_history",
+          actionLabel: "사료 확인",
+          notifyNow: true,
+          catId: cat.id,
+        });
+      }
+    });
+  });
+
+  care.medicationAdministrations.filter(log => log.date === today && (log.status === "vomited" || Boolean(log.sideEffects))).forEach(log => {
+    const cat = care.cats.find(item => item.id === log.catId);
+    const medication = cat?.medications.find(item => item.id === log.medicationId);
+    if (!cat) return;
     reminders.push({
-      id: `food-${cat.id}-${today}`,
-      title: `${cat.name} 현재 사료 정보 미등록`,
-      detail: "먹이고 있는 사료의 브랜드·제품과 급여 시작일을 기록해 주세요.",
-      severity: "info",
-      action: "food_history",
-      actionLabel: "사료 추가",
+      id: `medication-reaction-${log.id}-${log.updatedAt}`,
+      title: `${cat.name} 투약 후 확인 필요`,
+      detail: `${medication?.name ?? "약"} · ${log.status === "vomited" ? "복용 후 구토" : log.sideEffects}`,
+      severity: "warning",
+      action: "medication_log",
+      actionLabel: "투약 기록 확인",
       notifyNow: true,
       catId: cat.id,
+      targetDate: log.date,
     });
   });
 

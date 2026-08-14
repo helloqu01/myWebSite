@@ -25,9 +25,11 @@ export type ObservationLevel = "usual" | "changed" | "concerning";
 export type LitterRecordType = "urine" | "stool" | "both";
 export type CloudMemberRole = "owner" | "editor" | "viewer";
 export type HealthCheckupType = "routine" | "follow_up" | "symptom" | "emergency" | "vaccination" | "other";
-export type TimedCareEventType = "meal" | "urine" | "stool" | "seizure";
+export type TimedCareEventType = "water" | "meal" | "urine" | "stool" | "seizure";
 export type SeizureSeverity = "mild" | "moderate" | "severe";
 export type FoodCategory = "dry" | "wet" | "prescription" | "treat" | "other";
+export type MedicationAdministrationStatus = "given" | "missed" | "failed" | "vomited";
+export type ObservationMediaCategory = "mobility" | "behavior" | "vomit" | "stool" | "urine" | "skin" | "wound" | "other";
 
 export interface Medication {
   id: string;
@@ -60,11 +62,27 @@ export interface TimedCareEvent {
   id: string;
   type: TimedCareEventType;
   time: string;
+  amountMl: number | null;
   amountGrams: number | null;
   durationSeconds: number | null;
   severity: SeizureSeverity | null;
   foodItemId: string | null;
   notes: string;
+}
+
+export interface FoodNutrientAnalysis {
+  proteinMinPercent: number | null;
+  fatMinPercent: number | null;
+  fiberMaxPercent: number | null;
+  ashMaxPercent: number | null;
+  moistureMaxPercent: number | null;
+  calciumMinPercent: number | null;
+  phosphorusMinPercent: number | null;
+  omega6Percent: number | null;
+  omega3Percent: number | null;
+  magnesiumPercent: number | null;
+  sodiumPercent: number | null;
+  energyKcalPerKg: number | null;
 }
 
 export interface FoodItem {
@@ -75,7 +93,66 @@ export interface FoodItem {
   productName: string;
   startDate: string;
   endDate: string;
+  openedDate: string;
+  expiresDate: string;
+  packageSizeGrams: number | null;
+  remainingGrams: number | null;
+  dailyTargetGrams: number | null;
+  caloriesPer100g: number | null;
+  nutrients: FoodNutrientAnalysis;
+  ingredients: string;
+  vitaminsMinerals: string;
+  additives: string;
+  labelRawText: string;
+  labelDocuments: MedicalDocumentReference[];
   notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MedicationAdministration {
+  id: string;
+  catId: string;
+  medicationId: string;
+  date: string;
+  scheduledTime: string;
+  actualTime: string;
+  dose: number | null;
+  doseUnit: string;
+  status: MedicationAdministrationStatus;
+  administeredBy: string;
+  sideEffects: string;
+  notes: string;
+  linkedScheduleId: string | null;
+  stockDeducted: boolean;
+  scheduleCompletedByLog: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface QualityOfLifeCheck {
+  id: string;
+  catId: string;
+  date: string;
+  appetite: number;
+  painComfort: number;
+  hygiene: number;
+  mobility: number;
+  interaction: number;
+  sleep: number;
+  notes: string;
+  updatedAt: string;
+}
+
+export interface ObservationMediaRecord {
+  id: string;
+  catId: string;
+  date: string;
+  time: string;
+  category: ObservationMediaCategory;
+  title: string;
+  notes: string;
+  document: MedicalDocumentReference;
   createdAt: string;
   updatedAt: string;
 }
@@ -205,6 +282,12 @@ export interface WeeklyWellnessCheck {
   muscleConditionScore: number | null;
   systolicBloodPressure: number | null;
   diastolicBloodPressure: number | null;
+  jumpingDifficulty: boolean;
+  stairDifficulty: boolean;
+  limping: boolean;
+  disorientation: boolean;
+  nightVocalizationCount: number | null;
+  hidingHours: number | null;
   notes: string;
   updatedAt: string;
 }
@@ -245,10 +328,13 @@ export interface NotificationSettings {
 }
 
 export interface CareState {
-  version: 9;
+  version: 11;
   cats: CatProfile[];
   records: DailyRecord[];
   foodItems: FoodItem[];
+  medicationAdministrations: MedicationAdministration[];
+  qualityOfLifeChecks: QualityOfLifeCheck[];
+  observationMedia: ObservationMediaRecord[];
   schedules: CareSchedule[];
   labReports: LabReport[];
   healthCheckups: HealthCheckup[];

@@ -302,8 +302,8 @@ values (
   'cat-medical-documents',
   'cat-medical-documents',
   false,
-  10485760,
-  array['image/jpeg', 'image/png', 'image/webp']
+  31457280,
+  array['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime']
 )
 on conflict (id) do update
 set public = excluded.public,
@@ -327,7 +327,7 @@ declare
 begin
   if current_user_id is null
      or coalesce(array_length(path_parts, 1), 0) < 4
-     or path_parts[3] not in ('chart', 'examination') then
+     or path_parts[3] not in ('chart', 'examination', 'observation', 'food-label') then
     return false;
   end if;
 
