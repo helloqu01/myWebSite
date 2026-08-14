@@ -31,10 +31,24 @@ import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
 import CalendarMonthRounded from "@mui/icons-material/CalendarMonthRounded";
 import MonitorHeartRounded from "@mui/icons-material/MonitorHeartRounded";
 import LockRounded from "@mui/icons-material/LockRounded";
+import PlaylistAddCheckRounded from "@mui/icons-material/PlaylistAddCheckRounded";
+import PrintRounded from "@mui/icons-material/PrintRounded";
 import CatProfileDialog from "@/components/senior-cat/CatProfileDialog";
+import CareCalendar from "@/components/senior-cat/CareCalendar";
+import CareSchedulePanel from "@/components/senior-cat/CareSchedulePanel";
 import DailyRecordForm from "@/components/senior-cat/DailyRecordForm";
+import LabReportPanel from "@/components/senior-cat/LabReportPanel";
+import QuickRecordDialog from "@/components/senior-cat/QuickRecordDialog";
 import TrendCharts from "@/components/senior-cat/TrendCharts";
-import type { AlertLevel, CareState, CatProfile, DailyRecord, HealthAlert } from "@/types/cat-care";
+import type {
+  AlertLevel,
+  CareSchedule,
+  CareState,
+  CatProfile,
+  DailyRecord,
+  HealthAlert,
+  LabReport,
+} from "@/types/cat-care";
 import { MAX_CATS } from "@/types/cat-care";
 import {
   EMPTY_CARE_STATE,
@@ -51,6 +65,7 @@ import {
   getRecordsInRange,
   recordsForCat,
 } from "@/lib/cat-care/insights";
+import { openVetReport } from "@/lib/cat-care/reports";
 
 const statusStyle: Record<AlertLevel | "stable", { label: string; color: "default" | "info" | "warning" | "error" | "success" }> = {
   stable: { label: "안정적", color: "success" },
@@ -188,7 +203,10 @@ export default function SeniorCatPage() {
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<CatProfile | null>(null);
   const [selectedDate, setSelectedDate] = useState(() => toLocalDateKey(new Date()));
+  const [quickRecordOpen, setQuickRecordOpen] = useState(false);
+  const [quickRecordDate, setQuickRecordDate] = useState(() => toLocalDateKey(new Date()));
   const [range, setRange] = useState<7 | 30>(7);
+  const [reportRange, setReportRange] = useState<7 | 30 | 90>(30);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -263,8 +281,10 @@ export default function SeniorCatPage() {
 
   const deleteProfile = (cat: CatProfile) => {
     const recordCount = care.records.filter(record => record.catId === cat.id).length;
+    const scheduleCount = care.schedules.filter(schedule => schedule.catId === cat.id).length;
+    const labReportCount = care.labReports.filter(report => report.catId === cat.id).length;
     const confirmed = window.confirm(
-      `${cat.name} 프로필과 기록 ${recordCount}개를 이 기기에서 삭제할까요? 삭제 전 JSON 백업을 권장합니다.`,
+      `${cat.name} 프로필과 건강 기록 ${recordCount}개, 케어 일정 ${scheduleCount}개, 검사결과 ${labReportCount}개를 이 기기에서 삭제할까요? 삭제 전 JSON 백업을 권장합니다.`,
     );
     if (!confirmed) return;
 
@@ -272,27 +292,102 @@ export default function SeniorCatPage() {
       ...current,
       cats: current.cats.filter(item => item.id !== cat.id),
       records: current.records.filter(record => record.catId !== cat.id),
+      schedules: current.schedules.filter(schedule => schedule.catId !== cat.id),
+      labReports: current.labReports.filter(report => report.catId !== cat.id),
     }));
     const next = orderedCats.find(item => item.id !== cat.id);
     setSelectedCatId(next?.id ?? null);
-    setMessage(`${cat.name} 프로필과 기록을 삭제했습니다.`);
+    setMessage(`${cat.name} 프로필과 관련 건강 데이터를 삭제했습니다.`);
   };
 
   const saveRecord = (record: DailyRecord) => {
+    saveRecords([record]);
+    setMessage(`${selectedCat?.name ?? "고양이"}의 ${formatDate(record.date)} 기록을 저장했습니다.`);
+  };
+
+  const saveRecords = (incoming: DailyRecord[]) => {
+    setCare(current => {
+      const records = [...current.records];
+      incoming.forEach(record => {
+        const existingIndex = records.findIndex(item => item.catId === record.catId && item.date === record.date);
+        if (existingIndex >= 0) records[existingIndex] = { ...record, id: records[existingIndex].id };
+        else records.push(record);
+      });
+
+      return {
+        ...current,
+        cats: current.cats.map(cat => {
+          const latestWeight = incoming
+            .filter(record => record.catId === cat.id && record.weightKg != null)
+            .sort((a, b) => b.date.localeCompare(a.date))[0];
+          return latestWeight
+            ? { ...cat, currentWeightKg: latestWeight.weightKg, updatedAt: new Date().toISOString() }
+            : cat;
+        }),
+        records,
+      };
+    });
+  };
+
+  const saveQuickRecords = (records: DailyRecord[]) => {
+    saveRecords(records);
+    setMessage(`${formatDate(quickRecordDate)} 기록을 ${records.length}마리에게 저장했습니다.`);
+  };
+
+  const saveSchedule = (schedule: CareSchedule) => {
     setCare(current => ({
       ...current,
-      cats: current.cats.map(cat =>
-        cat.id === record.catId && record.weightKg != null
-          ? { ...cat, currentWeightKg: record.weightKg, updatedAt: new Date().toISOString() }
-          : cat,
-      ),
-      records: current.records.some(item => item.catId === record.catId && item.date === record.date)
-        ? current.records.map(item =>
-            item.catId === record.catId && item.date === record.date ? { ...record, id: item.id } : item,
-          )
-        : [...current.records, record],
+      schedules: current.schedules.some(item => item.id === schedule.id)
+        ? current.schedules.map(item => item.id === schedule.id ? schedule : item)
+        : [...current.schedules, schedule],
     }));
-    setMessage(`${selectedCat?.name ?? "고양이"}의 ${formatDate(record.date)} 기록을 저장했습니다.`);
+    setMessage(`${schedule.title} 일정을 저장했습니다.`);
+  };
+
+  const deleteSchedule = (schedule: CareSchedule) => {
+    if (!window.confirm(`${schedule.title} 일정을 삭제할까요?`)) return;
+    setCare(current => ({ ...current, schedules: current.schedules.filter(item => item.id !== schedule.id) }));
+    setMessage(`${schedule.title} 일정을 삭제했습니다.`);
+  };
+
+  const toggleSchedule = (schedule: CareSchedule, date: string) => {
+    const completed = schedule.completedDates.includes(date);
+    setCare(current => ({
+      ...current,
+      schedules: current.schedules.map(item => item.id === schedule.id
+        ? {
+            ...item,
+            completedDates: completed
+              ? item.completedDates.filter(completedDate => completedDate !== date)
+              : [...item.completedDates, date],
+            updatedAt: new Date().toISOString(),
+          }
+        : item),
+    }));
+  };
+
+  const saveLabReport = (report: LabReport) => {
+    setCare(current => ({ ...current, labReports: [...current.labReports, report] }));
+    setMessage(`${formatDate(report.date)} 검사결과 ${report.items.length}개를 저장했습니다.`);
+  };
+
+  const deleteLabReport = (report: LabReport) => {
+    if (!window.confirm(`${formatDate(report.date)} 검사결과를 삭제할까요?`)) return;
+    setCare(current => ({ ...current, labReports: current.labReports.filter(item => item.id !== report.id) }));
+    setMessage("검사결과를 삭제했습니다.");
+  };
+
+  const showVetReport = () => {
+    if (!selectedCat) return;
+    const opened = openVetReport({
+      cat: selectedCat,
+      records: getRecordsInRange(care.records, selectedCat.id, reportRange),
+      alerts: selectedAlerts,
+      schedules: care.schedules,
+      labReports: care.labReports,
+      days: reportRange,
+    });
+    if (!opened) setMessage("팝업이 차단되었습니다. 이 사이트의 팝업을 허용한 뒤 다시 시도해 주세요.");
   };
 
   if (!ready) {
@@ -348,6 +443,19 @@ export default function SeniorCatPage() {
                 disabled={care.cats.length >= MAX_CATS}
               >
                 고양이 등록 {care.cats.length}/{MAX_CATS}
+              </Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                size="large"
+                startIcon={<PlaylistAddCheckRounded />}
+                disabled={!care.cats.length}
+                onClick={() => {
+                  setQuickRecordDate(toLocalDateKey(new Date()));
+                  setQuickRecordOpen(true);
+                }}
+              >
+                전체 고양이 빠른 기록
               </Button>
               <Button
                 variant="outlined"
@@ -526,6 +634,31 @@ export default function SeniorCatPage() {
                     </Stack>
                   )}
 
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" },
+                      gap: 3,
+                      mb: 3,
+                    }}
+                  >
+                    <CareCalendar
+                      catId={selectedCat.id}
+                      records={care.records}
+                      schedules={care.schedules}
+                      selectedDate={selectedDate}
+                      onSelectDate={setSelectedDate}
+                    />
+                    <CareSchedulePanel
+                      cat={selectedCat}
+                      date={selectedDate}
+                      schedules={care.schedules}
+                      onSave={saveSchedule}
+                      onDelete={deleteSchedule}
+                      onToggle={toggleSchedule}
+                    />
+                  </Box>
+
                   <DailyRecordForm
                     cat={selectedCat}
                     date={selectedDate}
@@ -557,6 +690,49 @@ export default function SeniorCatPage() {
                       </ToggleButtonGroup>
                     </Stack>
                     <TrendCharts records={chartRecords} />
+                  </Box>
+
+                  <Paper
+                    elevation={0}
+                    sx={{ mt: 3, p: { xs: 2, sm: 3 }, border: "1px solid var(--card-border)", borderRadius: 4 }}
+                  >
+                    <Stack
+                      direction={{ xs: "column", md: "row" }}
+                      justifyContent="space-between"
+                      alignItems={{ xs: "flex-start", md: "center" }}
+                      gap={2}
+                    >
+                      <Box>
+                        <Typography variant="h6" fontWeight={800}>병원 공유 리포트</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          프로필, 자동 감지 내용, 케어 일정과 일별 기록을 인쇄하거나 PDF로 저장합니다.
+                        </Typography>
+                      </Box>
+                      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
+                        <ToggleButtonGroup
+                          value={reportRange}
+                          exclusive
+                          size="small"
+                          onChange={(_, value: 7 | 30 | 90 | null) => value && setReportRange(value)}
+                        >
+                          <ToggleButton value={7}>7일</ToggleButton>
+                          <ToggleButton value={30}>30일</ToggleButton>
+                          <ToggleButton value={90}>90일</ToggleButton>
+                        </ToggleButtonGroup>
+                        <Button variant="contained" startIcon={<PrintRounded />} onClick={showVetReport}>
+                          리포트 열기
+                        </Button>
+                      </Stack>
+                    </Stack>
+                  </Paper>
+
+                  <Box sx={{ mt: 4 }}>
+                    <LabReportPanel
+                      cat={selectedCat}
+                      reports={care.labReports}
+                      onSave={saveLabReport}
+                      onDelete={deleteLabReport}
+                    />
                   </Box>
 
                   <Paper
@@ -627,6 +803,16 @@ export default function SeniorCatPage() {
         profile={editingProfile}
         onClose={() => setProfileDialogOpen(false)}
         onSave={saveProfile}
+      />
+
+      <QuickRecordDialog
+        open={quickRecordOpen}
+        cats={orderedCats}
+        records={care.records}
+        date={quickRecordDate}
+        onDateChange={setQuickRecordDate}
+        onClose={() => setQuickRecordOpen(false)}
+        onSave={saveQuickRecords}
       />
 
       <Snackbar

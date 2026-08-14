@@ -14,6 +14,14 @@ on:
         options:
           - "true"
           - "false"
+      portfolio_public:
+        description: "노묘 건강관리 외 페이지 공개 상태 (true=공개, false=비밀번호 보호)"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 jobs:
   deploy-web:
@@ -46,6 +54,7 @@ jobs:
           NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
           NEXT_PUBLIC_CLARITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID }}
           NEXT_PUBLIC_RESUME_PUBLIC: ${{ github.event_name == 'workflow_dispatch' && inputs.resume_public || vars.RESUME_PUBLIC || 'false' }}
+          NEXT_PUBLIC_PORTFOLIO_PUBLIC: ${{ github.event_name == 'workflow_dispatch' && inputs.portfolio_public || vars.PORTFOLIO_PUBLIC || 'false' }}
           NEXT_PUBLIC_RESUME_ACCESS_HASH: ${{ secrets.RESUME_ACCESS_HASH }}
         run: npm run build
         

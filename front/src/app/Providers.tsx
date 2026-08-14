@@ -10,6 +10,7 @@ import ConsentScripts from "@/components/ConsentScripts";
 import { ColorModeContext } from "./context/ColorModeContext";
 import { LocaleProvider } from "@/context/LocaleContext";
 import AnalyticsTracker from "./AnalyticsTracker";
+import ProtectedSiteGate from "@/components/ProtectedSiteGate";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useState<"light" | "dark">("dark");
@@ -167,10 +168,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           <Header />
           <ConsentScripts />
           <AnalyticsTracker />
-          <ChatbotWidget />
-          <main id="main-content" tabIndex={-1} {...{ "google-side-rail-overlap": "false" }}>
-            {children}
-          </main>
+          <ProtectedSiteGate>
+            <ChatbotWidget />
+            <main id="main-content" tabIndex={-1} {...{ "google-side-rail-overlap": "false" }}>
+              {children}
+            </main>
+          </ProtectedSiteGate>
           <CookieBanner />
         </ThemeProvider>
       </ColorModeContext.Provider>

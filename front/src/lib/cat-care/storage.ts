@@ -1,11 +1,13 @@
-import type { CareState, CatProfile, DailyRecord } from "@/types/cat-care";
+import type { CareSchedule, CareState, CatProfile, DailyRecord, LabReport } from "@/types/cat-care";
 
 export const CAT_CARE_STORAGE_KEY = "ohj-senior-cat-care-v1";
 
 export const EMPTY_CARE_STATE: CareState = {
-  version: 1,
+  version: 3,
   cats: [],
   records: [],
+  schedules: [],
+  labReports: [],
 };
 
 export function createId(prefix: string): string {
@@ -29,9 +31,15 @@ export function loadCareState(): CareState {
     }
 
     return {
-      version: 1,
+      version: 3,
       cats: parsed.cats as CatProfile[],
       records: parsed.records as DailyRecord[],
+      schedules: Array.isArray(parsed.schedules)
+        ? parsed.schedules as CareSchedule[]
+        : [],
+      labReports: Array.isArray(parsed.labReports)
+        ? parsed.labReports as LabReport[]
+        : [],
     };
   } catch {
     return EMPTY_CARE_STATE;
@@ -141,4 +149,3 @@ export function toLocalDateKey(date: Date): string {
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
-

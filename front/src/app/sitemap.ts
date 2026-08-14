@@ -1,11 +1,20 @@
 import type { MetadataRoute } from "next";
 import { insights } from "@/lib/insights";
 import { siteConfig } from "@/lib/siteConfig";
-import { isResumePublic } from "@/lib/featureFlags";
+import { isPortfolioPublic, isResumePublic } from "@/lib/featureFlags";
 
 export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const seniorCatRoute: MetadataRoute.Sitemap[number] = {
+    url: `${siteConfig.siteUrl}/senior-cat`,
+    lastModified: "2026-08-14",
+    changeFrequency: "weekly",
+    priority: 0.9,
+  };
+
+  if (!isPortfolioPublic) return [seniorCatRoute];
+
   const routes: MetadataRoute.Sitemap = [
     {
       url: siteConfig.siteUrl,
@@ -57,6 +66,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.6,
     },
+    seniorCatRoute,
   ];
 
   const insightRoutes: MetadataRoute.Sitemap = insights.map(article => ({

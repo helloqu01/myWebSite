@@ -12,6 +12,12 @@ export const isResumePublic = publicFlag(
   false,
 );
 
+/** 노묘 건강관리 외 포트폴리오 페이지의 전체 공개 여부 */
+export const isPortfolioPublic = publicFlag(
+  process.env.NEXT_PUBLIC_PORTFOLIO_PUBLIC,
+  false,
+);
+
 // 평문 비밀번호는 번들에 넣지 않고 SHA-256 해시만 비교합니다.
 // 배포 시 GitHub Secret `RESUME_ACCESS_HASH`로 교체할 수 있습니다.
 const fallbackResumeAccessHash =
