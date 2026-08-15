@@ -187,6 +187,18 @@ export function buildCatAlerts(cat: CatProfile, allRecords: DailyRecord[]): Heal
         todayRecord.measurementConfidence,
       );
     }
+
+    if (todayRecord.restingRespiratoryRate != null && todayRecord.restingRespiratoryRate > 35 && !todayRecord.breathingDifficulty) {
+      addAlert(
+        alerts,
+        cat.id,
+        "consult",
+        "안정 시 호흡수 증가",
+        "편안히 자는 동안 다시 측정해도 높은 상태가 이어지면 동물병원에 상담하세요.",
+        `${todayRecord.date} 분당 ${todayRecord.restingRespiratoryRate}회`,
+        todayRecord.measurementConfidence,
+      );
+    }
   }
 
   const recent = records.slice(-3);
@@ -289,6 +301,18 @@ export function buildCatAlerts(cat: CatProfile, allRecords: DailyRecord[]): Heal
       "배변 없음 지속",
       "배변 시 힘주기, 통증, 구토 또는 식욕 저하가 있는지 확인하고 동물병원에 상담하세요.",
       `${lastTwo[0].date}부터 2회 연속 배변 0회`,
+      minimumConfidence(lastTwo),
+    );
+  }
+
+  if (lastTwo.length === 2 && lastTwo.every(record => record.activity === "low")) {
+    addAlert(
+      alerts,
+      cat.id,
+      "watch",
+      "활동성 감소 지속",
+      "통증, 식욕, 호흡과 배변 상태를 함께 확인하고 변화가 이어지면 동물병원에 상담하세요.",
+      `${lastTwo[0].date}부터 2회 연속 활동성 감소`,
       minimumConfidence(lastTwo),
     );
   }

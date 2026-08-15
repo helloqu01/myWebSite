@@ -85,6 +85,7 @@ function recordFor(cat: CatProfile, date: string, draft: QuickDraft, existing?: 
     weightKg: nullableNumber(draft.weightKg),
     vomitCount: existing?.vomitCount ?? 0,
     activity: existing?.activity ?? "normal",
+    restingRespiratoryRate: existing?.restingRespiratoryRate ?? null,
     measurementConfidence: draft.confidence,
     medicationChecks: {
       ...(existing?.medicationChecks ?? {}),

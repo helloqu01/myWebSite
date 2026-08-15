@@ -6,10 +6,12 @@ import {
   Avatar,
   Box,
   Button,
+  Checkbox,
   Chip,
   Divider,
   IconButton,
   InputAdornment,
+  FormControlLabel,
   MenuItem,
   Paper,
   Stack,
@@ -28,7 +30,11 @@ import SaveRounded from "@mui/icons-material/SaveRounded";
 import WarningAmberRounded from "@mui/icons-material/WarningAmberRounded";
 import WaterDropRounded from "@mui/icons-material/WaterDropRounded";
 import WcRounded from "@mui/icons-material/WcRounded";
+import AirRounded from "@mui/icons-material/AirRounded";
+import DirectionsRunRounded from "@mui/icons-material/DirectionsRunRounded";
+import SickRounded from "@mui/icons-material/SickRounded";
 import type {
+  ActivityLevel,
   AppetiteLevel,
   CatProfile,
   DailyRecord,
@@ -53,7 +59,15 @@ interface DailyDraft {
   urineCount: string;
   stoolCount: string;
   appetite: AppetiteLevel;
+  vomitCount: string;
+  activity: ActivityLevel;
+  restingRespiratoryRate: string;
   confidence: MeasurementConfidence;
+  urinationStraining: boolean;
+  urineNotProduced: boolean;
+  bloodInUrine: boolean;
+  breathingDifficulty: boolean;
+  collapseOrSeizure: boolean;
   notes: string;
 }
 
@@ -145,7 +159,15 @@ function dailyDraft(record?: DailyRecord): DailyDraft {
     urineCount: record?.urineCount?.toString() ?? "",
     stoolCount: record?.stoolCount?.toString() ?? "",
     appetite: record?.appetite ?? "normal",
+    vomitCount: record?.vomitCount?.toString() ?? "0",
+    activity: record?.activity ?? "normal",
+    restingRespiratoryRate: record?.restingRespiratoryRate?.toString() ?? "",
     confidence: record?.measurementConfidence ?? "high",
+    urinationStraining: record?.urinationStraining ?? false,
+    urineNotProduced: record?.urineNotProduced ?? false,
+    bloodInUrine: record?.bloodInUrine ?? false,
+    breathingDifficulty: record?.breathingDifficulty ?? false,
+    collapseOrSeizure: record?.collapseOrSeizure ?? false,
     notes: record?.notes ?? "",
   };
 }
@@ -183,6 +205,7 @@ function emptyRecord(cat: CatProfile, date: string): DailyRecord {
     weightKg: null,
     vomitCount: 0,
     activity: "normal",
+    restingRespiratoryRate: null,
     measurementConfidence: "high",
     medicationChecks: Object.fromEntries(cat.medications.map(item => [item.id, false])),
     urinationStraining: false,
@@ -371,8 +394,15 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
           : Math.max(enteredStoolCount, stoolFromEvents),
         stoolAmount: lastStoolSize || base.stoolAmount,
         appetite: draft.appetite,
+        vomitCount: nullableNumber(draft.vomitCount) ?? 0,
+        activity: draft.activity,
+        restingRespiratoryRate: nullableNumber(draft.restingRespiratoryRate),
         measurementConfidence: draft.confidence,
-        collapseOrSeizure: base.collapseOrSeizure || events.some(event => event.type === "seizure"),
+        urinationStraining: draft.urinationStraining,
+        urineNotProduced: draft.urineNotProduced,
+        bloodInUrine: draft.bloodInUrine,
+        breathingDifficulty: draft.breathingDifficulty,
+        collapseOrSeizure: draft.collapseOrSeizure || events.some(event => event.type === "seizure"),
         timedEvents: events.sort((a, b) => a.time.localeCompare(b.time)),
         notes: draft.notes.trim(),
         updatedAt: now,
@@ -422,7 +452,22 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
                 <TextField label="소변(회)" type="number" size="small" value={draft.urineCount} onChange={event => updateDraft(cat.id, "urineCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} InputProps={{ startAdornment: <InputAdornment position="start"><WcRounded fontSize="small" sx={{ color: eventColors.urine }} /></InputAdornment> }} helperText={summary?.eventUrineCount ? `시간 행 ${summary.eventUrineCount}회 반영` : undefined} />
                 <TextField label="대변(회)" type="number" size="small" value={draft.stoolCount} onChange={event => updateDraft(cat.id, "stoolCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} InputProps={{ startAdornment: <InputAdornment position="start"><FiberManualRecordRounded fontSize="small" sx={{ color: eventColors.stool }} /></InputAdornment> }} helperText={summary?.eventStoolCount ? `시간 행 ${summary.eventStoolCount}회 반영` : undefined} />
                 <TextField select label="식욕" size="small" value={draft.appetite} onChange={event => updateDraft(cat.id, "appetite", event.target.value as AppetiteLevel)}>{Object.entries(appetiteLabels).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>
+                <TextField label="구토(회)" type="number" size="small" value={draft.vomitCount} onChange={event => updateDraft(cat.id, "vomitCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} InputProps={{ startAdornment: <InputAdornment position="start"><SickRounded fontSize="small" color="warning" /></InputAdornment> }} />
+                <TextField select label="활동성" size="small" value={draft.activity} onChange={event => updateDraft(cat.id, "activity", event.target.value as ActivityLevel)} InputProps={{ startAdornment: <InputAdornment position="start"><DirectionsRunRounded fontSize="small" color="success" /></InputAdornment> }}><MenuItem value="normal">평소</MenuItem><MenuItem value="low">감소</MenuItem></TextField>
+                <TextField label="안정 시 호흡수" type="number" size="small" value={draft.restingRespiratoryRate} onChange={event => updateDraft(cat.id, "restingRespiratoryRate", event.target.value)} slotProps={{ htmlInput: { min: 0, max: 120, step: 1 } }} InputProps={{ startAdornment: <InputAdornment position="start"><AirRounded fontSize="small" color="info" /></InputAdornment>, endAdornment: <InputAdornment position="end">회/분</InputAdornment> }} helperText="자는 동안 1분간 측정" />
                 <TextField select label="기록 신뢰도" size="small" value={draft.confidence} onChange={event => updateDraft(cat.id, "confidence", event.target.value as MeasurementConfidence)}>{Object.entries(confidenceLabels).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>
+                <Box sx={{ gridColumn: "1 / -1", p: 1.25, borderRadius: 2.5, bgcolor: "rgba(211,47,47,0.04)", border: "1px solid", borderColor: "divider" }}>
+                  <Typography variant="subtitle2" fontWeight={800} sx={{ mb: 0.25 }}>오늘 이상 징후</Typography>
+                  <Stack direction={{ xs: "column", sm: "row" }} flexWrap="wrap" useFlexGap>
+                    <FormControlLabel control={<Checkbox checked={draft.urinationStraining} onChange={event => updateDraft(cat.id, "urinationStraining", event.target.checked)} />} label="소변 볼 때 힘줌" />
+                    <FormControlLabel control={<Checkbox checked={draft.urineNotProduced} onChange={event => updateDraft(cat.id, "urineNotProduced", event.target.checked)} />} label="소변이 나오지 않음" />
+                    <FormControlLabel control={<Checkbox checked={draft.bloodInUrine} onChange={event => updateDraft(cat.id, "bloodInUrine", event.target.checked)} />} label="혈뇨" />
+                    <FormControlLabel control={<Checkbox checked={draft.breathingDifficulty} onChange={event => updateDraft(cat.id, "breathingDifficulty", event.target.checked)} />} label="호흡이 힘들어 보임" />
+                    <FormControlLabel control={<Checkbox checked={draft.collapseOrSeizure} onChange={event => updateDraft(cat.id, "collapseOrSeizure", event.target.checked)} />} label="쓰러짐·경련" />
+                  </Stack>
+                  {(draft.urineNotProduced || draft.breathingDifficulty || draft.collapseOrSeizure) && <Alert severity="error" sx={{ mt: 1 }}>소변이 나오지 않음, 호흡 곤란, 쓰러짐·경련은 기록보다 즉시 동물병원 연락이 우선입니다.</Alert>}
+                  {nullableNumber(draft.restingRespiratoryRate) != null && nullableNumber(draft.restingRespiratoryRate)! > 35 && !draft.breathingDifficulty && <Alert severity="warning" sx={{ mt: 1 }}>안정 시 호흡수가 분당 35회를 넘었습니다. 다시 측정해도 지속되면 동물병원에 상담하세요.</Alert>}
+                </Box>
                 <TextField label="하루 메모" size="small" value={draft.notes} onChange={event => updateDraft(cat.id, "notes", event.target.value)} placeholder="구토, 활동성, 특이사항" multiline minRows={2} sx={{ gridColumn: "1 / -1" }} />
               </Box>
             </Paper>
@@ -439,9 +484,9 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
         {rows.map((row, index) => {
           const catFoods = foodItems.filter(item => foodAppliesToCat(item, row.catId));
           return (
-            <Box key={row.id} data-testid={`multi-event-row-${index}`} sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: row.type === "meal" ? "130px 115px 125px 105px minmax(150px,1fr) 120px minmax(140px,1fr) auto" : row.type === "seizure" ? "130px 115px 125px 105px 120px minmax(140px,1fr) auto" : "130px 115px 125px 105px minmax(150px,1fr) auto" }, gap: 1, alignItems: "center", p: 1.25, border: "1px solid", borderLeft: "4px solid", borderColor: eventColors[row.type], bgcolor: eventBackgrounds[row.type], borderRadius: 2.5 }}>
+            <Box key={row.id} data-testid={`multi-event-row-${index}`} sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))", xl: row.type === "meal" ? "130px 150px 125px 110px minmax(150px,1fr) 130px minmax(140px,1fr) auto" : row.type === "seizure" ? "130px 150px 125px 110px 130px minmax(140px,1fr) auto" : "130px 150px 125px 110px minmax(150px,1fr) auto" }, gap: 1, alignItems: "center", p: 1.25, border: "1px solid", borderLeft: "4px solid", borderColor: eventColors[row.type], bgcolor: eventBackgrounds[row.type], borderRadius: 2.5 }}>
               <Chip icon={eventIcon(row.type)} label={`${index + 1} · ${eventLabels[row.type]}`} size="small" variant="outlined" sx={{ color: eventColors[row.type], borderColor: eventColors[row.type], "& .MuiChip-icon": { color: "inherit" } }} />
-              <TextField label="시각" type="time" size="small" value={row.time} onChange={event => updateRow(row.id, { time: event.target.value })} slotProps={{ inputLabel: { shrink: true } }} />
+              <TextField label="시각" type="time" size="small" value={row.time} onChange={event => updateRow(row.id, { time: event.target.value })} slotProps={{ inputLabel: { shrink: true }, htmlInput: { style: { minWidth: 0 } } }} sx={{ width: "100%", minWidth: 0 }} />
               <TextField select label="고양이" size="small" value={row.catId} onChange={event => updateRow(row.id, { catId: event.target.value, foodItemId: "" })}>
                 <MenuItem value=""><em>선택</em></MenuItem>
                 {cats.map(cat => <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>)}

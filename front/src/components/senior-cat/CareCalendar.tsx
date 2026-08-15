@@ -28,7 +28,8 @@ function hasAttention(record?: DailyRecord): boolean {
     record.urinationStraining ||
     record.bloodInUrine ||
     record.appetite === "none" ||
-    record.vomitCount >= 2,
+    record.vomitCount >= 2 ||
+    (record.restingRespiratoryRate != null && record.restingRespiratoryRate > 35),
   );
 }
 

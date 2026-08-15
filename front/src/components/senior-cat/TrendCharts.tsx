@@ -7,6 +7,8 @@ import MonitorWeightRounded from "@mui/icons-material/MonitorWeightRounded";
 import WcRounded from "@mui/icons-material/WcRounded";
 import SpaRounded from "@mui/icons-material/SpaRounded";
 import RestaurantRounded from "@mui/icons-material/RestaurantRounded";
+import AirRounded from "@mui/icons-material/AirRounded";
+import SickRounded from "@mui/icons-material/SickRounded";
 import type { DailyRecord } from "@/types/cat-care";
 
 interface TrendChartsProps {
@@ -125,7 +127,7 @@ export default function TrendCharts({ records }: TrendChartsProps) {
     <Box
       sx={{
         display: "grid",
-        gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(5, 1fr)" },
+        gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" },
         gap: 2,
       }}
     >
@@ -172,6 +174,22 @@ export default function TrendCharts({ records }: TrendChartsProps) {
           const count = record.timedEvents.filter(event => event.type === "meal").length;
           return count > 0 ? count : record.appetite === "none" ? 0 : null;
         }}
+      />
+      <MetricChart
+        title="구토"
+        unit="회"
+        color={theme.palette.error.main}
+        icon={<SickRounded fontSize="small" />}
+        records={records}
+        value={record => record.vomitCount}
+      />
+      <MetricChart
+        title="안정 시 호흡수"
+        unit="회/분"
+        color={theme.palette.info.dark}
+        icon={<AirRounded fontSize="small" />}
+        records={records}
+        value={record => record.restingRespiratoryRate}
       />
     </Box>
   );

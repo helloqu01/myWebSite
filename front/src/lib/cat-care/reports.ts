@@ -1,4 +1,4 @@
-import type { CareSchedule, CatProfile, DailyRecord, EmergencyInfo, FoodItem, HealthAlert, HealthCheckup, LabReport, MedicationAdministration, ObservationMediaRecord, QualityOfLifeCheck, WeeklyWellnessCheck } from "@/types/cat-care";
+import type { CareSchedule, CatProfile, DailyRecord, EmergencyInfo, FoodItem, HealthAlert, HealthCheckup, LabReport, MedicationAdministration, MonthlyCareCheck, ObservationMediaRecord, QualityOfLifeCheck, WeeklyWellnessCheck } from "@/types/cat-care";
 import { createMedicalDocumentSignedUrl } from "./medical-documents";
 import { getCatAge } from "./insights";
 import { scheduleRepeatLabel, scheduleTypeLabel } from "./schedules";
@@ -49,11 +49,12 @@ interface VetReportInput {
   labReports: LabReport[];
   healthCheckups: HealthCheckup[];
   weeklyChecks: WeeklyWellnessCheck[];
+  monthlyChecks: MonthlyCareCheck[];
   emergencyInfo: EmergencyInfo | null;
   days: number;
 }
 
-export async function openVetReport({ cat, records, alerts, schedules, foodItems, medicationAdministrations, qualityOfLifeChecks, observationMedia, labReports, healthCheckups, weeklyChecks, emergencyInfo, days }: VetReportInput): Promise<boolean> {
+export async function openVetReport({ cat, records, alerts, schedules, foodItems, medicationAdministrations, qualityOfLifeChecks, observationMedia, labReports, healthCheckups, weeklyChecks, monthlyChecks, emergencyInfo, days }: VetReportInput): Promise<boolean> {
   const reportWindow = window.open("", "_blank");
   if (!reportWindow) return false;
   reportWindow.opener = null;
@@ -115,6 +116,7 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
     record.urineNotProduced && "소변 안 나옴",
     record.bloodInUrine && "혈뇨",
     record.breathingDifficulty && "호흡 곤란",
+    record.restingRespiratoryRate != null && record.restingRespiratoryRate > 35 && `안정 시 호흡수 ${record.restingRespiratoryRate}회/분`,
     record.collapseOrSeizure && "쓰러짐/경련",
   ].filter(Boolean).join(", ") || "—";
   const timedEventSummary = (record: DailyRecord) => record.timedEvents
@@ -144,6 +146,9 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
         <td>${escapeHtml(displayNumber(record.urineCount, "회"))}</td>
         <td>${escapeHtml(displayNumber(record.stoolCount, "회"))}</td>
         <td>${escapeHtml(appetiteLabel[record.appetite])}</td>
+        <td>${record.vomitCount}회</td>
+        <td>${record.activity === "low" ? "감소" : "평소"}</td>
+        <td>${escapeHtml(displayNumber(record.restingRespiratoryRate, "회/분"))}</td>
         <td>${escapeHtml(displayNumber(record.weightKg, "kg"))}</td>
         <td>${cat.medications.length ? `${medicationDone}/${cat.medications.length}` : "—"}</td>
         <td>${timedEventSummary(record)}</td>
@@ -268,6 +273,11 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
       return `<tr><td>${escapeHtml(check.date)}</td><td>${escapeHtml(displayNumber(check.weightKg, "kg"))}</td><td>${observationText[check.mobility]}</td><td>${observationText[check.grooming]}</td><td>${observationText[check.sleep]}</td><td>${observationText[check.interaction]}</td><td>${observationText[check.litterBoxUse]}</td><td>${observationText[check.painResponse]}</td><td>${escapeHtml(behavior)}</td><td>${check.bodyConditionScore ?? "—"}/${check.muscleConditionScore ?? "—"}</td><td>${check.systolicBloodPressure ?? "—"}${check.diastolicBloodPressure != null ? `/${check.diastolicBloodPressure}` : ""}</td><td>${escapeHtml(check.notes || "—")}</td></tr>`;
     })
     .join("");
+  const monthlyRows = monthlyChecks
+    .filter(check => check.catId === cat.id && check.date >= startKey)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(check => `<tr><td>${escapeHtml(check.date)}</td><td>${observationText[check.oralHealth]}</td><td>${observationText[check.skinAndLumps]}</td><td>${observationText[check.nailsAndPaws]}</td><td>${observationText[check.homeAccessibility]}</td><td>${observationText[check.litterBoxAccessibility]}</td><td>${observationText[check.foodWaterAccessibility]}</td><td>${escapeHtml(check.notes || "—")}</td></tr>`)
+    .join("");
 
   reportWindow.document.write(`<!doctype html>
 <html lang="ko">
@@ -336,8 +346,10 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
   <div class="table-wrap"><table><thead><tr><th>날짜</th><th>체중</th><th>이동</th><th>그루밍</th><th>수면</th><th>상호작용</th><th>화장실</th><th>통증</th><th>구체 행동</th><th>BCS/MCS</th><th>혈압</th><th>메모</th></tr></thead><tbody>${weeklyRows || '<tr><td colspan="12">해당 기간에 주간 체크 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <h3>삶의 질 점수</h3>
   <div class="table-wrap"><table><thead><tr><th>날짜</th><th>총점</th><th>식욕</th><th>편안함</th><th>청결</th><th>이동</th><th>교감</th><th>수면</th><th>메모</th></tr></thead><tbody>${qualityRows || '<tr><td colspan="9">해당 기간에 삶의 질 평가가 없습니다.</td></tr>'}</tbody></table></div>
+  <h2>월간 생활환경·몸 점검</h2>
+  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>치아·잇몸</th><th>피부·혹</th><th>발톱·발바닥</th><th>이동 환경</th><th>화장실 접근</th><th>사료·물 접근</th><th>메모</th></tr></thead><tbody>${monthlyRows || '<tr><td colspan="8">해당 기간에 월간 점검 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <h2>일별 상세 기록</h2>
-  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>물 마심</th><th>소변</th><th>대변</th><th>식욕</th><th>체중</th><th>투약</th><th>시간별 물·식사·배변·발작</th><th>이상 징후</th><th>메모</th></tr></thead><tbody>${recordRows || '<tr><td colspan="10">해당 기간에 기록이 없습니다.</td></tr>'}</tbody></table></div>
+  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>물 마심</th><th>소변</th><th>대변</th><th>식욕</th><th>구토</th><th>활동성</th><th>안정 시 호흡수</th><th>체중</th><th>투약</th><th>시간별 물·식사·배변·발작</th><th>이상 징후</th><th>메모</th></tr></thead><tbody>${recordRows || '<tr><td colspan="13">해당 기간에 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <div class="notice"><strong>안내:</strong> 이 리포트는 보호자가 입력한 관찰 기록을 정리한 자료이며 수의사의 진단을 대신하지 않습니다.</div>
 </body>
 </html>`);

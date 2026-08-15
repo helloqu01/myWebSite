@@ -175,6 +175,7 @@ export interface DailyRecord {
   weightKg: number | null;
   vomitCount: number;
   activity: ActivityLevel;
+  restingRespiratoryRate: number | null;
   measurementConfidence: MeasurementConfidence;
   medicationChecks: Record<string, boolean>;
   urinationStraining: boolean;
@@ -298,6 +299,20 @@ export interface WeeklyWellnessCheck {
   updatedAt: string;
 }
 
+export interface MonthlyCareCheck {
+  id: string;
+  catId: string;
+  date: string;
+  oralHealth: ObservationLevel;
+  skinAndLumps: ObservationLevel;
+  nailsAndPaws: ObservationLevel;
+  homeAccessibility: ObservationLevel;
+  litterBoxAccessibility: ObservationLevel;
+  foodWaterAccessibility: ObservationLevel;
+  notes: string;
+  updatedAt: string;
+}
+
 export interface HouseholdLitterRecord {
   id: string;
   catId: string | null;
@@ -334,7 +349,7 @@ export interface NotificationSettings {
 }
 
 export interface CareState {
-  version: 13;
+  version: 14;
   cats: CatProfile[];
   records: DailyRecord[];
   foodItems: FoodItem[];
@@ -345,6 +360,7 @@ export interface CareState {
   labReports: LabReport[];
   healthCheckups: HealthCheckup[];
   weeklyChecks: WeeklyWellnessCheck[];
+  monthlyChecks: MonthlyCareCheck[];
   householdLitterRecords: HouseholdLitterRecord[];
   emergencyInfo: EmergencyInfo[];
   notificationSettings: NotificationSettings;

@@ -2,7 +2,7 @@ import type { CareState, DailyRecord } from "@/types/cat-care";
 import { isScheduleCompleted, isScheduleDue } from "./schedules";
 import { foodAppliesToCat, toLocalDateKey } from "./storage";
 
-export type CareReminderAction = "daily_record" | "schedule" | "weekly_check" | "medication_stock" | "food_history" | "medication_log" | "quality_of_life";
+export type CareReminderAction = "daily_record" | "schedule" | "weekly_check" | "monthly_check" | "health_checkup" | "medication_stock" | "food_history" | "medication_log" | "quality_of_life";
 
 export interface CareReminder {
   id: string;
@@ -114,6 +114,21 @@ export function buildCareReminders(care: CareState, now = new Date()): CareRemin
       });
     }
 
+    const latestMonthly = care.monthlyChecks.filter(check => check.catId === cat.id).sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (!latestMonthly || latestMonthly.date < datePlus(now, -30)) {
+      reminders.push({
+        id: `monthly-${cat.id}-${today}`,
+        title: `${cat.name} 월간 생활환경·몸 점검 필요`,
+        detail: latestMonthly ? `마지막 월간 점검은 ${latestMonthly.date}입니다.` : "아직 구강·피부·혹·생활환경 점검 기록이 없습니다.",
+        severity: "info",
+        action: "monthly_check",
+        actionLabel: "월간 점검",
+        notifyNow: true,
+        catId: cat.id,
+        targetDate: today,
+      });
+    }
+
     const qualityChecks = care.qualityOfLifeChecks.filter(check => check.catId === cat.id).sort((a, b) => b.date.localeCompare(a.date));
     const latestQuality = qualityChecks[0];
     if (latestQuality) {
@@ -132,6 +147,28 @@ export function buildCareReminders(care: CareState, now = new Date()): CareRemin
         });
       }
     }
+  });
+
+  care.cats.forEach(cat => {
+    const reminderLimit = datePlus(now, 7);
+    const recentLimit = datePlus(now, -30);
+    const visit = care.healthCheckups
+      .filter(checkup => checkup.catId === cat.id && checkup.nextVisitDate && checkup.nextVisitDate >= recentLimit && checkup.nextVisitDate <= reminderLimit)
+      .sort((a, b) => a.nextVisitDate.localeCompare(b.nextVisitDate))[0];
+    if (!visit) return;
+    const overdue = visit.nextVisitDate < today;
+    const isToday = visit.nextVisitDate === today;
+    reminders.push({
+      id: `next-visit-${visit.id}-${visit.nextVisitDate}`,
+      title: `${cat.name} ${overdue ? "다음 진료일 확인" : isToday ? "오늘 병원 방문 예정" : "병원 방문 예정"}`,
+      detail: `${visit.nextVisitDate}${visit.hospital ? ` · ${visit.hospital}` : ""}${overdue ? "로 기록된 진료일이 지났습니다. 방문 여부나 새 일정을 확인해 주세요." : "에 다음 진료가 예정되어 있습니다."}`,
+      severity: overdue || isToday ? "warning" : "info",
+      action: "health_checkup",
+      actionLabel: "진료 기록 확인",
+      notifyNow: true,
+      catId: cat.id,
+      targetDate: visit.nextVisitDate,
+    });
   });
 
   care.cats.forEach(cat => {

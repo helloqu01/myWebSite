@@ -10,6 +10,7 @@ import type {
   LabReport,
   Medication,
   MedicationAdministration,
+  MonthlyCareCheck,
   NotificationSettings,
   ObservationMediaRecord,
   QualityOfLifeCheck,
@@ -20,7 +21,7 @@ import { EMPTY_FOOD_NUTRIENTS } from "./food-label";
 export const CAT_CARE_STORAGE_KEY = "ohj-senior-cat-care-v1";
 
 export const EMPTY_CARE_STATE: CareState = {
-  version: 13,
+  version: 14,
   cats: [],
   records: [],
   foodItems: [],
@@ -31,6 +32,7 @@ export const EMPTY_CARE_STATE: CareState = {
   labReports: [],
   healthCheckups: [],
   weeklyChecks: [],
+  monthlyChecks: [],
   householdLitterRecords: [],
   emergencyInfo: [],
   notificationSettings: {
@@ -63,7 +65,7 @@ function normalizeNotificationSettings(settings?: Partial<NotificationSettings>)
 
 export function normalizeCareState(input: Partial<CareState>): CareState {
   return {
-    version: 13,
+    version: 14,
     cats: Array.isArray(input.cats)
       ? (input.cats as CatProfile[]).map(cat => ({
           ...cat,
@@ -92,6 +94,14 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
               ? record.waterCount
               : timedEvents.filter(event => event.type === "water").length || null,
             timedEvents,
+            vomitCount: typeof record.vomitCount === "number" ? record.vomitCount : 0,
+            activity: record.activity === "low" ? "low" : "normal",
+            restingRespiratoryRate: typeof record.restingRespiratoryRate === "number" ? record.restingRespiratoryRate : null,
+            measurementConfidence: ["high", "medium", "low"].includes(record.measurementConfidence) ? record.measurementConfidence : "high",
+            urinationStraining: Boolean(record.urinationStraining),
+            urineNotProduced: Boolean(record.urineNotProduced),
+            bloodInUrine: Boolean(record.bloodInUrine),
+            breathingDifficulty: Boolean(record.breathingDifficulty),
             collapseOrSeizure: Boolean(record.collapseOrSeizure) || timedEvents.some(event => event.type === "seizure"),
           };
         })
@@ -206,6 +216,18 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
           hidingHours: typeof check.hidingHours === "number" ? check.hidingHours : null,
         }))
       : [],
+    monthlyChecks: Array.isArray(input.monthlyChecks)
+      ? (input.monthlyChecks as MonthlyCareCheck[]).map(check => ({
+          ...check,
+          oralHealth: ["usual", "changed", "concerning"].includes(check.oralHealth) ? check.oralHealth : "usual",
+          skinAndLumps: ["usual", "changed", "concerning"].includes(check.skinAndLumps) ? check.skinAndLumps : "usual",
+          nailsAndPaws: ["usual", "changed", "concerning"].includes(check.nailsAndPaws) ? check.nailsAndPaws : "usual",
+          homeAccessibility: ["usual", "changed", "concerning"].includes(check.homeAccessibility) ? check.homeAccessibility : "usual",
+          litterBoxAccessibility: ["usual", "changed", "concerning"].includes(check.litterBoxAccessibility) ? check.litterBoxAccessibility : "usual",
+          foodWaterAccessibility: ["usual", "changed", "concerning"].includes(check.foodWaterAccessibility) ? check.foodWaterAccessibility : "usual",
+          notes: check.notes ?? "",
+        }))
+      : [],
     householdLitterRecords: Array.isArray(input.householdLitterRecords)
       ? input.householdLitterRecords as HouseholdLitterRecord[]
       : [],
@@ -289,6 +311,7 @@ export function exportCareCsv(state: CareState): void {
     "체중(kg)",
     "구토 횟수",
     "활동성",
+    "안정 시 호흡수(회/분)",
     "측정 신뢰도",
     "배뇨 힘주기",
     "소변 안 나옴",
@@ -318,6 +341,7 @@ export function exportCareCsv(state: CareState): void {
         record.weightKg,
         record.vomitCount,
         record.activity,
+        record.restingRespiratoryRate,
         record.measurementConfidence,
         record.urinationStraining,
         record.urineNotProduced,
@@ -389,6 +413,17 @@ export function exportCareCsv(state: CareState): void {
     const score = Math.round((check.appetite + check.painComfort + check.hygiene + check.mobility + check.interaction + check.sleep) / 24 * 100);
     return [check.date, catsById.get(check.catId)?.name ?? "삭제된 고양이", score, check.appetite, check.painComfort, check.hygiene, check.mobility, check.interaction, check.sleep, check.notes].map(csvCell).join(",");
   });
+  const monthlyRows = state.monthlyChecks.map(check => [
+    check.date,
+    catsById.get(check.catId)?.name ?? "삭제된 고양이",
+    check.oralHealth,
+    check.skinAndLumps,
+    check.nailsAndPaws,
+    check.homeAccessibility,
+    check.litterBoxAccessibility,
+    check.foodWaterAccessibility,
+    check.notes,
+  ].map(csvCell).join(","));
   const mediaRows = state.observationMedia.map(record => [record.date, record.time, catsById.get(record.catId)?.name ?? "삭제된 고양이", record.category, record.title, record.document.fileName, record.document.mimeType, record.notes].map(csvCell).join(","));
 
   const sections = [
@@ -396,6 +431,7 @@ export function exportCareCsv(state: CareState): void {
     `${["고양이", "종류", "브랜드", "제품명", "급여 시작일", "종료일", "개봉일", "유통기한", "포장용량(g)", "남은양(g)", "하루목표(g)", "kcal/100g", "조단백(%)", "조지방(%)", "조섬유(%)", "조회분(%)", "수분(%)", "칼슘(%)", "인(%)", "오메가6(%)", "오메가3(%)", "마그네슘(%)", "나트륨(%)", "대사에너지(kcal/kg)", "사용 원재료", "비타민·미네랄", "첨가제", "라벨 사진 수", "메모"].map(csvCell).join(",")}\n${foodRows.join("\n")}`,
     `${["날짜", "고양이", "약", "결과", "예정시각", "실제시각", "용량", "단위", "투약자", "이상반응", "메모"].map(csvCell).join(",")}\n${medicationRows.join("\n")}`,
     `${["날짜", "고양이", "총점", "식욕", "편안함", "청결", "이동", "교감", "수면", "메모"].map(csvCell).join(",")}\n${qualityRows.join("\n")}`,
+    `${["날짜", "고양이", "치아·잇몸", "피부·혹", "발톱·발바닥", "이동 환경", "화장실 접근", "사료·물 접근", "메모"].map(csvCell).join(",")}\n${monthlyRows.join("\n")}`,
     `${["날짜", "시각", "고양이", "관찰종류", "제목", "파일명", "파일형식", "메모"].map(csvCell).join(",")}\n${mediaRows.join("\n")}`,
   ];
   const csv = `\uFEFF${sections.join("\n\n")}`;

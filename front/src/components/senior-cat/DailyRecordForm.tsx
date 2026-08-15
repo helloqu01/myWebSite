@@ -63,6 +63,7 @@ function emptyRecord(cat: CatProfile, date: string): DailyRecord {
     weightKg: cat.currentWeightKg,
     vomitCount: 0,
     activity: "normal",
+    restingRespiratoryRate: null,
     measurementConfidence: "high",
     medicationChecks: Object.fromEntries(cat.medications.map(item => [item.id, false])),
     urinationStraining: false,

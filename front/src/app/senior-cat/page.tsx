@@ -46,6 +46,7 @@ import LabTrendCharts from "@/components/senior-cat/LabTrendCharts";
 import MedicationLogPanel from "@/components/senior-cat/MedicationLogPanel";
 import MultiCatEventLogger from "@/components/senior-cat/MultiCatEventLogger";
 import MultiCatHealthDashboard from "@/components/senior-cat/MultiCatHealthDashboard";
+import MonthlyCarePanel from "@/components/senior-cat/MonthlyCarePanel";
 import ObservationMediaPanel from "@/components/senior-cat/ObservationMediaPanel";
 import TrendCharts from "@/components/senior-cat/TrendCharts";
 import WeeklyWellnessPanel from "@/components/senior-cat/WeeklyWellnessPanel";
@@ -62,6 +63,7 @@ import type {
   LabReport,
   Medication,
   MedicationAdministration,
+  MonthlyCareCheck,
   NotificationSettings,
   ObservationMediaRecord,
   QualityOfLifeCheck,
@@ -264,6 +266,7 @@ export default function SeniorCatPage() {
   const [foodDialogRequest, setFoodDialogRequest] = useState(0);
   const [medicationDialogRequest, setMedicationDialogRequest] = useState(0);
   const [weeklyDialogRequest, setWeeklyDialogRequest] = useState(0);
+  const [monthlyDialogRequest, setMonthlyDialogRequest] = useState(0);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -341,9 +344,10 @@ export default function SeniorCatPage() {
     const labReportCount = care.labReports.filter(report => report.catId === cat.id).length;
     const healthCheckupCount = care.healthCheckups.filter(checkup => checkup.catId === cat.id).length;
     const weeklyCheckCount = care.weeklyChecks.filter(check => check.catId === cat.id).length;
+    const monthlyCheckCount = care.monthlyChecks.filter(check => check.catId === cat.id).length;
     const observationMediaCount = care.observationMedia.filter(record => record.catId === cat.id).length;
     const confirmed = window.confirm(
-      `${cat.name} 프로필과 건강 기록 ${recordCount}개, 케어 일정 ${scheduleCount}개, 건강검진 ${healthCheckupCount}개, 검사결과 ${labReportCount}개, 주간 체크 ${weeklyCheckCount}개, 관찰 사진·영상 ${observationMediaCount}개를 삭제할까요? 삭제 전 JSON 백업을 권장합니다.`,
+      `${cat.name} 프로필과 건강 기록 ${recordCount}개, 케어 일정 ${scheduleCount}개, 건강검진 ${healthCheckupCount}개, 검사결과 ${labReportCount}개, 주간 체크 ${weeklyCheckCount}개, 월간 체크 ${monthlyCheckCount}개, 관찰 사진·영상 ${observationMediaCount}개를 삭제할까요? 삭제 전 JSON 백업을 권장합니다.`,
     );
     if (!confirmed) return;
 
@@ -378,6 +382,7 @@ export default function SeniorCatPage() {
       labReports: current.labReports.filter(report => report.catId !== cat.id),
       healthCheckups: current.healthCheckups.filter(checkup => checkup.catId !== cat.id),
       weeklyChecks: current.weeklyChecks.filter(check => check.catId !== cat.id),
+      monthlyChecks: current.monthlyChecks.filter(check => check.catId !== cat.id),
       householdLitterRecords: current.householdLitterRecords.map(record => record.catId === cat.id ? { ...record, catId: null, confidence: "low" } : record),
       emergencyInfo: current.emergencyInfo.filter(info => info.catId !== cat.id),
     }));
@@ -677,6 +682,7 @@ export default function SeniorCatPage() {
             weightKg: check.weightKg,
             vomitCount: 0,
             activity: "normal",
+            restingRespiratoryRate: null,
             measurementConfidence: "high",
             medicationChecks: Object.fromEntries((cat?.medications ?? []).map(medication => [medication.id, false])),
             urinationStraining: false,
@@ -706,6 +712,16 @@ export default function SeniorCatPage() {
       };
     });
     setMessage(`${formatDate(check.date)} 주간 건강·삶의 질${check.weightKg != null ? `과 체중 ${check.weightKg}kg을` : "을"} 함께 저장했습니다.`);
+  };
+
+  const saveMonthlyCheck = (check: MonthlyCareCheck) => {
+    setCare(current => ({
+      ...current,
+      monthlyChecks: current.monthlyChecks.some(item => item.catId === check.catId && item.date === check.date)
+        ? current.monthlyChecks.map(item => item.catId === check.catId && item.date === check.date ? { ...check, id: item.id } : item)
+        : [...current.monthlyChecks, check],
+    }));
+    setMessage(`${formatDate(check.date)} 월간 생활환경·몸 점검을 저장했습니다.`);
   };
 
   const saveEmergencyInfo = (infos: EmergencyInfo[]) => {
@@ -743,11 +759,14 @@ export default function SeniorCatPage() {
     if (reminder.action === "medication_log") setMedicationDialogRequest(current => current + 1);
     if (reminder.action === "quality_of_life") setWeeklyDialogRequest(current => current + 1);
     if (reminder.action === "weekly_check") setWeeklyDialogRequest(current => current + 1);
+    if (reminder.action === "monthly_check") setMonthlyDialogRequest(current => current + 1);
 
     const targetId = {
       daily_record: "daily-record-section",
       schedule: "schedule-care-section",
       weekly_check: "weekly-care-section",
+      monthly_check: "monthly-care-section",
+      health_checkup: "health-checkup-section",
       medication_stock: "medication-log-section",
       food_history: "food-history-section",
       medication_log: "medication-log-section",
@@ -775,6 +794,7 @@ export default function SeniorCatPage() {
     setFoodDialogRequest(0);
     setMedicationDialogRequest(0);
     setWeeklyDialogRequest(0);
+    setMonthlyDialogRequest(0);
   };
 
   const showVetReport = async () => {
@@ -791,6 +811,7 @@ export default function SeniorCatPage() {
       labReports: care.labReports,
       healthCheckups: care.healthCheckups,
       weeklyChecks: care.weeklyChecks,
+      monthlyChecks: care.monthlyChecks,
       emergencyInfo: care.emergencyInfo.find(info => info.catId === selectedCat.id) ?? null,
       days: reportRange,
     });
@@ -1083,7 +1104,7 @@ export default function SeniorCatPage() {
                   <Box
                     sx={{
                       display: "grid",
-                      gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" },
+                      gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))", xl: "repeat(3, minmax(0, 1fr))" },
                       gap: 3,
                       mb: 3,
                     }}
@@ -1091,6 +1112,7 @@ export default function SeniorCatPage() {
                     <Box id="weekly-care-section" sx={{ scrollMarginTop: 96 }}>
                       <WeeklyWellnessPanel cat={selectedCat} checks={care.weeklyChecks} qualityChecks={care.qualityOfLifeChecks} openRequestKey={weeklyDialogRequest} onSave={saveWeeklyCheck} />
                     </Box>
+                    <MonthlyCarePanel cat={selectedCat} checks={care.monthlyChecks} openRequestKey={monthlyDialogRequest} onSave={saveMonthlyCheck} />
                     <EmergencyCardPanel
                       cat={selectedCat}
                       cats={orderedCats}
@@ -1164,7 +1186,7 @@ export default function SeniorCatPage() {
                     />
                   </Box>
 
-                  <Box sx={{ mt: 4 }}>
+                  <Box id="health-checkup-section" sx={{ mt: 4, scrollMarginTop: 96 }}>
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
                       justifyContent="space-between"
@@ -1256,10 +1278,10 @@ export default function SeniorCatPage() {
                     </Stack>
                     {selectedCatRecords.length ? (
                       <Box sx={{ overflowX: "auto" }}>
-                        <Box component="table" sx={{ width: "100%", minWidth: 860, borderCollapse: "collapse" }}>
+                        <Box component="table" sx={{ width: "100%", minWidth: 1320, borderCollapse: "collapse" }}>
                           <Box component="thead">
                             <Box component="tr">
-                              {["날짜", "물 마심", "소변", "대변", "식욕", "체중", "시간 기록", "투약"].map(label => (
+                              {["날짜", "💧 물", "🍚 식욕", "🚽 소변", "💩 대변", "🤮 구토", "🐾 활동", "🫁 호흡", "⚖️ 체중", "⏱️ 시간 기록", "💊 투약", "⚠️ 이상 징후"].map(label => (
                                 <Box component="th" key={label} sx={{ textAlign: "left", py: 1.25, px: 1, color: "text.secondary", fontSize: 13, borderBottom: "1px solid", borderColor: "divider" }}>
                                   {label}
                                 </Box>
@@ -1269,6 +1291,7 @@ export default function SeniorCatPage() {
                           <Box component="tbody">
                             {[...selectedCatRecords].reverse().slice(0, 10).map(record => {
                               const done = Object.values(record.medicationChecks).filter(Boolean).length;
+                              const signs = [record.urinationStraining && "배뇨 힘주기", record.urineNotProduced && "소변 안 나옴", record.bloodInUrine && "혈뇨", record.breathingDifficulty && "호흡 곤란", record.collapseOrSeizure && "쓰러짐·경련"].filter(Boolean).join(" · ");
                               return (
                                 <Box
                                   component="tr"
@@ -1278,9 +1301,12 @@ export default function SeniorCatPage() {
                                 >
                                   <Box component="td" sx={{ py: 1.25, px: 1, fontWeight: 700 }}>{formatDate(record.date)}</Box>
                                   <Box component="td" sx={{ py: 1.25, px: 1 }}>{record.waterCount == null ? "—" : `${record.waterCount}회`}</Box>
+                                  <Box component="td" sx={{ py: 1.25, px: 1 }}>{{ good: "좋음", normal: "평소", low: "감소", none: "없음" }[record.appetite]}</Box>
                                   <Box component="td" sx={{ py: 1.25, px: 1 }}>{record.urineCount == null ? "—" : `${record.urineCount}회`}</Box>
                                   <Box component="td" sx={{ py: 1.25, px: 1 }}>{record.stoolCount == null ? "—" : `${record.stoolCount}회`}</Box>
-                                  <Box component="td" sx={{ py: 1.25, px: 1 }}>{{ good: "좋음", normal: "평소", low: "감소", none: "없음" }[record.appetite]}</Box>
+                                  <Box component="td" sx={{ py: 1.25, px: 1 }}>{record.vomitCount}회</Box>
+                                  <Box component="td" sx={{ py: 1.25, px: 1 }}>{record.activity === "low" ? "감소" : "평소"}</Box>
+                                  <Box component="td" sx={{ py: 1.25, px: 1 }}>{record.restingRespiratoryRate == null ? "—" : `${record.restingRespiratoryRate}회/분`}</Box>
                                   <Box component="td" sx={{ py: 1.25, px: 1 }}>{record.weightKg == null ? "—" : `${record.weightKg}kg`}</Box>
                                   <Box component="td" sx={{ py: 1.25, px: 1, minWidth: 180 }}>
                                     {record.timedEvents.length
@@ -1288,6 +1314,7 @@ export default function SeniorCatPage() {
                                       : "—"}
                                   </Box>
                                   <Box component="td" sx={{ py: 1.25, px: 1 }}>{selectedCat.medications.length ? `${done}/${selectedCat.medications.length}` : "—"}</Box>
+                                  <Box component="td" sx={{ py: 1.25, px: 1, color: signs ? "error.main" : "text.secondary" }}>{signs || "없음"}</Box>
                                 </Box>
                               );
                             })}

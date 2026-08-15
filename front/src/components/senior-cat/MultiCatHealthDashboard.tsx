@@ -12,6 +12,8 @@ import RestaurantRounded from "@mui/icons-material/RestaurantRounded";
 import WarningAmberRounded from "@mui/icons-material/WarningAmberRounded";
 import WaterDropRounded from "@mui/icons-material/WaterDropRounded";
 import WcRounded from "@mui/icons-material/WcRounded";
+import AirRounded from "@mui/icons-material/AirRounded";
+import SickRounded from "@mui/icons-material/SickRounded";
 import type { CareSchedule, CatProfile, DailyRecord } from "@/types/cat-care";
 import { isScheduleDue } from "@/lib/cat-care/schedules";
 
@@ -32,7 +34,8 @@ function needsAttention(record?: DailyRecord): boolean {
     || record.urinationStraining
     || record.bloodInUrine
     || record.appetite === "none"
-    || record.vomitCount >= 2,
+    || record.vomitCount >= 2
+    || (record.restingRespiratoryRate != null && record.restingRespiratoryRate > 35),
   );
 }
 
@@ -99,6 +102,8 @@ export default function MultiCatHealthDashboard({ cats, records, schedules, sele
                 { label: "식사", value: row.record ? `${row.mealCount}회` : "—", icon: <RestaurantRounded fontSize="small" />, color: "#ed6c02" },
                 { label: "소변", value: displayCount(row.record?.urineCount), icon: <WcRounded fontSize="small" />, color: "#7c3aed" },
                 { label: "대변", value: displayCount(row.record?.stoolCount), icon: <FiberManualRecordRounded fontSize="small" />, color: "#795548" },
+                { label: "구토", value: row.record ? `${row.record.vomitCount}회` : "—", icon: <SickRounded fontSize="small" />, color: "#d97706" },
+                { label: "호흡", value: row.record?.restingRespiratoryRate == null ? "—" : `${row.record.restingRespiratoryRate}회/분`, icon: <AirRounded fontSize="small" />, color: "#0891b2" },
               ].map(metric => <Box key={metric.label} sx={{ p: 0.85, bgcolor: "var(--surface)", borderRadius: 2, borderLeft: "3px solid", borderLeftColor: metric.color }}><Stack direction="row" spacing={0.5} alignItems="center" sx={{ color: metric.color }}>{metric.icon}<Typography variant="caption" color="text.secondary">{metric.label}</Typography></Stack><Typography variant="body2" fontWeight={800}>{metric.value}</Typography></Box>)}
             </Box>
 
