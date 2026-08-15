@@ -110,25 +110,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ secrets.AWS_REGION }}
 
-      - name: Validate API deployment secrets
-        env:
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-          EMAIL_TO: ${{ secrets.EMAIL_TO }}
-        run: |
-          missing=()
-          for secret_name in SMTP_USER SMTP_PASS EMAIL_FROM EMAIL_TO; do
-            if [[ -z "${!secret_name:-}" ]]; then
-              missing+=("$secret_name")
-            fi
-          done
-
-          if (( ${#missing[@]} > 0 )); then
-            printf '::error::Required GitHub Actions secret is missing: %s\n' "${missing[@]}"
-            exit 1
-          fi
-
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
@@ -170,7 +151,36 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          FUNCTION_NAME: my-profile-api
         run: |
+          set +x
+
+          if [[ -z "$SMTP_USER" || -z "$SMTP_PASS" || -z "$EMAIL_FROM" || -z "$EMAIL_TO" ]]; then
+            existing_config="$(aws lambda get-function-configuration \
+              --function-name "$FUNCTION_NAME" \
+              --query 'Environment.Variables' \
+              --output json)"
+
+            SMTP_USER="${SMTP_USER:-$(jq -r '.SMTP_USER // empty' <<<"$existing_config")}"
+            SMTP_PASS="${SMTP_PASS:-$(jq -r '.SMTP_PASS // empty' <<<"$existing_config")}"
+            EMAIL_FROM="${EMAIL_FROM:-$(jq -r '.EMAIL_FROM // empty' <<<"$existing_config")}"
+            EMAIL_TO="${EMAIL_TO:-$(jq -r '.EMAIL_TO // empty' <<<"$existing_config")}"
+          fi
+
+          missing=()
+          for setting_name in SMTP_USER SMTP_PASS EMAIL_FROM EMAIL_TO; do
+            if [[ -z "${!setting_name:-}" ]]; then
+              missing+=("$setting_name")
+            else
+              echo "::add-mask::${!setting_name}"
+            fi
+          done
+
+          if (( ${#missing[@]} > 0 )); then
+            printf '::error::No GitHub Secret or existing Lambda setting found for: %s\n' "${missing[@]}"
+            exit 1
+          fi
+
           sam deploy \
             --template-file packaged.yaml \
             --stack-name ${{ secrets.STACK_NAME }} \
