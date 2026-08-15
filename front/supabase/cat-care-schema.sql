@@ -411,3 +411,6 @@ using (
   bucket_id = 'cat-medical-documents'
   and private.can_access_cat_medical_object(name, true)
 );
+
+-- 컬럼·RPC 변경을 Data API가 즉시 인식하도록 PostgREST 캐시를 갱신합니다.
+notify pgrst, 'reload schema';
