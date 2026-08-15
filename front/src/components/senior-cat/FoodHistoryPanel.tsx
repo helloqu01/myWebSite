@@ -5,6 +5,7 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
   Dialog,
@@ -13,6 +14,7 @@ import {
   DialogTitle,
   Divider,
   FormControl,
+  FormControlLabel,
   IconButton,
   InputLabel,
   LinearProgress,
@@ -42,6 +44,7 @@ import { createId, toLocalDateKey } from "@/lib/cat-care/storage";
 
 interface FoodHistoryPanelProps {
   cat: CatProfile;
+  cats: CatProfile[];
   items: FoodItem[];
   records: DailyRecord[];
   openRequestKey: number;
@@ -50,6 +53,7 @@ interface FoodHistoryPanelProps {
 }
 
 interface FoodDraft {
+  catIds: string[];
   category: FoodCategory;
   brand: string;
   productName: string;
@@ -223,9 +227,10 @@ function nutrientDraft(nutrients: FoodNutrientAnalysis = EMPTY_FOOD_NUTRIENTS): 
   ) as FoodDraft["nutrients"];
 }
 
-function toDraft(item: FoodItem | null): FoodDraft {
+function toDraft(item: FoodItem | null, defaultCatId: string): FoodDraft {
   return item
     ? {
+        catIds: item.catIds?.length ? item.catIds : [item.catId],
         category: item.category,
         brand: item.brand,
         productName: item.productName,
@@ -245,6 +250,7 @@ function toDraft(item: FoodItem | null): FoodDraft {
         notes: item.notes,
       }
     : {
+        catIds: [defaultCatId],
         category: "dry",
         brand: "",
         productName: "",
@@ -287,10 +293,10 @@ function transitionSummary(records: DailyRecord[], startDate: string, from: numb
   return `${windowRecords.length}일 · 구토 ${vomit}회 · 식욕저하 ${lowAppetite}일 · 평균 변 점수 ${stool}`;
 }
 
-export default function FoodHistoryPanel({ cat, items, records, openRequestKey, onSave, onDelete }: FoodHistoryPanelProps) {
+export default function FoodHistoryPanel({ cat, cats, items, records, openRequestKey, onSave, onDelete }: FoodHistoryPanelProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<FoodItem | null>(null);
-  const [draft, setDraft] = useState<FoodDraft>(() => toDraft(null));
+  const [draft, setDraft] = useState<FoodDraft>(() => toDraft(null, cat.id));
   const [files, setFiles] = useState<File[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -307,7 +313,7 @@ export default function FoodHistoryPanel({ cat, items, records, openRequestKey, 
 
   const openNew = () => {
     setEditing(null);
-    setDraft(toDraft(null));
+    setDraft(toDraft(null, cat.id));
     setFiles([]);
     setError("");
     setNotice("");
@@ -315,12 +321,18 @@ export default function FoodHistoryPanel({ cat, items, records, openRequestKey, 
   };
 
   useEffect(() => {
-    if (openRequestKey > 0) openNew();
-  }, [openRequestKey]);
+    if (openRequestKey <= 0) return;
+    setEditing(null);
+    setDraft(toDraft(null, cat.id));
+    setFiles([]);
+    setError("");
+    setNotice("");
+    setDialogOpen(true);
+  }, [cat.id, openRequestKey]);
 
   const openEdit = (item: FoodItem) => {
     setEditing(item);
-    setDraft(toDraft(item));
+    setDraft(toDraft(item, cat.id));
     setFiles([]);
     setError("");
     setNotice("");
@@ -425,6 +437,10 @@ export default function FoodHistoryPanel({ cat, items, records, openRequestKey, 
   };
 
   const save = async () => {
+    if (!draft.catIds.length) {
+      setError("이 사료를 적용할 고양이를 한 마리 이상 선택해 주세요.");
+      return;
+    }
     if (!draft.brand.trim()) {
       setError("브랜드를 입력해 주세요.");
       return;
@@ -450,12 +466,13 @@ export default function FoodHistoryPanel({ cat, items, records, openRequestKey, 
     const uploaded = [] as FoodItem["labelDocuments"];
     try {
       for (const file of files) {
-        uploaded.push(await uploadMedicalDocument({ file, catId: cat.id, recordId: itemId, kind: "food-label" }));
+        uploaded.push(await uploadMedicalDocument({ file, catId: draft.catIds[0], recordId: itemId, kind: "food-label" }));
       }
       const now = new Date().toISOString();
       await onSave({
         id: itemId,
-        catId: cat.id,
+        catId: draft.catIds[0],
+        catIds: draft.catIds,
         category: draft.category,
         brand: draft.brand.trim(),
         productName: draft.productName.trim(),
@@ -520,6 +537,7 @@ export default function FoodHistoryPanel({ cat, items, records, openRequestKey, 
                       {active && <Chip size="small" color="primary" variant="outlined" label="현재 급여 중" />}
                       {expirySoon && <Chip size="small" color="warning" label="유통기한 임박" />}
                       {item.labelDocuments.length > 0 && <Chip size="small" color="success" variant="outlined" label={`라벨 사진 ${item.labelDocuments.length}장`} />}
+                      <Chip size="small" color="secondary" variant="outlined" label={`적용 · ${item.catIds.map(catId => cats.find(target => target.id === catId)?.name).filter(Boolean).join(" · ")}`} />
                     </Stack>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{item.startDate} ~ {item.endDate || "현재"}</Typography>
                     <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 0.75 }}>
@@ -546,11 +564,32 @@ export default function FoodHistoryPanel({ cat, items, records, openRequestKey, 
       ) : <Box sx={{ py: 3, textAlign: "center", color: "text.secondary" }}><RestaurantRounded /><Typography variant="body2">등록된 사료·간식 이력이 없습니다.</Typography></Box>}
 
       <Dialog open={dialogOpen} onClose={() => !saving && setDialogOpen(false)} fullWidth maxWidth="lg">
-        <DialogTitle>{editing ? "사료·간식 정보 수정" : `${cat.name} 사료·간식 추가`}</DialogTitle>
+        <DialogTitle>{editing ? "사료·간식 정보 수정" : "사료·간식 추가"}</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ pt: 0.5 }}>
             {error && <Alert severity="error">{error}</Alert>}
             {notice && <Alert severity="success">{notice}</Alert>}
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
+              <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" gap={1}>
+                <Box>
+                  <Typography fontWeight={800}>적용할 고양이</Typography>
+                  <Typography variant="body2" color="text.secondary">여러 마리를 선택하면 같은 사료 정보와 재고를 공통으로 사용합니다.</Typography>
+                </Box>
+                <Stack direction="row" spacing={1}>
+                  <Button size="small" onClick={() => update("catIds", cats.map(target => target.id))}>전체 선택</Button>
+                  <Button size="small" color="inherit" onClick={() => update("catIds", [])}>전체 해제</Button>
+                </Stack>
+              </Stack>
+              <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+                {cats.map(target => (
+                  <FormControlLabel
+                    key={target.id}
+                    control={<Checkbox checked={draft.catIds.includes(target.id)} onChange={event => update("catIds", event.target.checked ? [...draft.catIds, target.id] : draft.catIds.filter(catId => catId !== target.id))} />}
+                    label={target.name}
+                  />
+                ))}
+              </Stack>
+            </Paper>
             <Paper variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
               <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={1.5} alignItems={{ md: "center" }}>
                 <Box><Typography fontWeight={800}>사료 라벨 사진 자동 입력</Typography><Typography variant="body2" color="text.secondary">성분표·원재료 사진을 여러 장 선택할 수 있습니다. 원본은 로그인한 가족 공간에 비공개 저장됩니다.</Typography></Box>

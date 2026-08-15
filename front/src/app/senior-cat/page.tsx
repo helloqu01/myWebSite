@@ -46,6 +46,7 @@ import LabReportPanel from "@/components/senior-cat/LabReportPanel";
 import LabTrendCharts from "@/components/senior-cat/LabTrendCharts";
 import MedicationLogPanel from "@/components/senior-cat/MedicationLogPanel";
 import MultiCatEventLogger from "@/components/senior-cat/MultiCatEventLogger";
+import MultiCatHealthDashboard from "@/components/senior-cat/MultiCatHealthDashboard";
 import ObservationMediaPanel from "@/components/senior-cat/ObservationMediaPanel";
 import QualityOfLifePanel from "@/components/senior-cat/QualityOfLifePanel";
 import TrendCharts from "@/components/senior-cat/TrendCharts";
@@ -76,6 +77,7 @@ import {
   createId,
   exportCareCsv,
   exportCareJson,
+  foodAppliesToCat,
   loadCareState,
   normalizeCareState,
   saveCareState,
@@ -111,16 +113,14 @@ function formatDate(date: string): string {
   return `${Number(month)}월 ${Number(day)}일`;
 }
 
-function latestValue(record: DailyRecord | undefined, key: "waterMl" | "urineCount" | "stoolCount" | "weightKg", unit: string) {
+function latestValue(record: DailyRecord | undefined, key: "waterCount" | "urineCount" | "stoolCount" | "weightKg", unit: string) {
   const value = record?.[key];
   return value == null ? "—" : `${value}${unit}`;
 }
 
 function timedCareEventText(event: TimedCareEvent, foodItems: FoodItem[]): string {
-  const label = { water: "음수", meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
-  const amount = event.type === "water" && event.amountMl != null
-    ? ` ${event.amountMl}ml`
-    : event.type === "meal" && event.amountGrams != null
+  const label = { water: "물 마심", meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
+  const amount = event.type === "meal" && event.amountGrams != null
       ? ` ${event.amountGrams}g`
       : "";
   const duration = event.type === "seizure" && event.durationSeconds != null ? ` ${event.durationSeconds}초` : "";
@@ -145,6 +145,7 @@ function CatCard({ cat, selected, records, alerts, onSelect, onEdit, onDelete }:
   const today = toLocalDateKey(new Date());
   const todayRecord = records.find(record => record.date === today);
   const age = getCatAge(cat.birthDate);
+  const sex = { female: "암컷", male: "수컷", unknown: "성별 미확인" }[cat.sex];
 
   return (
     <Card
@@ -190,6 +191,26 @@ function CatCard({ cat, selected, records, alerts, onSelect, onEdit, onDelete }:
           </Stack>
         </Stack>
 
+        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 0.75 }}>
+          {[
+            ["성별", sex],
+            ["중성화", cat.neutered ? "완료" : "미완료"],
+            ["현재 체중", cat.currentWeightKg == null ? "미등록" : `${cat.currentWeightKg}kg`],
+            ["목표 체중", cat.targetWeightKg == null ? "미등록" : `${cat.targetWeightKg}kg`],
+          ].map(([label, value]) => (
+            <Box key={label} sx={{ px: 1, py: 0.75, borderRadius: 2, bgcolor: "var(--surface)" }}>
+              <Typography variant="caption" color="text.secondary" display="block">{label}</Typography>
+              <Typography variant="body2" fontWeight={800}>{value}</Typography>
+            </Box>
+          ))}
+        </Box>
+
+        <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+          {cat.birthDate && <Chip label={`생년월일 ${cat.birthDate}`} size="small" variant="outlined" />}
+          {cat.conditions.slice(0, 2).map(condition => <Chip key={condition} label={condition} size="small" variant="outlined" color="warning" />)}
+          {cat.conditions.length > 2 && <Chip label={`질환·관심 +${cat.conditions.length - 2}`} size="small" variant="outlined" />}
+        </Stack>
+
         <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
           <Chip label={status.label} color={status.color} size="small" />
           {cat.focusCare && <Chip label="집중관리" size="small" variant="outlined" color="primary" />}
@@ -202,7 +223,7 @@ function CatCard({ cat, selected, records, alerts, onSelect, onEdit, onDelete }:
 
         <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1 }}>
           {[
-            ["물", latestValue(todayRecord, "waterMl", "ml")],
+            ["물", latestValue(todayRecord, "waterCount", "회")],
             ["소변", latestValue(todayRecord, "urineCount", "회")],
             ["대변", latestValue(todayRecord, "stoolCount", "회")],
           ].map(([label, value]) => (
@@ -334,7 +355,9 @@ export default function SeniorCatPage() {
       ...care.labReports.filter(report => report.catId === cat.id).map(report => report.originalDocument?.storagePath),
       ...care.healthCheckups.filter(checkup => checkup.catId === cat.id).map(checkup => checkup.originalDocument?.storagePath),
       ...care.observationMedia.filter(record => record.catId === cat.id).map(record => record.document.storagePath),
-      ...care.foodItems.filter(item => item.catId === cat.id).flatMap(item => item.labelDocuments.map(document => document.storagePath)),
+      ...care.foodItems
+        .filter(item => foodAppliesToCat(item, cat.id) && item.catIds.length === 1)
+        .flatMap(item => item.labelDocuments.map(document => document.storagePath)),
     ].filter((path): path is string => Boolean(path));
     try {
       await deleteMedicalDocuments(originalDocumentPaths);
@@ -347,7 +370,11 @@ export default function SeniorCatPage() {
       ...current,
       cats: current.cats.filter(item => item.id !== cat.id),
       records: current.records.filter(record => record.catId !== cat.id),
-      foodItems: current.foodItems.filter(item => item.catId !== cat.id),
+      foodItems: current.foodItems.flatMap(item => {
+        if (!foodAppliesToCat(item, cat.id)) return [item];
+        const catIds = item.catIds.filter(catId => catId !== cat.id);
+        return catIds.length ? [{ ...item, catId: catIds[0], catIds }] : [];
+      }),
       medicationAdministrations: current.medicationAdministrations.filter(item => item.catId !== cat.id),
       qualityOfLifeChecks: current.qualityOfLifeChecks.filter(item => item.catId !== cat.id),
       observationMedia: current.observationMedia.filter(item => item.catId !== cat.id),
@@ -651,7 +678,7 @@ export default function SeniorCatPage() {
             id: createId("record"),
             catId: check.catId,
             date: check.date,
-            waterMl: null,
+            waterCount: null,
             urineCount: null,
             urineSize: null,
             stoolCount: null,
@@ -706,14 +733,17 @@ export default function SeniorCatPage() {
     setMessage("공동 화장실 기록을 삭제했습니다.");
   };
 
-  const saveEmergencyInfo = (info: EmergencyInfo) => {
-    setCare(current => ({
-      ...current,
-      emergencyInfo: current.emergencyInfo.some(item => item.catId === info.catId)
-        ? current.emergencyInfo.map(item => item.catId === info.catId ? info : item)
-        : [...current.emergencyInfo, info],
-    }));
-    setMessage("응급·병원 정보를 저장했습니다.");
+  const saveEmergencyInfo = (infos: EmergencyInfo[]) => {
+    setCare(current => {
+      const emergencyInfo = [...current.emergencyInfo];
+      infos.forEach(info => {
+        const index = emergencyInfo.findIndex(item => item.catId === info.catId);
+        if (index >= 0) emergencyInfo[index] = info;
+        else emergencyInfo.push(info);
+      });
+      return { ...current, emergencyInfo };
+    });
+    setMessage(infos.length > 1 ? `${infos.length}마리에게 응급·병원 연락처를 공통 적용했습니다.` : "응급·병원 정보를 저장했습니다.");
   };
 
   const updateNotificationSettings = (notificationSettings: NotificationSettings) => {
@@ -833,7 +863,7 @@ export default function SeniorCatPage() {
                 <Box component="span" className="gradient-text"> 작은 변화를 먼저 발견하세요.</Box>
               </Typography>
               <Typography color="text.secondary" sx={{ mt: 2, maxWidth: 720, fontSize: { md: "1.08rem" } }}>
-                음수량, 배변, 체중, 식욕과 투약을 고양이별로 관리합니다. 자동 알림은 진단이 아닌
+                물 마신 횟수, 배변, 체중, 식욕과 투약을 고양이별로 관리합니다. 자동 알림은 진단이 아닌
                 개인 기준선의 변화를 알려주는 관찰 도구입니다.
               </Typography>
             </Box>
@@ -967,6 +997,25 @@ export default function SeniorCatPage() {
                 </Box>
               </Box>
 
+              <MultiCatHealthDashboard
+                cats={orderedCats}
+                records={care.records}
+                schedules={care.schedules}
+                selectedDate={selectedDate}
+                onSelectCat={catId => {
+                  setSelectedCatId(catId);
+                  window.setTimeout(() => document.getElementById("selected-cat-detail")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+                }}
+              />
+
+              <CareCalendar
+                cats={orderedCats}
+                records={care.records}
+                schedules={care.schedules}
+                selectedDate={selectedDate}
+                onSelectDate={setSelectedDate}
+              />
+
               <MultiCatEventLogger
                 cats={orderedCats}
                 records={care.records}
@@ -1000,7 +1049,7 @@ export default function SeniorCatPage() {
               />
 
               {selectedCat && (
-                <Box component="section" aria-labelledby="selected-cat-heading">
+                <Box id="selected-cat-detail" component="section" aria-labelledby="selected-cat-heading" sx={{ scrollMarginTop: 96 }}>
                   <Paper
                     elevation={0}
                     sx={{
@@ -1076,7 +1125,8 @@ export default function SeniorCatPage() {
                     </Box>
                     <EmergencyCardPanel
                       cat={selectedCat}
-                      info={care.emergencyInfo.find(info => info.catId === selectedCat.id) ?? null}
+                      cats={orderedCats}
+                      infos={care.emergencyInfo}
                       onSave={saveEmergencyInfo}
                       onMessage={setMessage}
                     />
@@ -1141,7 +1191,8 @@ export default function SeniorCatPage() {
                   <Box id="food-history-section" sx={{ mb: 3, scrollMarginTop: 96 }}>
                     <FoodHistoryPanel
                       cat={selectedCat}
-                      items={care.foodItems.filter(item => item.catId === selectedCat.id)}
+                      cats={orderedCats}
+                      items={care.foodItems.filter(item => foodAppliesToCat(item, selectedCat.id))}
                       records={selectedCatRecords}
                       openRequestKey={foodDialogRequest}
                       onSave={saveFoodItem}
@@ -1244,7 +1295,7 @@ export default function SeniorCatPage() {
                         <Box component="table" sx={{ width: "100%", minWidth: 860, borderCollapse: "collapse" }}>
                           <Box component="thead">
                             <Box component="tr">
-                              {["날짜", "음수량", "소변", "대변", "식욕", "체중", "시간 기록", "투약"].map(label => (
+                              {["날짜", "물 마심", "소변", "대변", "식욕", "체중", "시간 기록", "투약"].map(label => (
                                 <Box component="th" key={label} sx={{ textAlign: "left", py: 1.25, px: 1, color: "text.secondary", fontSize: 13, borderBottom: "1px solid", borderColor: "divider" }}>
                                   {label}
                                 </Box>
@@ -1262,7 +1313,7 @@ export default function SeniorCatPage() {
                                   sx={{ cursor: "pointer", "&:hover": { bgcolor: "var(--surface)" } }}
                                 >
                                   <Box component="td" sx={{ py: 1.25, px: 1, fontWeight: 700 }}>{formatDate(record.date)}</Box>
-                                  <Box component="td" sx={{ py: 1.25, px: 1 }}>{record.waterMl == null ? "—" : `${record.waterMl}ml`}</Box>
+                                  <Box component="td" sx={{ py: 1.25, px: 1 }}>{record.waterCount == null ? "—" : `${record.waterCount}회`}</Box>
                                   <Box component="td" sx={{ py: 1.25, px: 1 }}>{record.urineCount == null ? "—" : `${record.urineCount}회`}</Box>
                                   <Box component="td" sx={{ py: 1.25, px: 1 }}>{record.stoolCount == null ? "—" : `${record.stoolCount}회`}</Box>
                                   <Box component="td" sx={{ py: 1.25, px: 1 }}>{{ good: "좋음", normal: "평소", low: "감소", none: "없음" }[record.appetite]}</Box>

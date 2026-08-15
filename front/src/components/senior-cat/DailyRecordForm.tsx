@@ -53,7 +53,7 @@ function emptyRecord(cat: CatProfile, date: string): DailyRecord {
     id: createId("record"),
     catId: cat.id,
     date,
-    waterMl: null,
+    waterCount: null,
     urineCount: null,
     urineSize: null,
     stoolCount: null,
@@ -96,12 +96,8 @@ function currentTime(): string {
 }
 
 function syncTimedEventCounts(record: DailyRecord, timedEvents: TimedCareEvent[]): DailyRecord {
-  const previousWaterMl = record.timedEvents
-    .filter(event => event.type === "water")
-    .reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
-  const waterEventMl = timedEvents
-    .filter(event => event.type === "water")
-    .reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
+  const previousWaterCount = record.timedEvents.filter(event => event.type === "water").length;
+  const waterEventCount = timedEvents.filter(event => event.type === "water").length;
   const previousUrineCount = record.timedEvents.filter(event => event.type === "urine").length;
   const previousStoolCount = record.timedEvents.filter(event => event.type === "stool").length;
   const urineEventCount = timedEvents.filter(event => event.type === "urine").length;
@@ -114,9 +110,7 @@ function syncTimedEventCounts(record: DailyRecord, timedEvents: TimedCareEvent[]
   return {
     ...record,
     timedEvents,
-    waterMl: previousWaterMl > 0 || waterEventMl > 0
-      ? Math.max(0, (record.waterMl ?? 0) - previousWaterMl) + waterEventMl
-      : record.waterMl,
+    waterCount: syncCount(record.waterCount, previousWaterCount, waterEventCount),
     urineCount: syncCount(record.urineCount, previousUrineCount, urineEventCount),
     stoolCount: syncCount(record.stoolCount, previousStoolCount, stoolEventCount),
     collapseOrSeizure: record.collapseOrSeizure || timedEvents.some(event => event.type === "seizure"),
@@ -199,7 +193,7 @@ export default function DailyRecordForm({
     || draft.timedEvents.some(event => event.type === "seizure");
   const mealEvents = draft.timedEvents.filter(event => event.type === "meal");
   const waterEvents = draft.timedEvents.filter(event => event.type === "water");
-  const waterEventTotalMl = waterEvents.reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
+  const waterEventCount = waterEvents.length;
   const mealTotalGrams = mealEvents.reduce((sum, event) => sum + (event.amountGrams ?? 0), 0);
   const mealCalories = mealEvents.reduce((sum, event) => {
     const food = event.foodItemId ? foodItems.find(item => item.id === event.foodItemId) : null;
@@ -257,12 +251,12 @@ export default function DailyRecordForm({
           }}
         >
           <TextField
-            label="음수량"
+            label="물 마신 횟수"
             type="number"
-            value={draft.waterMl ?? ""}
-            onChange={event => update("waterMl", numberOrNull(event.target.value))}
+            value={draft.waterCount ?? ""}
+            onChange={event => update("waterCount", numberOrNull(event.target.value))}
             slotProps={{ htmlInput: { min: 0, step: 1 } }}
-            InputProps={{ endAdornment: <InputAdornment position="end">ml</InputAdornment> }}
+            InputProps={{ endAdornment: <InputAdornment position="end">회</InputAdornment> }}
           />
           <TextField
             label="소변 횟수"
@@ -388,7 +382,7 @@ export default function DailyRecordForm({
             <Box>
               <Stack direction="row" spacing={1} alignItems="center">
                 <AccessTimeRounded color="primary" fontSize="small" />
-                <Typography variant="subtitle1" fontWeight={800}>시간별 음수·식사·배변·발작 기록</Typography>
+                <Typography variant="subtitle1" fontWeight={800}>시간별 물 마심·식사·배변·발작 기록</Typography>
               </Stack>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 버튼을 누르면 현재 시각이 입력됩니다. 과거 기록은 시각을 직접 수정할 수 있습니다.
@@ -416,7 +410,6 @@ export default function DailyRecordForm({
                   <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: event.type === "seizure" ? "110px 130px 150px 150px 1fr auto" : event.type === "meal" ? "110px 130px minmax(180px, 1fr) 150px minmax(180px, 1fr) auto" : event.type === "water" ? "110px 130px 150px minmax(180px, 1fr) auto" : "110px 130px 1fr auto" }, gap: 1, alignItems: "center" }}>
                     <Chip label={timedEventLabels[event.type]} size="small" color={event.type === "seizure" ? "error" : "primary"} variant={event.type === "seizure" ? "filled" : "outlined"} />
                     <TextField label="발생 시각" type="time" size="small" value={event.time} onChange={change => updateTimedEvent(event.id, { time: change.target.value })} slotProps={{ inputLabel: { shrink: true } }} />
-                    {event.type === "water" && <TextField label="마신 양" type="number" size="small" value={event.amountMl ?? ""} onChange={change => updateTimedEvent(event.id, { amountMl: numberOrNull(change.target.value) })} slotProps={{ htmlInput: { min: 0, step: 1 } }} InputProps={{ endAdornment: <InputAdornment position="end">ml</InputAdornment> }} />}
                     {event.type === "meal" && <TextField select label="먹인 사료·간식" size="small" value={event.foodItemId ?? ""} onChange={change => updateTimedEvent(event.id, { foodItemId: change.target.value || null })}><MenuItem value=""><em>미선택</em></MenuItem>{foodItems.map(item => <MenuItem key={item.id} value={item.id}>{item.brand}{item.productName ? ` · ${item.productName}` : ""}</MenuItem>)}</TextField>}
                     {event.type === "meal" && <TextField label="먹은 양" type="number" size="small" value={event.amountGrams ?? ""} onChange={change => updateTimedEvent(event.id, { amountGrams: numberOrNull(change.target.value) })} slotProps={{ htmlInput: { min: 0, step: 1 } }} InputProps={{ endAdornment: <InputAdornment position="end">g</InputAdornment> }} />}
                     {event.type === "seizure" && <TextField label="지속시간" type="number" size="small" value={event.durationSeconds ?? ""} onChange={change => updateTimedEvent(event.id, { durationSeconds: numberOrNull(change.target.value) })} slotProps={{ htmlInput: { min: 0, step: 1 } }} InputProps={{ endAdornment: <InputAdornment position="end">초</InputAdornment> }} />}
@@ -440,7 +433,7 @@ export default function DailyRecordForm({
           )}
           {waterEvents.length > 0 && (
             <Alert severity="info" sx={{ mt: 1.5 }}>
-              시간별로 기록한 음수량 <strong>{waterEventTotalMl}ml</strong> · 저장하면 오늘 총 음수량에 자동 반영됩니다.
+              시간별로 기록한 물 마심 <strong>{waterEventCount}회</strong> · 저장하면 오늘 총 횟수에 자동 반영됩니다.
             </Alert>
           )}
         </Box>

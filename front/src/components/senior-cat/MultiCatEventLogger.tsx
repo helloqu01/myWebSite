@@ -33,7 +33,7 @@ import type {
   TimedCareEvent,
   TimedCareEventType,
 } from "@/types/cat-care";
-import { createId, toLocalDateKey } from "@/lib/cat-care/storage";
+import { createId, foodAppliesToCat, toLocalDateKey } from "@/lib/cat-care/storage";
 
 interface MultiCatEventLoggerProps {
   cats: CatProfile[];
@@ -43,7 +43,7 @@ interface MultiCatEventLoggerProps {
 }
 
 interface DailyDraft {
-  waterMl: string;
+  waterCount: string;
   urineCount: string;
   stoolCount: string;
   weightKg: string;
@@ -112,7 +112,7 @@ function blankRow(previous?: LedgerRow): LedgerRow {
 
 function dailyDraft(record?: DailyRecord): DailyDraft {
   return {
-    waterMl: record?.waterMl?.toString() ?? "",
+    waterCount: record?.waterCount?.toString() ?? "",
     urineCount: record?.urineCount?.toString() ?? "",
     stoolCount: record?.stoolCount?.toString() ?? "",
     weightKg: record?.weightKg?.toString() ?? "",
@@ -128,9 +128,7 @@ function rowFromEvent(record: DailyRecord, event: TimedCareEvent): LedgerRow {
     time: event.time,
     catId: record.catId,
     type: event.type,
-    amount: event.type === "water"
-      ? event.amountMl?.toString() ?? ""
-      : event.type === "meal"
+    amount: event.type === "meal"
         ? event.amountGrams?.toString() ?? ""
         : event.type === "seizure"
           ? event.durationSeconds?.toString() ?? ""
@@ -147,7 +145,7 @@ function emptyRecord(cat: CatProfile, date: string): DailyRecord {
     id: createId("record"),
     catId: cat.id,
     date,
-    waterMl: null,
+    waterCount: null,
     urineCount: null,
     urineSize: null,
     stoolCount: null,
@@ -212,28 +210,57 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
     setError("");
   };
 
+  const syncDraftCountsWithRows = (previousRows: LedgerRow[], nextRows: LedgerRow[], catIds: string[]) => {
+    const count = (source: LedgerRow[], catId: string, type: TimedCareEventType) => source.filter(row => row.catId === catId && row.type === type).length;
+    const syncValue = (value: string, previousCount: number, nextCount: number) => {
+      if (previousCount === 0 && nextCount === 0) return value;
+      const aggregate = nullableNumber(value);
+      return String(aggregate == null || aggregate === previousCount || aggregate < nextCount ? nextCount : aggregate);
+    };
+    setDrafts(current => {
+      const updated = { ...current };
+      [...new Set(catIds.filter(Boolean))].forEach(catId => {
+        const draft = updated[catId];
+        if (!draft) return;
+        updated[catId] = {
+          ...draft,
+          waterCount: syncValue(draft.waterCount, count(previousRows, catId, "water"), count(nextRows, catId, "water")),
+          urineCount: syncValue(draft.urineCount, count(previousRows, catId, "urine"), count(nextRows, catId, "urine")),
+          stoolCount: syncValue(draft.stoolCount, count(previousRows, catId, "stool"), count(nextRows, catId, "stool")),
+        };
+      });
+      return updated;
+    });
+  };
+
   const updateRow = (id: string, patch: Partial<LedgerRow>) => {
     const previous = rows.find(row => row.id === id);
-    setRows(current => current.map(row => row.id === id ? { ...row, ...patch } : row));
+    const nextRows = rows.map(row => row.id === id ? { ...row, ...patch } : row);
+    setRows(nextRows);
+    syncDraftCountsWithRows(rows, nextRows, [previous?.catId ?? "", patch.catId ?? previous?.catId ?? ""]);
     markChanged(previous?.catId ?? "", patch.catId ?? "");
     setError("");
   };
 
   const addRow = () => {
     const next = blankRow(rows.at(-1));
-    setRows(current => [...current, next]);
+    const nextRows = [...rows, next];
+    setRows(nextRows);
+    syncDraftCountsWithRows(rows, nextRows, [next.catId]);
     markChanged(next.catId);
   };
   const duplicateRow = (row: LedgerRow) => {
-    setRows(current => [...current, { ...row, id: createId("care-event") }]);
+    const nextRows = [...rows, { ...row, id: createId("care-event") }];
+    setRows(nextRows);
+    syncDraftCountsWithRows(rows, nextRows, [row.catId]);
     markChanged(row.catId);
   };
   const deleteRow = (id: string) => {
     const deleted = rows.find(row => row.id === id);
-    setRows(current => {
-      const next = current.filter(row => row.id !== id);
-      return next.length ? next : [blankRow()];
-    });
+    const remaining = rows.filter(row => row.id !== id);
+    const nextRows = remaining.length ? remaining : [blankRow()];
+    setRows(nextRows);
+    syncDraftCountsWithRows(rows, nextRows, [deleted?.catId ?? ""]);
     markChanged(deleted?.catId ?? "");
   };
 
@@ -242,19 +269,22 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
     const draft = drafts[cat.id];
     const assigned = activeRows.filter(row => row.catId === cat.id);
     const mealCount = assigned.filter(row => row.type === "meal").length;
-    const eventWaterMl = assigned.filter(row => row.type === "water").reduce((sum, row) => sum + (positiveNumber(row.amount) ?? 0), 0);
+    const eventWaterCount = assigned.filter(row => row.type === "water").length;
     const eventUrineCount = assigned.filter(row => row.type === "urine").length;
     const eventStoolCount = assigned.filter(row => row.type === "stool").length;
-    const enteredWaterMl = draft ? nullableNumber(draft.waterMl) : null;
+    const enteredWaterCount = draft ? nullableNumber(draft.waterCount) : null;
     const enteredUrineCount = draft ? nullableNumber(draft.urineCount) : null;
     const enteredStoolCount = draft ? nullableNumber(draft.stoolCount) : null;
     return {
       cat,
       recorded: changedCatIds.includes(cat.id) || records.some(record => record.catId === cat.id && record.date === date),
-      waterMl: enteredWaterMl == null && eventWaterMl === 0 ? "—" : String(Math.max(enteredWaterMl ?? 0, eventWaterMl)),
+      waterCount: enteredWaterCount == null && eventWaterCount === 0 ? "—" : String(Math.max(enteredWaterCount ?? 0, eventWaterCount)),
       urineCount: enteredUrineCount == null && eventUrineCount === 0 ? "—" : String(Math.max(enteredUrineCount ?? 0, eventUrineCount)),
       stoolCount: enteredStoolCount == null && eventStoolCount === 0 ? "—" : String(Math.max(enteredStoolCount ?? 0, eventStoolCount)),
       mealCount,
+      eventWaterCount,
+      eventUrineCount,
+      eventStoolCount,
     };
   }), [activeRows, cats, changedCatIds, date, drafts, records]);
 
@@ -266,10 +296,6 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
     const incompleteRow = rows.find(row => !row.catId && (row.notes.trim() || row.amount || row.foodItemId || row.severity || row.size));
     if (incompleteRow || activeRows.some(row => !row.time)) {
       setError("시간 기록 행의 고양이와 시각을 확인해 주세요.");
-      return;
-    }
-    if (activeRows.some(row => row.type === "water" && positiveNumber(row.amount) == null)) {
-      setError("시간별 물 기록에는 마신 양을 ml 단위로 입력해 주세요.");
       return;
     }
     if (!changedCatIds.length) {
@@ -288,26 +314,26 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
         id: row.id,
         type: row.type,
         time: row.time,
-        amountMl: row.type === "water" ? positiveNumber(row.amount) : null,
+        amountMl: null,
         amountGrams: row.type === "meal" ? positiveNumber(row.amount) : null,
         durationSeconds: row.type === "seizure" ? positiveNumber(row.amount) : null,
         severity: row.type === "seizure" ? row.severity || null : null,
         foodItemId: row.type === "meal" ? row.foodItemId || null : null,
         notes: row.notes.trim(),
       }));
-      const waterFromEvents = events.filter(event => event.type === "water").reduce((sum, event) => sum + (event.amountMl ?? 0), 0);
+      const waterFromEvents = events.filter(event => event.type === "water").length;
       const urineFromEvents = events.filter(event => event.type === "urine").length;
       const stoolFromEvents = events.filter(event => event.type === "stool").length;
-      const enteredWaterMl = nullableNumber(draft.waterMl);
+      const enteredWaterCount = nullableNumber(draft.waterCount);
       const enteredUrineCount = nullableNumber(draft.urineCount);
       const enteredStoolCount = nullableNumber(draft.stoolCount);
       const lastUrineSize = [...catRows].reverse().find(row => row.type === "urine" && row.size)?.size || null;
       const lastStoolSize = [...catRows].reverse().find(row => row.type === "stool" && row.size)?.size || null;
       return [{
         ...base,
-        waterMl: enteredWaterMl == null
+        waterCount: enteredWaterCount == null
           ? (waterFromEvents > 0 ? waterFromEvents : null)
-          : Math.max(enteredWaterMl, waterFromEvents),
+          : Math.max(enteredWaterCount, waterFromEvents),
         urineCount: enteredUrineCount == null
           ? (urineFromEvents > 0 ? urineFromEvents : null)
           : Math.max(enteredUrineCount, urineFromEvents),
@@ -354,6 +380,7 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
           if (!draft) return null;
           const existing = records.some(record => record.catId === cat.id && record.date === date);
           const changed = changedCatIds.includes(cat.id);
+          const summary = summaries.find(item => item.cat.id === cat.id);
           return (
             <Paper key={cat.id} variant="outlined" sx={{ p: 2, borderRadius: 3, borderColor: changed ? "primary.main" : "divider", bgcolor: changed ? "rgba(139,92,246,0.05)" : "var(--surface)" }}>
               <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
@@ -362,10 +389,11 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
                 {existing && <Chip size="small" color="success" variant="outlined" label="저장된 기록" />}
                 {changed && <Chip size="small" color="primary" label="수정됨" />}
               </Stack>
-              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" }, gap: 1.25 }}>
-                <TextField label="음수량(ml)" type="number" size="small" value={draft.waterMl} onChange={event => updateDraft(cat.id, "waterMl", event.target.value)} slotProps={{ htmlInput: { min: 0 } }} />
-                <TextField label="소변(회)" type="number" size="small" value={draft.urineCount} onChange={event => updateDraft(cat.id, "urineCount", event.target.value)} slotProps={{ htmlInput: { min: 0 } }} />
-                <TextField label="대변(회)" type="number" size="small" value={draft.stoolCount} onChange={event => updateDraft(cat.id, "stoolCount", event.target.value)} slotProps={{ htmlInput: { min: 0 } }} />
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" }, gap: 1.25 }}>
+                <TextField label="물 마심(회)" type="number" size="small" value={draft.waterCount} onChange={event => updateDraft(cat.id, "waterCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} helperText={summary?.eventWaterCount ? `시간 행 ${summary.eventWaterCount}회 반영` : undefined} />
+                <TextField label="식사(회)" type="number" size="small" value={summary?.mealCount ?? 0} slotProps={{ htmlInput: { readOnly: true, min: 0, step: 1 } }} helperText={summary?.mealCount ? "시간 행 자동 집계" : "행에서 자동 집계"} />
+                <TextField label="소변(회)" type="number" size="small" value={draft.urineCount} onChange={event => updateDraft(cat.id, "urineCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} helperText={summary?.eventUrineCount ? `시간 행 ${summary.eventUrineCount}회 반영` : undefined} />
+                <TextField label="대변(회)" type="number" size="small" value={draft.stoolCount} onChange={event => updateDraft(cat.id, "stoolCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} helperText={summary?.eventStoolCount ? `시간 행 ${summary.eventStoolCount}회 반영` : undefined} />
                 <TextField label="체중(kg)" type="number" size="small" value={draft.weightKg} onChange={event => updateDraft(cat.id, "weightKg", event.target.value)} slotProps={{ htmlInput: { min: 0.3, max: 30, step: 0.01 } }} />
                 <TextField select label="식욕" size="small" value={draft.appetite} onChange={event => updateDraft(cat.id, "appetite", event.target.value as AppetiteLevel)}>{Object.entries(appetiteLabels).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>
                 <TextField select label="기록 신뢰도" size="small" value={draft.confidence} onChange={event => updateDraft(cat.id, "confidence", event.target.value as MeasurementConfidence)}>{Object.entries(confidenceLabels).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>
@@ -378,14 +406,14 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
 
       <Divider sx={{ my: 3 }}><Chip icon={<OndemandVideoRounded />} label="시간별·영상 기록 (선택)" /></Divider>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-        영상에서 확인한 식사·물·배변 시각을 한 줄씩 남기세요. 식사는 한 줄이 1회이며 먹은 g은 몰라도 됩니다.
+        영상에서 확인한 식사·물·배변 시각을 한 줄씩 남기세요. 식사와 물 마심은 한 줄을 각각 1회로 계산합니다.
       </Typography>
 
       <Stack spacing={1}>
         {rows.map((row, index) => {
-          const catFoods = foodItems.filter(item => item.catId === row.catId);
+          const catFoods = foodItems.filter(item => foodAppliesToCat(item, row.catId));
           return (
-            <Box key={row.id} data-testid={`multi-event-row-${index}`} sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: row.type === "meal" ? "60px 115px 125px 105px minmax(150px,1fr) 120px minmax(140px,1fr) auto" : row.type === "water" ? "60px 115px 125px 105px minmax(150px,1fr) auto" : row.type === "seizure" ? "60px 115px 125px 105px 120px minmax(140px,1fr) auto" : "60px 115px 125px 105px minmax(150px,1fr) auto" }, gap: 1, alignItems: "center", p: 1.25, border: "1px solid", borderColor: row.type === "seizure" ? "error.light" : "divider", borderRadius: 2.5 }}>
+            <Box key={row.id} data-testid={`multi-event-row-${index}`} sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: row.type === "meal" ? "60px 115px 125px 105px minmax(150px,1fr) 120px minmax(140px,1fr) auto" : row.type === "seizure" ? "60px 115px 125px 105px 120px minmax(140px,1fr) auto" : "60px 115px 125px 105px minmax(150px,1fr) auto" }, gap: 1, alignItems: "center", p: 1.25, border: "1px solid", borderColor: row.type === "seizure" ? "error.light" : "divider", borderRadius: 2.5 }}>
               <Chip label={index + 1} size="small" variant="outlined" />
               <TextField label="시각" type="time" size="small" value={row.time} onChange={event => updateRow(row.id, { time: event.target.value })} slotProps={{ inputLabel: { shrink: true } }} />
               <TextField select label="고양이" size="small" value={row.catId} onChange={event => updateRow(row.id, { catId: event.target.value, foodItemId: "" })}>
@@ -395,7 +423,7 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
               <TextField select label="기록" size="small" value={row.type} onChange={event => updateRow(row.id, { type: event.target.value as TimedCareEventType, amount: "", size: "", foodItemId: "", severity: "" })}>
                 {Object.entries(eventLabels).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}
               </TextField>
-              {(row.type === "water" || row.type === "meal" || row.type === "seizure") && <TextField label={row.type === "water" ? "마신 양(ml)" : row.type === "meal" ? "먹은 양(g, 선택)" : "지속시간(초)"} type="number" size="small" value={row.amount} onChange={event => updateRow(row.id, { amount: event.target.value })} slotProps={{ htmlInput: { min: 0, step: 1 } }} />}
+              {(row.type === "meal" || row.type === "seizure") && <TextField label={row.type === "meal" ? "먹은 양(g, 선택)" : "지속시간(초)"} type="number" size="small" value={row.amount} onChange={event => updateRow(row.id, { amount: event.target.value })} slotProps={{ htmlInput: { min: 0, step: 1 } }} />}
               {row.type === "meal" && <TextField select label="사료·간식" size="small" value={row.foodItemId} onChange={event => updateRow(row.id, { foodItemId: event.target.value })}><MenuItem value=""><em>미선택</em></MenuItem>{catFoods.map(item => <MenuItem key={item.id} value={item.id}>{item.brand}{item.productName ? ` · ${item.productName}` : ""}</MenuItem>)}</TextField>}
               {(row.type === "urine" || row.type === "stool") && <TextField select label="양" size="small" value={row.size} onChange={event => updateRow(row.id, { size: event.target.value as SizeLevel | "" })}><MenuItem value=""><em>미기록</em></MenuItem>{Object.entries(sizeLabels).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>}
               {row.type === "seizure" && <TextField select label="강도" size="small" value={row.severity} onChange={event => updateRow(row.id, { severity: event.target.value as SeizureSeverity | "" })}><MenuItem value=""><em>미기록</em></MenuItem><MenuItem value="mild">경미</MenuItem><MenuItem value="moderate">중간</MenuItem><MenuItem value="severe">심함</MenuItem></TextField>}
@@ -412,7 +440,7 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
       <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ md: "center" }} gap={2} sx={{ mt: 2 }}>
         <Button variant="outlined" startIcon={<AddRounded />} onClick={addRow}>시간 기록 행 추가</Button>
         <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-          {summaries.map(summary => <Chip key={summary.cat.id} color={summary.recorded ? "primary" : "default"} variant="outlined" label={`${summary.cat.name} · 물 ${summary.waterMl}ml · 식사 ${summary.mealCount}회 · 소변 ${summary.urineCount} · 대변 ${summary.stoolCount}`} />)}
+          {summaries.map(summary => <Chip key={summary.cat.id} color={summary.recorded ? "primary" : "default"} variant="outlined" label={`${summary.cat.name} · 물 ${summary.waterCount}회 · 식사 ${summary.mealCount}회 · 소변 ${summary.urineCount} · 대변 ${summary.stoolCount}`} />)}
         </Stack>
         <Button variant="contained" size="large" startIcon={<SaveRounded />} onClick={save} disabled={!changedCatIds.length}>통합 하루 기록 저장</Button>
       </Stack>

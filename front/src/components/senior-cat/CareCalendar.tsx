@@ -4,12 +4,13 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Box, Chip, IconButton, Paper, Stack, Tooltip, Typography } from "@mui/material";
 import ChevronLeftRounded from "@mui/icons-material/ChevronLeftRounded";
 import ChevronRightRounded from "@mui/icons-material/ChevronRightRounded";
-import type { CareSchedule, DailyRecord } from "@/types/cat-care";
+import type { CareSchedule, CatProfile, DailyRecord } from "@/types/cat-care";
 import { isScheduleDue } from "@/lib/cat-care/schedules";
 import { toLocalDateKey } from "@/lib/cat-care/storage";
 
 interface CareCalendarProps {
-  catId: string;
+  catId?: string;
+  cats?: CatProfile[];
   records: DailyRecord[];
   schedules: CareSchedule[];
   selectedDate: string;
@@ -33,6 +34,7 @@ function hasAttention(record?: DailyRecord): boolean {
 
 export default function CareCalendar({
   catId,
+  cats = [],
   records,
   schedules,
   selectedDate,
@@ -61,11 +63,15 @@ export default function CareCalendar({
     ];
   }, [cursor]);
 
-  const recordsByDate = useMemo(
-    () => new Map(records.filter(record => record.catId === catId).map(record => [record.date, record])),
-    [catId, records],
-  );
-  const catSchedules = schedules.filter(schedule => schedule.catId === catId);
+  const recordsByDate = useMemo(() => {
+    const grouped = new Map<string, DailyRecord[]>();
+    records
+      .filter(record => !catId || record.catId === catId)
+      .forEach(record => grouped.set(record.date, [...(grouped.get(record.date) ?? []), record]));
+    return grouped;
+  }, [catId, records]);
+  const catSchedules = schedules.filter(schedule => !catId || schedule.catId === catId);
+  const unified = !catId;
   const today = toLocalDateKey(new Date());
 
   const moveMonth = (amount: number) => {
@@ -79,8 +85,8 @@ export default function CareCalendar({
     >
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Box>
-          <Typography variant="h6" fontWeight={800}>건강 캘린더</Typography>
-          <Typography variant="body2" color="text.secondary">날짜를 누르면 해당 일자의 기록과 일정을 확인합니다.</Typography>
+          <Typography variant="h6" fontWeight={800}>{unified ? "전체 고양이 건강 캘린더" : "건강 캘린더"}</Typography>
+          <Typography variant="body2" color="text.secondary">{unified ? "모든 고양이의 기록과 일정을 날짜별로 모아 봅니다." : "날짜를 누르면 해당 일자의 기록과 일정을 확인합니다."}</Typography>
         </Box>
         <Stack direction="row" alignItems="center">
           <IconButton onClick={() => moveMonth(-1)} aria-label="이전 달"><ChevronLeftRounded /></IconButton>
@@ -107,14 +113,18 @@ export default function CareCalendar({
         {calendarDays.map((date, index) => {
           if (!date) return <Box key={`blank-${index}`} />;
           const dateKey = toLocalDateKey(date);
-          const record = recordsByDate.get(dateKey);
+          const dayRecords = recordsByDate.get(dateKey) ?? [];
           const due = catSchedules.filter(schedule => isScheduleDue(schedule, dateKey));
           const complete = due.length > 0 && due.every(schedule => schedule.completedDates.includes(dateKey));
-          const attention = hasAttention(record);
+          const attentionRecords = dayRecords.filter(record => hasAttention(record));
+          const record = dayRecords[0];
+          const recordedNames = unified
+            ? dayRecords.map(item => cats.find(cat => cat.id === item.catId)?.name).filter(Boolean).join(" · ")
+            : "";
           return (
             <Tooltip
               key={dateKey}
-              title={`${record ? "건강 기록 있음" : "건강 기록 없음"}${due.length ? ` · 일정 ${due.length}개` : ""}`}
+              title={`${dayRecords.length ? unified ? `기록 ${dayRecords.length}마리${recordedNames ? ` (${recordedNames})` : ""}` : "건강 기록 있음" : "건강 기록 없음"}${attentionRecords.length ? ` · 주의 ${attentionRecords.length}마리` : ""}${due.length ? ` · 일정 ${due.length}개` : ""}`}
               arrow
             >
               <Box
@@ -141,8 +151,13 @@ export default function CareCalendar({
                 }}
               >
                 <Typography variant="body2" fontWeight={dateKey === today ? 900 : 600}>{date.getDate()}</Typography>
+                {unified && (dayRecords.length > 0 || due.length > 0) && (
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.25, lineHeight: 1.2 }}>
+                    {dayRecords.length > 0 ? `기록 ${dayRecords.length}/${cats.length}` : ""}{dayRecords.length > 0 && due.length > 0 ? " · " : ""}{due.length > 0 ? `일정 ${due.length}` : ""}
+                  </Typography>
+                )}
                 <Stack direction="row" spacing={0.4} sx={{ mt: 1 }} flexWrap="wrap" useFlexGap>
-                  {record && <Box sx={{ width: 7, height: 7, borderRadius: "50%", bgcolor: attention ? "error.main" : "success.main" }} />}
+                  {record && <Box sx={{ width: 7, height: 7, borderRadius: "50%", bgcolor: attentionRecords.length ? "error.main" : "success.main" }} />}
                   {due.length > 0 && <Box sx={{ width: 7, height: 7, borderRadius: "50%", bgcolor: complete ? "success.main" : "warning.main" }} />}
                 </Stack>
               </Box>
@@ -159,4 +174,3 @@ export default function CareCalendar({
     </Paper>
   );
 }
-

@@ -37,9 +37,8 @@ export const scheduleTypeLabel = {
 } as const;
 
 export const scheduleRepeatLabel = {
-  none: "한 번",
-  daily: "매일",
-  weekly: "매주",
-  monthly: "매월",
+  none: "반복 안 함",
+  daily: "매일 반복",
+  weekly: "매주 반복",
+  monthly: "매달 반복",
 } as const;
-

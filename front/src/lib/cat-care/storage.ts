@@ -20,7 +20,7 @@ import { EMPTY_FOOD_NUTRIENTS } from "./food-label";
 export const CAT_CARE_STORAGE_KEY = "ohj-senior-cat-care-v1";
 
 export const EMPTY_CARE_STATE: CareState = {
-  version: 11,
+  version: 13,
   cats: [],
   records: [],
   foodItems: [],
@@ -63,7 +63,7 @@ function normalizeNotificationSettings(settings?: Partial<NotificationSettings>)
 
 export function normalizeCareState(input: Partial<CareState>): CareState {
   return {
-    version: 11,
+    version: 13,
     cats: Array.isArray(input.cats)
       ? (input.cats as CatProfile[]).map(cat => ({
           ...cat,
@@ -88,6 +88,9 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
             : [];
           return {
             ...record,
+            waterCount: typeof record.waterCount === "number"
+              ? record.waterCount
+              : timedEvents.filter(event => event.type === "water").length || null,
             timedEvents,
             collapseOrSeizure: Boolean(record.collapseOrSeizure) || timedEvents.some(event => event.type === "seizure"),
           };
@@ -96,6 +99,9 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
     foodItems: Array.isArray(input.foodItems)
       ? (input.foodItems as FoodItem[]).map(item => ({
           ...item,
+          catIds: Array.isArray(item.catIds) && item.catIds.length
+            ? [...new Set(item.catIds.filter(catId => typeof catId === "string" && catId))]
+            : item.catId ? [item.catId] : [],
           category: item.category ?? "other",
           brand: item.brand ?? "",
           productName: item.productName ?? "",
@@ -271,7 +277,7 @@ export function exportCareCsv(state: CareState): void {
   const headers = [
     "날짜",
     "고양이",
-    "음수량(ml)",
+    "물 마신 횟수",
     "소변 횟수",
     "소변 덩어리",
     "대변 횟수",
@@ -287,7 +293,7 @@ export function exportCareCsv(state: CareState): void {
     "혈뇨",
     "호흡 곤란",
     "쓰러짐/경련",
-    "시간별 음수·식사·배변·발작",
+    "시간별 물 마심·식사·배변·발작",
     "투약 완료 수",
     "메모",
   ];
@@ -300,7 +306,7 @@ export function exportCareCsv(state: CareState): void {
       return [
         record.date,
         cat?.name ?? "삭제된 고양이",
-        record.waterMl,
+        record.waterCount,
         record.urineCount,
         record.urineSize,
         record.stoolCount,
@@ -320,10 +326,8 @@ export function exportCareCsv(state: CareState): void {
           .slice()
           .sort((a, b) => a.time.localeCompare(b.time))
           .map(event => {
-            const label = { water: "음수", meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
-            const details = event.type === "water" && event.amountMl != null
-              ? ` ${event.amountMl}ml`
-              : event.type === "meal" && event.amountGrams != null
+            const label = { water: "물 마심", meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
+            const details = event.type === "meal" && event.amountGrams != null
                 ? ` ${event.amountGrams}g`
               : event.type === "seizure" && event.durationSeconds != null
                 ? ` ${event.durationSeconds}초`
@@ -344,7 +348,7 @@ export function exportCareCsv(state: CareState): void {
     });
 
   const foodRows = state.foodItems.map(item => [
-    catsById.get(item.catId)?.name ?? "삭제된 고양이",
+    item.catIds.map(catId => catsById.get(catId)?.name ?? "삭제된 고양이").join(" · "),
     item.category,
     item.brand,
     item.productName,
@@ -405,4 +409,8 @@ export function toLocalDateKey(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+export function foodAppliesToCat(item: FoodItem, catId: string): boolean {
+  return item.catIds?.length ? item.catIds.includes(catId) : item.catId === catId;
 }

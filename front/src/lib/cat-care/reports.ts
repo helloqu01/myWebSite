@@ -2,7 +2,7 @@ import type { CareSchedule, CatProfile, DailyRecord, EmergencyInfo, FoodItem, He
 import { createMedicalDocumentSignedUrl } from "./medical-documents";
 import { getCatAge } from "./insights";
 import { scheduleRepeatLabel, scheduleTypeLabel } from "./schedules";
-import { toLocalDateKey } from "./storage";
+import { foodAppliesToCat, toLocalDateKey } from "./storage";
 
 function escapeHtml(value: unknown): string {
   return String(value ?? "")
@@ -66,7 +66,7 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
     : `최근 ${days}일 (기록 없음)`;
   const activeSchedules = schedules.filter(schedule => schedule.catId === cat.id && schedule.enabled);
   const catFoodItems = foodItems
-    .filter(item => item.catId === cat.id)
+    .filter(item => foodAppliesToCat(item, cat.id))
     .sort((a, b) => b.startDate.localeCompare(a.startDate));
   const foodById = new Map(catFoodItems.map(item => [item.id, item]));
   const start = new Date();
@@ -121,10 +121,8 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
     .slice()
     .sort((a, b) => a.time.localeCompare(b.time))
     .map(event => {
-      const label = { water: "음수", meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
-      const amount = event.type === "water" && event.amountMl != null
-        ? ` ${event.amountMl}ml`
-        : event.type === "meal" && event.amountGrams != null
+      const label = { water: "물 마심", meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
+      const amount = event.type === "meal" && event.amountGrams != null
           ? ` ${event.amountGrams}g`
           : "";
       const duration = event.type === "seizure" && event.durationSeconds != null ? ` ${event.durationSeconds}초` : "";
@@ -142,7 +140,7 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
     return `
       <tr>
         <td>${escapeHtml(record.date)}</td>
-        <td>${escapeHtml(displayNumber(record.waterMl, "ml"))}</td>
+        <td>${escapeHtml(displayNumber(record.waterCount, "회"))}</td>
         <td>${escapeHtml(displayNumber(record.urineCount, "회"))}</td>
         <td>${escapeHtml(displayNumber(record.stoolCount, "회"))}</td>
         <td>${escapeHtml(appetiteLabel[record.appetite])}</td>
@@ -313,7 +311,7 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
   </section>
   <section class="summary">
     <div><span>기록 일수</span><strong>${records.length}일</strong></div>
-    <div><span>평균 음수량</span><strong>${average(records, record => record.waterMl)}${records.some(record => record.waterMl != null) ? "ml" : ""}</strong></div>
+    <div><span>평균 물 마신 횟수</span><strong>${average(records, record => record.waterCount)}${records.some(record => record.waterCount != null) ? "회" : ""}</strong></div>
     <div><span>평균 소변 횟수</span><strong>${average(records, record => record.urineCount)}${records.some(record => record.urineCount != null) ? "회" : ""}</strong></div>
     <div><span>최근 체중</span><strong>${escapeHtml(displayNumber(latest?.weightKg ?? cat.currentWeightKg, "kg"))}</strong></div>
   </section>
@@ -338,7 +336,7 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
   <h2>주간 노묘 상태 체크</h2>
   <div class="table-wrap"><table><thead><tr><th>날짜</th><th>체중</th><th>이동</th><th>그루밍</th><th>수면</th><th>상호작용</th><th>화장실</th><th>통증</th><th>구체 행동</th><th>BCS/MCS</th><th>혈압</th><th>메모</th></tr></thead><tbody>${weeklyRows || '<tr><td colspan="12">해당 기간에 주간 체크 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <h2>일별 상세 기록</h2>
-  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>음수량</th><th>소변</th><th>대변</th><th>식욕</th><th>체중</th><th>투약</th><th>시간별 음수·식사·배변·발작</th><th>이상 징후</th><th>메모</th></tr></thead><tbody>${recordRows || '<tr><td colspan="10">해당 기간에 기록이 없습니다.</td></tr>'}</tbody></table></div>
+  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>물 마심</th><th>소변</th><th>대변</th><th>식욕</th><th>체중</th><th>투약</th><th>시간별 물·식사·배변·발작</th><th>이상 징후</th><th>메모</th></tr></thead><tbody>${recordRows || '<tr><td colspan="10">해당 기간에 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <div class="notice"><strong>안내:</strong> 이 리포트는 보호자가 입력한 관찰 기록을 정리한 자료이며 수의사의 진단을 대신하지 않습니다.</div>
 </body>
 </html>`);

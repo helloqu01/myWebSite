@@ -41,7 +41,7 @@ interface QuickRecordDialogProps {
 }
 
 interface QuickDraft {
-  waterMl: string;
+  waterCount: string;
   urineCount: string;
   stoolCount: string;
   weightKg: string;
@@ -52,7 +52,7 @@ interface QuickDraft {
 
 function draftFor(cat: CatProfile, record?: DailyRecord): QuickDraft {
   return {
-    waterMl: record?.waterMl?.toString() ?? "",
+    waterCount: record?.waterCount?.toString() ?? "",
     urineCount: record?.urineCount?.toString() ?? "",
     stoolCount: record?.stoolCount?.toString() ?? "",
     weightKg: record?.weightKg?.toString() ?? cat.currentWeightKg?.toString() ?? "",
@@ -75,7 +75,7 @@ function recordFor(cat: CatProfile, date: string, draft: QuickDraft, existing?: 
     id: existing?.id ?? createId("record"),
     catId: cat.id,
     date,
-    waterMl: nullableNumber(draft.waterMl),
+    waterCount: nullableNumber(draft.waterCount),
     urineCount: nullableNumber(draft.urineCount),
     urineSize: existing?.urineSize ?? null,
     stoolCount: nullableNumber(draft.stoolCount),
@@ -199,7 +199,7 @@ export default function QuickRecordDialog({
                     alignItems: "center",
                   }}
                 >
-                  <TextField label="음수량(ml)" type="number" size="small" value={draft.waterMl} onChange={event => update(cat.id, "waterMl", event.target.value)} />
+                  <TextField label="물 마심(회)" type="number" size="small" value={draft.waterCount} onChange={event => update(cat.id, "waterCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} />
                   <TextField label="소변(회)" type="number" size="small" value={draft.urineCount} onChange={event => update(cat.id, "urineCount", event.target.value)} />
                   <TextField label="대변(회)" type="number" size="small" value={draft.stoolCount} onChange={event => update(cat.id, "stoolCount", event.target.value)} />
                   <TextField label="체중(kg)" type="number" size="small" value={draft.weightKg} onChange={event => update(cat.id, "weightKg", event.target.value)} />

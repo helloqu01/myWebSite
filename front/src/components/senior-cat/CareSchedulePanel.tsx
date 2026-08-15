@@ -19,6 +19,8 @@ import {
   Select,
   Stack,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -223,12 +225,20 @@ export default function CareSchedulePanel({
                   {Object.entries(scheduleTypeLabel).map(([value, label]) => <MenuItem value={value} key={value}>{label}</MenuItem>)}
                 </Select>
               </FormControl>
-              <FormControl fullWidth>
-                <InputLabel>반복</InputLabel>
-                <Select label="반복" value={draft.repeat} onChange={event => update("repeat", event.target.value as CareScheduleRepeat)}>
-                  {Object.entries(scheduleRepeatLabel).map(([value, label]) => <MenuItem value={value} key={value}>{label}</MenuItem>)}
-                </Select>
-              </FormControl>
+              <Box sx={{ width: "100%" }}>
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>반복 주기</Typography>
+                <ToggleButtonGroup
+                  exclusive
+                  fullWidth
+                  size="small"
+                  value={draft.repeat}
+                  onChange={(_, value: CareScheduleRepeat | null) => value && update("repeat", value)}
+                  aria-label="케어 일정 반복 주기"
+                  sx={{ flexWrap: { xs: "wrap", sm: "nowrap" }, "& .MuiToggleButton-root": { flex: { xs: "1 1 45%", sm: "1 1 0" } } }}
+                >
+                  {Object.entries(scheduleRepeatLabel).map(([value, label]) => <ToggleButton value={value} key={value}>{label}</ToggleButton>)}
+                </ToggleButtonGroup>
+              </Box>
             </Stack>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField label={draft.repeat === "none" ? "일정 날짜" : "반복 시작일"} type="date" value={draft.startDate} onChange={event => update("startDate", event.target.value)} slotProps={{ inputLabel: { shrink: true } }} fullWidth />

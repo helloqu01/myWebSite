@@ -230,7 +230,7 @@ export function buildCatAlerts(cat: CatProfile, allRecords: DailyRecord[]): Heal
       }
     };
 
-    compareMetric("음수량", "ml", record => record.waterMl, 35, 35);
+    compareMetric("물 마신 횟수", "회", record => record.waterCount, 50, 50);
     compareMetric("소변 횟수", "회", record => record.urineCount, 50, 50);
 
     const recentWeights = recent.map(record => record.weightKg).filter((value): value is number => value != null);
@@ -314,4 +314,3 @@ export function getRecordsInRange(
   const startKey = toLocalDateKey(start);
   return recordsForCat(records, catId).filter(record => record.date >= startKey);
 }
-

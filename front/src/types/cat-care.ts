@@ -87,7 +87,9 @@ export interface FoodNutrientAnalysis {
 
 export interface FoodItem {
   id: string;
+  /** 파일 저장 경로와 이전 데이터 호환을 위한 대표 고양이입니다. */
   catId: string;
+  catIds: string[];
   category: FoodCategory;
   brand: string;
   productName: string;
@@ -161,7 +163,9 @@ export interface DailyRecord {
   id: string;
   catId: string;
   date: string;
-  waterMl: number | null;
+  waterCount: number | null;
+  /** @deprecated 이전 버전에서 저장한 ml 기록. 새 기록과 통계에는 사용하지 않습니다. */
+  waterMl?: number | null;
   urineCount: number | null;
   urineSize: SizeLevel | null;
   stoolCount: number | null;
@@ -329,7 +333,7 @@ export interface NotificationSettings {
 }
 
 export interface CareState {
-  version: 11;
+  version: 13;
   cats: CatProfile[];
   records: DailyRecord[];
   foodItems: FoodItem[];

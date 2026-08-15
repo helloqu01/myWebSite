@@ -5,10 +5,12 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   Link,
   Paper,
   Stack,
@@ -23,8 +25,9 @@ import type { CatProfile, EmergencyInfo } from "@/types/cat-care";
 
 interface EmergencyCardPanelProps {
   cat: CatProfile;
-  info: EmergencyInfo | null;
-  onSave: (info: EmergencyInfo) => void;
+  cats: CatProfile[];
+  infos: EmergencyInfo[];
+  onSave: (infos: EmergencyInfo[]) => void;
   onMessage: (message: string) => void;
 }
 
@@ -49,12 +52,17 @@ function cardText(cat: CatProfile, info: EmergencyInfo): string {
   ].join("\n");
 }
 
-export default function EmergencyCardPanel({ cat, info, onSave, onMessage }: EmergencyCardPanelProps) {
+export default function EmergencyCardPanel({ cat, cats, infos, onSave, onMessage }: EmergencyCardPanelProps) {
   const [open, setOpen] = useState(false);
+  const info = infos.find(item => item.catId === cat.id) ?? null;
   const [draft, setDraft] = useState<EmergencyInfo>(() => info ?? emptyInfo(cat.id));
+  const [targetCatIds, setTargetCatIds] = useState<string[]>([cat.id]);
 
   useEffect(() => {
-    if (open) setDraft(info ? { ...info } : emptyInfo(cat.id));
+    if (open) {
+      setDraft(info ? { ...info } : emptyInfo(cat.id));
+      setTargetCatIds([cat.id]);
+    }
   }, [cat.id, info, open]);
 
   const current = info ?? emptyInfo(cat.id);
@@ -73,6 +81,23 @@ export default function EmergencyCardPanel({ cat, info, onSave, onMessage }: Eme
     popup.document.close();
   };
 
+  const save = () => {
+    const now = new Date().toISOString();
+    const sharedFields = {
+      primaryVetName: draft.primaryVetName,
+      primaryVetPhone: draft.primaryVetPhone,
+      emergencyVetName: draft.emergencyVetName,
+      emergencyVetPhone: draft.emergencyVetPhone,
+      caregiverContacts: draft.caregiverContacts,
+    };
+    onSave(targetCatIds.map(catId => {
+      if (catId === cat.id) return { ...draft, ...sharedFields, catId, updatedAt: now };
+      const existing = infos.find(item => item.catId === catId) ?? emptyInfo(catId);
+      return { ...existing, ...sharedFields, catId, updatedAt: now };
+    }));
+    setOpen(false);
+  };
+
   return (
     <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, border: "1px solid var(--card-border)", borderRadius: 4 }}>
       <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" gap={2}>
@@ -84,7 +109,36 @@ export default function EmergencyCardPanel({ cat, info, onSave, onMessage }: Eme
         <Box sx={{ p: 1.5, bgcolor: "var(--surface)", borderRadius: 2 }}><Typography variant="caption" color="text.secondary">응급병원</Typography><Typography fontWeight={800}>{current.emergencyVetName || "미입력"}</Typography>{current.emergencyVetPhone && <Link href={`tel:${current.emergencyVetPhone}`}>{current.emergencyVetPhone}</Link>}</Box>
       </Box>
 
-      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm"><DialogTitle>{cat.name} 응급 정보</DialogTitle><DialogContent dividers><Stack spacing={2}><Alert severity="warning">소변이 나오지 않음, 호흡 곤란, 쓰러짐·경련은 앱 기록보다 즉시 병원 연락이 우선입니다.</Alert><Stack direction={{ xs: "column", sm: "row" }} spacing={2}><TextField label="주치의 병원" value={draft.primaryVetName} onChange={event => update("primaryVetName", event.target.value)} fullWidth /><TextField label="주치의 전화" value={draft.primaryVetPhone} onChange={event => update("primaryVetPhone", event.target.value)} fullWidth /></Stack><Stack direction={{ xs: "column", sm: "row" }} spacing={2}><TextField label="24시·응급병원" value={draft.emergencyVetName} onChange={event => update("emergencyVetName", event.target.value)} fullWidth /><TextField label="응급병원 전화" value={draft.emergencyVetPhone} onChange={event => update("emergencyVetPhone", event.target.value)} fullWidth /></Stack><TextField label="약물·식품 알레르기" value={draft.allergies} onChange={event => update("allergies", event.target.value)} /><TextField label="보호자·대리 보호자 연락처" value={draft.caregiverContacts} onChange={event => update("caregiverContacts", event.target.value)} multiline minRows={2} /><TextField label="응급 시 전달할 메모" value={draft.emergencyNotes} onChange={event => update("emergencyNotes", event.target.value)} multiline minRows={2} /></Stack></DialogContent><DialogActions sx={{ px: 3, py: 2 }}><Button color="inherit" onClick={() => setOpen(false)}>취소</Button><Button variant="contained" onClick={() => { onSave({ ...draft, catId: cat.id, updatedAt: new Date().toISOString() }); setOpen(false); }}>저장</Button></DialogActions></Dialog>
+      <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>{cat.name} 응급 정보</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2}>
+            <Alert severity="warning">소변이 나오지 않음, 호흡 곤란, 쓰러짐·경련은 앱 기록보다 즉시 병원 연락이 우선입니다.</Alert>
+            <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2.5 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1}>
+                <Box><Typography fontWeight={800}>병원 연락처 공통 적용</Typography><Typography variant="caption" color="text.secondary">선택한 고양이에게 병원과 보호자 연락처를 함께 저장합니다.</Typography></Box>
+                <Button size="small" onClick={() => setTargetCatIds(cats.map(target => target.id))}>전체 선택</Button>
+              </Stack>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+                {cats.map(target => (
+                  <FormControlLabel
+                    key={target.id}
+                    control={<Checkbox checked={targetCatIds.includes(target.id)} disabled={target.id === cat.id} onChange={event => setTargetCatIds(current => event.target.checked ? [...current, target.id] : current.filter(catId => catId !== target.id))} />}
+                    label={target.name}
+                  />
+                ))}
+              </Stack>
+              <Typography variant="caption" color="text.secondary">알레르기와 응급 메모는 {cat.name}에게만 저장되며, 다른 고양이의 개별 내용은 유지됩니다.</Typography>
+            </Paper>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}><TextField label="주치의 병원" value={draft.primaryVetName} onChange={event => update("primaryVetName", event.target.value)} fullWidth /><TextField label="주치의 전화" value={draft.primaryVetPhone} onChange={event => update("primaryVetPhone", event.target.value)} fullWidth /></Stack>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}><TextField label="24시·응급병원" value={draft.emergencyVetName} onChange={event => update("emergencyVetName", event.target.value)} fullWidth /><TextField label="응급병원 전화" value={draft.emergencyVetPhone} onChange={event => update("emergencyVetPhone", event.target.value)} fullWidth /></Stack>
+            <TextField label="약물·식품 알레르기" value={draft.allergies} onChange={event => update("allergies", event.target.value)} />
+            <TextField label="보호자·대리 보호자 연락처" value={draft.caregiverContacts} onChange={event => update("caregiverContacts", event.target.value)} multiline minRows={2} />
+            <TextField label="응급 시 전달할 메모" value={draft.emergencyNotes} onChange={event => update("emergencyNotes", event.target.value)} multiline minRows={2} />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}><Button color="inherit" onClick={() => setOpen(false)}>취소</Button><Button variant="contained" onClick={save}>{targetCatIds.length > 1 ? `${targetCatIds.length}마리에 저장` : "저장"}</Button></DialogActions>
+      </Dialog>
     </Paper>
   );
 }

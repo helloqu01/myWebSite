@@ -283,7 +283,7 @@ export default function CatProfileDialog({
             label="주치의 목표·관리 기준"
             value={draft.vetTargets}
             onChange={event => update("vetTargets", event.target.value)}
-            placeholder="예: 목표 체중 4.2kg, 음수량 변화 시 병원 연락"
+            placeholder="예: 목표 체중 4.2kg, 물 마시는 횟수 변화 시 병원 연락"
             minRows={2}
             multiline
             fullWidth

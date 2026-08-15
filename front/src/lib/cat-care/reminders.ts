@@ -1,6 +1,6 @@
 import type { CareState, DailyRecord } from "@/types/cat-care";
 import { isScheduleCompleted, isScheduleDue } from "./schedules";
-import { toLocalDateKey } from "./storage";
+import { foodAppliesToCat, toLocalDateKey } from "./storage";
 
 export type CareReminderAction = "daily_record" | "schedule" | "weekly_check" | "medication_stock" | "food_history" | "medication_log" | "quality_of_life";
 
@@ -23,10 +23,10 @@ function datePlus(date: Date, days: number): string {
 }
 
 function missingDailyItems(record: DailyRecord | undefined): string[] {
-  if (!record) return ["음수량", "식사 시간", "소변 횟수·시간", "대변 횟수·시간"];
+  if (!record) return ["물 마신 횟수", "식사 시간", "소변 횟수·시간", "대변 횟수·시간"];
 
   const missing: string[] = [];
-  if (record.waterMl == null) missing.push("음수량");
+  if (record.waterCount == null) missing.push("물 마신 횟수");
   if (record.appetite !== "none" && !record.timedEvents.some(event => event.type === "meal")) missing.push("식사 시간");
   if (record.urineCount == null || (record.urineCount > 0 && !record.timedEvents.some(event => event.type === "urine"))) missing.push("소변 횟수·시간");
   if (record.stoolCount == null || (record.stoolCount > 0 && !record.timedEvents.some(event => event.type === "stool"))) missing.push("대변 횟수·시간");
@@ -148,7 +148,7 @@ export function buildCareReminders(care: CareState, now = new Date()): CareRemin
   });
 
   care.cats.forEach(cat => {
-    const currentFoods = care.foodItems.filter(item => item.catId === cat.id
+    const currentFoods = care.foodItems.filter(item => foodAppliesToCat(item, cat.id)
       && item.category !== "treat"
       && item.startDate <= today
       && (!item.endDate || item.endDate >= today));

@@ -130,12 +130,12 @@ export default function TrendCharts({ records }: TrendChartsProps) {
       }}
     >
       <MetricChart
-        title="음수량"
-        unit="ml"
+        title="물 마신 횟수"
+        unit="회"
         color={theme.palette.info.main}
         icon={<WaterDropRounded fontSize="small" />}
         records={records}
-        value={record => record.waterMl}
+        value={record => record.waterCount}
       />
       <MetricChart
         title="체중"
