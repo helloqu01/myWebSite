@@ -66,6 +66,11 @@ jobs:
           BUCKET: ${{ secrets.S3_BUCKET_NAME }}
         run: aws s3 sync front/out/ s3://$BUCKET --delete
 
+      - name: Upload static route entry objects
+        env:
+          BUCKET: ${{ secrets.S3_BUCKET_NAME }}
+        run: bash scripts/upload-static-route-entries.sh front/out "$BUCKET"
+
       - name: Invalidate CloudFront
         env:
           DISTRIBUTION_ID: ${{ secrets.CF_DISTRIBUTION_ID }}
