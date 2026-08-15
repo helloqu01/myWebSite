@@ -41,7 +41,6 @@ import CloudSyncPanel from "@/components/senior-cat/CloudSyncPanel";
 import EmergencyCardPanel from "@/components/senior-cat/EmergencyCardPanel";
 import FoodHistoryPanel from "@/components/senior-cat/FoodHistoryPanel";
 import HealthCheckupPanel from "@/components/senior-cat/HealthCheckupPanel";
-import HouseholdLitterPanel from "@/components/senior-cat/HouseholdLitterPanel";
 import LabReportPanel from "@/components/senior-cat/LabReportPanel";
 import LabTrendCharts from "@/components/senior-cat/LabTrendCharts";
 import MedicationLogPanel from "@/components/senior-cat/MedicationLogPanel";
@@ -60,7 +59,6 @@ import type {
   FoodItem,
   HealthAlert,
   HealthCheckup,
-  HouseholdLitterRecord,
   LabReport,
   Medication,
   MedicationAdministration,
@@ -710,21 +708,6 @@ export default function SeniorCatPage() {
     setMessage(`${formatDate(check.date)} 주간 건강·삶의 질${check.weightKg != null ? `과 체중 ${check.weightKg}kg을` : "을"} 함께 저장했습니다.`);
   };
 
-  const saveLitterRecord = (record: HouseholdLitterRecord) => {
-    setCare(current => ({
-      ...current,
-      householdLitterRecords: current.householdLitterRecords.some(item => item.id === record.id)
-        ? current.householdLitterRecords.map(item => item.id === record.id ? record : item)
-        : [...current.householdLitterRecords, record],
-    }));
-    setMessage("공동 화장실 기록을 저장했습니다.");
-  };
-
-  const deleteLitterRecord = (record: HouseholdLitterRecord) => {
-    setCare(current => ({ ...current, householdLitterRecords: current.householdLitterRecords.filter(item => item.id !== record.id) }));
-    setMessage("공동 화장실 기록을 삭제했습니다.");
-  };
-
   const saveEmergencyInfo = (infos: EmergencyInfo[]) => {
     setCare(current => {
       const emergencyInfo = [...current.emergencyInfo];
@@ -765,7 +748,7 @@ export default function SeniorCatPage() {
       daily_record: "daily-record-section",
       schedule: "schedule-care-section",
       weekly_check: "weekly-care-section",
-      medication_stock: "medication-stock-section",
+      medication_stock: "medication-log-section",
       food_history: "food-history-section",
       medication_log: "medication-log-section",
       quality_of_life: "weekly-care-section",
@@ -917,7 +900,8 @@ export default function SeniorCatPage() {
               <CareReminderPanel
                 care={care}
                 onSettingsChange={updateNotificationSettings}
-                onMedicationChange={updateMedication}
+                onMedicationSave={saveMedicationAdministration}
+                onMedicationDelete={deleteMedicationAdministration}
                 onReminderAction={handleReminderAction}
                 onMessage={setMessage}
               />
@@ -1031,13 +1015,6 @@ export default function SeniorCatPage() {
                   </Alert>
                 )}
               </Box>
-
-              <HouseholdLitterPanel
-                cats={orderedCats}
-                records={care.householdLitterRecords}
-                onSave={saveLitterRecord}
-                onDelete={deleteLitterRecord}
-              />
 
               {selectedCat && (
                 <Box id="selected-cat-detail" component="section" aria-labelledby="selected-cat-heading" sx={{ scrollMarginTop: 96 }}>
@@ -1168,6 +1145,10 @@ export default function SeniorCatPage() {
                       openRequestKey={medicationDialogRequest}
                       onSave={saveMedicationAdministration}
                       onDelete={deleteMedicationAdministration}
+                      onSaveSchedule={saveSchedule}
+                      onDeleteSchedule={deleteSchedule}
+                      onMedicationChange={medication => updateMedication(selectedCat.id, medication)}
+                      onEditMedications={() => openEditProfile(selectedCat)}
                     />
                   </Box>
 

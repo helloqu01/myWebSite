@@ -5,14 +5,12 @@ import {
   Alert,
   Box,
   Button,
-  Checkbox,
   Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
-  FormControlLabel,
   InputLabel,
   MenuItem,
   Paper,
@@ -28,8 +26,10 @@ import type {
   CatProfile,
   MedicationAdministration,
   MedicationAdministrationStatus,
+  Medication,
+  CareScheduleRepeat,
 } from "@/types/cat-care";
-import { schedulesDueOn } from "@/lib/cat-care/schedules";
+import { scheduleRepeatLabel, schedulesDueOn } from "@/lib/cat-care/schedules";
 import { createId } from "@/lib/cat-care/storage";
 
 interface MedicationLogPanelProps {
@@ -40,6 +40,10 @@ interface MedicationLogPanelProps {
   openRequestKey: number;
   onSave: (log: MedicationAdministration) => void;
   onDelete: (log: MedicationAdministration) => void;
+  onSaveSchedule: (schedule: CareSchedule) => void;
+  onDeleteSchedule: (schedule: CareSchedule) => void;
+  onMedicationChange: (medication: Medication) => void;
+  onEditMedications: () => void;
 }
 
 const statusLabels: Record<MedicationAdministrationStatus, string> = {
@@ -65,7 +69,7 @@ function blankLog(cat: CatProfile, date: string, schedules: CareSchedule[], medi
   const medication = cat.medications.find(item => item.id === medicationId) ?? cat.medications[0];
   const due = schedulesDueOn(schedules, cat.id, date).find(schedule => schedule.type === "medication"
     && medication
-    && (schedule.title.includes(medication.name) || medication.name.includes(schedule.title)));
+    && (schedule.medicationId === medication.id || (!schedule.medicationId && (schedule.title.includes(medication.name) || medication.name.includes(schedule.title)))));
   const now = new Date().toISOString();
   return {
     id: createId("medication-log"),
@@ -88,15 +92,56 @@ function blankLog(cat: CatProfile, date: string, schedules: CareSchedule[], medi
   };
 }
 
-export default function MedicationLogPanel({ cat, date, schedules, logs, openRequestKey, onSave, onDelete }: MedicationLogPanelProps) {
+export default function MedicationLogPanel({ cat, date, schedules, logs, openRequestKey, onSave, onDelete, onSaveSchedule, onDeleteSchedule, onMedicationChange, onEditMedications }: MedicationLogPanelProps) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<MedicationAdministration | null>(null);
   const [draft, setDraft] = useState<MedicationAdministration>(() => blankLog(cat, date, schedules));
   const [error, setError] = useState("");
+  const [scheduleMedication, setScheduleMedication] = useState<Medication | null>(null);
+  const [scheduleRepeat, setScheduleRepeat] = useState<CareScheduleRepeat>("daily");
+  const [scheduleStartDate, setScheduleStartDate] = useState(date);
+  const [scheduleTime, setScheduleTime] = useState("09:00");
+  const [scheduleNotes, setScheduleNotes] = useState("");
   const dayLogs = useMemo(
     () => logs.filter(log => log.catId === cat.id && log.date === date).sort((a, b) => (b.actualTime || b.scheduledTime).localeCompare(a.actualTime || a.scheduledTime)),
     [cat.id, date, logs],
   );
+  const medicationSchedules = schedules.filter(schedule => schedule.catId === cat.id && schedule.type === "medication");
+
+  const scheduleFor = (medication: Medication) => medicationSchedules.find(schedule => schedule.medicationId === medication.id
+    || (!schedule.medicationId && (schedule.title.includes(medication.name) || medication.name.includes(schedule.title))));
+
+  const openSchedule = (medication: Medication) => {
+    const schedule = scheduleFor(medication);
+    setScheduleMedication(medication);
+    setScheduleRepeat(schedule?.repeat ?? "daily");
+    setScheduleStartDate(schedule?.startDate ?? date);
+    setScheduleTime(schedule?.time ?? "09:00");
+    setScheduleNotes(schedule?.notes ?? medication.scheduleNote);
+  };
+
+  const saveSchedule = () => {
+    if (!scheduleMedication) return;
+    const existing = scheduleFor(scheduleMedication);
+    const now = new Date().toISOString();
+    onSaveSchedule({
+      id: existing?.id ?? createId("schedule"),
+      catId: cat.id,
+      medicationId: scheduleMedication.id,
+      title: scheduleMedication.name,
+      type: "medication",
+      repeat: scheduleRepeat,
+      startDate: scheduleStartDate,
+      time: scheduleTime,
+      notes: scheduleNotes.trim(),
+      completedDates: existing?.completedDates ?? [],
+      enabled: true,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    });
+    onMedicationChange({ ...scheduleMedication, scheduleNote: `${scheduleRepeat === "daily" ? "매일" : scheduleRepeat === "weekly" ? "매주" : scheduleRepeat === "monthly" ? "매달" : "한 번"}${scheduleTime ? ` ${scheduleTime}` : ""}` });
+    setScheduleMedication(null);
+  };
 
   const openNew = () => {
     setEditing(null);
@@ -124,7 +169,7 @@ export default function MedicationLogPanel({ cat, date, schedules, logs, openReq
     const medication = cat.medications.find(item => item.id === medicationId);
     const due = schedulesDueOn(schedules, cat.id, draft.date).find(schedule => schedule.type === "medication"
       && medication
-      && (schedule.title.includes(medication.name) || medication.name.includes(schedule.title)));
+      && (schedule.medicationId === medication.id || (!schedule.medicationId && (schedule.title.includes(medication.name) || medication.name.includes(schedule.title)))));
     setDraft(current => ({
       ...current,
       medicationId,
@@ -151,38 +196,40 @@ export default function MedicationLogPanel({ cat, date, schedules, logs, openReq
     <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, border: "1px solid var(--card-border)", borderRadius: 4 }}>
       <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" gap={2} sx={{ mb: 2 }}>
         <Box>
-          <Stack direction="row" spacing={1} alignItems="center"><MedicationRounded color="primary" /><Typography variant="h6" fontWeight={800}>오늘 투약 체크</Typography></Stack>
-          <Typography variant="body2" color="text.secondary">복용한 약을 체크하면 현재 시각으로 기록되고 재고와 연결 일정도 함께 반영됩니다.</Typography>
+          <Stack direction="row" spacing={1} alignItems="center"><MedicationRounded color="primary" /><Typography variant="h6" fontWeight={800}>투약 관리</Typography></Stack>
+          <Typography variant="body2" color="text.secondary">약 등록, 반복 일정, 재고와 상세 투약 이력을 한곳에서 관리합니다. 오늘 투약 체크는 상단 알림에서 할 수 있습니다.</Typography>
         </Box>
-        <Button variant="outlined" startIcon={<AddRounded />} onClick={openNew} disabled={!cat.medications.length}>상세 기록 추가</Button>
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap><Button onClick={onEditMedications}>약 추가·이름 수정</Button><Button variant="outlined" startIcon={<AddRounded />} onClick={openNew} disabled={!cat.medications.length}>상세 기록 추가</Button></Stack>
       </Stack>
 
       {!cat.medications.length ? (
-        <Alert severity="info">먼저 고양이 관리 정보에 복용약을 등록해 주세요.</Alert>
+        <Alert severity="info" action={<Button color="inherit" size="small" onClick={onEditMedications}>약 등록</Button>}>등록된 약이 없습니다. 약을 등록한 뒤 매일·매주·매달 복용 일정을 설정해 주세요.</Alert>
       ) : (
-        <Paper variant="outlined" sx={{ p: 1.5, mb: dayLogs.length ? 2 : 0, borderRadius: 2.5 }}>
-          <Stack spacing={0.5}>
+        <Stack spacing={1} sx={{ mb: 2 }}>
             {cat.medications.map(medication => {
-              const completedLog = dayLogs.find(log => log.medicationId === medication.id && (log.status === "given" || log.status === "vomited"));
+              const schedule = scheduleFor(medication);
               return (
-                <FormControlLabel
-                  key={medication.id}
-                  control={<Checkbox checked={Boolean(completedLog)} onChange={event => {
-                    if (event.target.checked) onSave(blankLog(cat, date, schedules, medication.id));
-                    else if (completedLog) onDelete(completedLog);
-                  }} />}
-                  label={
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0, sm: 1 }} alignItems={{ sm: "center" }}>
-                      <Typography fontWeight={700}>{medication.name}</Typography>
-                      {medication.scheduleNote && <Typography variant="body2" color="text.secondary">{medication.scheduleNote}</Typography>}
-                      {medication.stockCount != null && <Chip size="small" variant="outlined" label={`재고 ${medication.stockCount}${medication.stockUnit}`} />}
+                <Paper key={medication.id} variant="outlined" sx={{ p: 1.5, borderRadius: 2.5 }}>
+                  <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={1.5}>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
+                        <Typography fontWeight={800}>{medication.name}</Typography>
+                        {schedule ? <><Chip size="small" color="primary" label={scheduleRepeatLabel[schedule.repeat]} /><Chip size="small" variant="outlined" label={schedule.time || "시간 미지정"} /></> : <Chip size="small" color="warning" label="복용 일정 미설정" />}
+                      </Stack>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{schedule?.notes || medication.scheduleNote || "복용 메모 없음"}</Typography>
+                    </Box>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+                      <TextField label="현재 재고" type="number" size="small" value={medication.stockCount ?? ""} onChange={event => onMedicationChange({ ...medication, stockCount: event.target.value === "" ? null : Math.max(0, Number(event.target.value)) })} sx={{ width: { sm: 115 } }} />
+                      <TextField label="재고 알림" type="number" size="small" value={medication.refillThreshold ?? ""} onChange={event => onMedicationChange({ ...medication, refillThreshold: event.target.value === "" ? null : Math.max(0, Number(event.target.value)) })} sx={{ width: { sm: 115 } }} />
+                      <TextField label="단위" size="small" value={medication.stockUnit} onChange={event => onMedicationChange({ ...medication, stockUnit: event.target.value })} sx={{ width: { sm: 90 } }} />
+                      <Button variant="contained" size="small" onClick={() => openSchedule(medication)}>반복 일정 설정</Button>
+                      {schedule && <Button color="error" size="small" onClick={() => onDeleteSchedule(schedule)}>일정 삭제</Button>}
                     </Stack>
-                  }
-                />
+                  </Stack>
+                </Paper>
               );
             })}
-          </Stack>
-        </Paper>
+        </Stack>
       )}
 
       {dayLogs.length ? (
@@ -215,6 +262,12 @@ export default function MedicationLogPanel({ cat, date, schedules, logs, openReq
           })}
         </Stack>
       ) : cat.medications.length ? <Typography color="text.secondary" sx={{ pt: 2 }}>아직 체크한 투약이 없습니다.</Typography> : null}
+
+      <Dialog open={Boolean(scheduleMedication)} onClose={() => setScheduleMedication(null)} fullWidth maxWidth="sm">
+        <DialogTitle>{scheduleMedication?.name} 반복 투약 일정</DialogTitle>
+        <DialogContent dividers><Stack spacing={2} sx={{ pt: 0.5 }}><Alert severity="info">설정한 주기에 맞는 날에 상단 ‘오늘 할 일·알림’에 투약 체크박스가 나타납니다.</Alert><FormControl fullWidth><InputLabel>복용 주기</InputLabel><Select label="복용 주기" value={scheduleRepeat} onChange={event => setScheduleRepeat(event.target.value as CareScheduleRepeat)}>{Object.entries(scheduleRepeatLabel).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</Select></FormControl><Stack direction={{ xs: "column", sm: "row" }} spacing={2}><TextField label={scheduleRepeat === "none" ? "투약 날짜" : "반복 시작일"} type="date" value={scheduleStartDate} onChange={event => setScheduleStartDate(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} helperText={scheduleRepeat === "weekly" ? "이 날짜와 같은 요일마다 표시" : scheduleRepeat === "monthly" ? "이 날짜와 같은 날짜마다 표시" : undefined} fullWidth /><TextField label="예정 시각" type="time" value={scheduleTime} onChange={event => setScheduleTime(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} fullWidth /></Stack><TextField label="복용 방법·메모" value={scheduleNotes} onChange={event => setScheduleNotes(event.target.value)} placeholder="예: 식후 1정" multiline minRows={2} /></Stack></DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}><Button color="inherit" onClick={() => setScheduleMedication(null)}>취소</Button><Button variant="contained" onClick={saveSchedule}>일정 저장</Button></DialogActions>
+      </Dialog>
 
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>{editing ? "투약 기록 수정" : `${cat.name} 투약 기록`}</DialogTitle>

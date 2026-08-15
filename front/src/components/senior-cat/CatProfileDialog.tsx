@@ -269,11 +269,11 @@ export default function CatProfileDialog({
           />
 
           <TextField
-            label="복용약·영양제"
+            label="복용약·영양제 이름"
             value={draft.medications}
             onChange={event => update("medications", event.target.value)}
-            placeholder={"예: 신장약 | 오전 9시\n오메가3 | 저녁 식후"}
-            helperText="한 줄에 하나씩 ‘이름 | 일정’ 형식으로 입력하면 매일 체크할 수 있습니다."
+            placeholder={"예: 신장약\n오메가3"}
+            helperText="한 줄에 하나씩 약 이름을 등록하세요. 매일·매주·매달 주기와 시간은 ‘투약 관리’에서 설정합니다."
             minRows={3}
             multiline
             fullWidth

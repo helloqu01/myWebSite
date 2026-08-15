@@ -6,8 +6,12 @@ import ArrowForwardRounded from "@mui/icons-material/ArrowForwardRounded";
 import CheckCircleRounded from "@mui/icons-material/CheckCircleRounded";
 import DashboardRounded from "@mui/icons-material/DashboardRounded";
 import EventAvailableRounded from "@mui/icons-material/EventAvailableRounded";
+import FiberManualRecordRounded from "@mui/icons-material/FiberManualRecordRounded";
 import PetsRounded from "@mui/icons-material/PetsRounded";
+import RestaurantRounded from "@mui/icons-material/RestaurantRounded";
 import WarningAmberRounded from "@mui/icons-material/WarningAmberRounded";
+import WaterDropRounded from "@mui/icons-material/WaterDropRounded";
+import WcRounded from "@mui/icons-material/WcRounded";
 import type { CareSchedule, CatProfile, DailyRecord } from "@/types/cat-care";
 import { isScheduleDue } from "@/lib/cat-care/schedules";
 
@@ -91,11 +95,11 @@ export default function MultiCatHealthDashboard({ cats, records, schedules, sele
 
             <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 0.75, my: 1.5 }}>
               {[
-                ["물", displayCount(row.record?.waterCount)],
-                ["식사", row.record ? `${row.mealCount}회` : "—"],
-                ["소변", displayCount(row.record?.urineCount)],
-                ["대변", displayCount(row.record?.stoolCount)],
-              ].map(([label, value]) => <Box key={label} sx={{ p: 0.85, bgcolor: "var(--surface)", borderRadius: 2 }}><Typography variant="caption" color="text.secondary">{label}</Typography><Typography variant="body2" fontWeight={800}>{value}</Typography></Box>)}
+                { label: "물", value: displayCount(row.record?.waterCount), icon: <WaterDropRounded fontSize="small" />, color: "#0288d1" },
+                { label: "식사", value: row.record ? `${row.mealCount}회` : "—", icon: <RestaurantRounded fontSize="small" />, color: "#ed6c02" },
+                { label: "소변", value: displayCount(row.record?.urineCount), icon: <WcRounded fontSize="small" />, color: "#7c3aed" },
+                { label: "대변", value: displayCount(row.record?.stoolCount), icon: <FiberManualRecordRounded fontSize="small" />, color: "#795548" },
+              ].map(metric => <Box key={metric.label} sx={{ p: 0.85, bgcolor: "var(--surface)", borderRadius: 2, borderLeft: "3px solid", borderLeftColor: metric.color }}><Stack direction="row" spacing={0.5} alignItems="center" sx={{ color: metric.color }}>{metric.icon}<Typography variant="caption" color="text.secondary">{metric.label}</Typography></Stack><Typography variant="body2" fontWeight={800}>{metric.value}</Typography></Box>)}
             </Box>
 
             <Stack spacing={0.5}>

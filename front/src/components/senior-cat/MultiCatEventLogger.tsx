@@ -9,6 +9,7 @@ import {
   Chip,
   Divider,
   IconButton,
+  InputAdornment,
   MenuItem,
   Paper,
   Stack,
@@ -19,9 +20,14 @@ import {
 import AddRounded from "@mui/icons-material/AddRounded";
 import ContentCopyRounded from "@mui/icons-material/ContentCopyRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
+import FiberManualRecordRounded from "@mui/icons-material/FiberManualRecordRounded";
 import OndemandVideoRounded from "@mui/icons-material/OndemandVideoRounded";
 import PetsRounded from "@mui/icons-material/PetsRounded";
+import RestaurantRounded from "@mui/icons-material/RestaurantRounded";
 import SaveRounded from "@mui/icons-material/SaveRounded";
+import WarningAmberRounded from "@mui/icons-material/WarningAmberRounded";
+import WaterDropRounded from "@mui/icons-material/WaterDropRounded";
+import WcRounded from "@mui/icons-material/WcRounded";
 import type {
   AppetiteLevel,
   CatProfile,
@@ -70,6 +76,30 @@ const eventLabels: Record<TimedCareEventType, string> = {
   stool: "대변",
   seizure: "발작",
 };
+
+const eventColors: Record<TimedCareEventType, string> = {
+  water: "#0288d1",
+  meal: "#ed6c02",
+  urine: "#7c3aed",
+  stool: "#795548",
+  seizure: "#d32f2f",
+};
+
+const eventBackgrounds: Record<TimedCareEventType, string> = {
+  water: "rgba(2,136,209,0.06)",
+  meal: "rgba(237,108,2,0.06)",
+  urine: "rgba(124,58,237,0.06)",
+  stool: "rgba(121,85,72,0.06)",
+  seizure: "rgba(211,47,47,0.06)",
+};
+
+function eventIcon(type: TimedCareEventType, size: "small" | "inherit" = "small") {
+  if (type === "water") return <WaterDropRounded fontSize={size} />;
+  if (type === "meal") return <RestaurantRounded fontSize={size} />;
+  if (type === "urine") return <WcRounded fontSize={size} />;
+  if (type === "stool") return <FiberManualRecordRounded fontSize={size} />;
+  return <WarningAmberRounded fontSize={size} />;
+}
 
 const appetiteLabels: Record<AppetiteLevel, string> = {
   good: "좋음",
@@ -387,10 +417,10 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
                 {changed && <Chip size="small" color="primary" label="수정됨" />}
               </Stack>
               <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" }, gap: 1.25 }}>
-                <TextField label="물 마심(회)" type="number" size="small" value={draft.waterCount} onChange={event => updateDraft(cat.id, "waterCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} helperText={summary?.eventWaterCount ? `시간 행 ${summary.eventWaterCount}회 반영` : undefined} />
-                <TextField label="식사(회)" type="number" size="small" value={summary?.mealCount ?? 0} slotProps={{ htmlInput: { readOnly: true, min: 0, step: 1 } }} helperText={summary?.mealCount ? "시간 행 자동 집계" : "행에서 자동 집계"} />
-                <TextField label="소변(회)" type="number" size="small" value={draft.urineCount} onChange={event => updateDraft(cat.id, "urineCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} helperText={summary?.eventUrineCount ? `시간 행 ${summary.eventUrineCount}회 반영` : undefined} />
-                <TextField label="대변(회)" type="number" size="small" value={draft.stoolCount} onChange={event => updateDraft(cat.id, "stoolCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} helperText={summary?.eventStoolCount ? `시간 행 ${summary.eventStoolCount}회 반영` : undefined} />
+                <TextField label="물 마심(회)" type="number" size="small" value={draft.waterCount} onChange={event => updateDraft(cat.id, "waterCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} InputProps={{ startAdornment: <InputAdornment position="start"><WaterDropRounded fontSize="small" sx={{ color: eventColors.water }} /></InputAdornment> }} helperText={summary?.eventWaterCount ? `시간 행 ${summary.eventWaterCount}회 반영` : undefined} />
+                <TextField label="식사(회)" type="number" size="small" value={summary?.mealCount ?? 0} slotProps={{ htmlInput: { readOnly: true, min: 0, step: 1 } }} InputProps={{ startAdornment: <InputAdornment position="start"><RestaurantRounded fontSize="small" sx={{ color: eventColors.meal }} /></InputAdornment> }} helperText={summary?.mealCount ? "시간 행 자동 집계" : "행에서 자동 집계"} />
+                <TextField label="소변(회)" type="number" size="small" value={draft.urineCount} onChange={event => updateDraft(cat.id, "urineCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} InputProps={{ startAdornment: <InputAdornment position="start"><WcRounded fontSize="small" sx={{ color: eventColors.urine }} /></InputAdornment> }} helperText={summary?.eventUrineCount ? `시간 행 ${summary.eventUrineCount}회 반영` : undefined} />
+                <TextField label="대변(회)" type="number" size="small" value={draft.stoolCount} onChange={event => updateDraft(cat.id, "stoolCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} InputProps={{ startAdornment: <InputAdornment position="start"><FiberManualRecordRounded fontSize="small" sx={{ color: eventColors.stool }} /></InputAdornment> }} helperText={summary?.eventStoolCount ? `시간 행 ${summary.eventStoolCount}회 반영` : undefined} />
                 <TextField select label="식욕" size="small" value={draft.appetite} onChange={event => updateDraft(cat.id, "appetite", event.target.value as AppetiteLevel)}>{Object.entries(appetiteLabels).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>
                 <TextField select label="기록 신뢰도" size="small" value={draft.confidence} onChange={event => updateDraft(cat.id, "confidence", event.target.value as MeasurementConfidence)}>{Object.entries(confidenceLabels).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>
                 <TextField label="하루 메모" size="small" value={draft.notes} onChange={event => updateDraft(cat.id, "notes", event.target.value)} placeholder="구토, 활동성, 특이사항" multiline minRows={2} sx={{ gridColumn: "1 / -1" }} />
@@ -409,15 +439,15 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
         {rows.map((row, index) => {
           const catFoods = foodItems.filter(item => foodAppliesToCat(item, row.catId));
           return (
-            <Box key={row.id} data-testid={`multi-event-row-${index}`} sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: row.type === "meal" ? "60px 115px 125px 105px minmax(150px,1fr) 120px minmax(140px,1fr) auto" : row.type === "seizure" ? "60px 115px 125px 105px 120px minmax(140px,1fr) auto" : "60px 115px 125px 105px minmax(150px,1fr) auto" }, gap: 1, alignItems: "center", p: 1.25, border: "1px solid", borderColor: row.type === "seizure" ? "error.light" : "divider", borderRadius: 2.5 }}>
-              <Chip label={index + 1} size="small" variant="outlined" />
+            <Box key={row.id} data-testid={`multi-event-row-${index}`} sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: row.type === "meal" ? "130px 115px 125px 105px minmax(150px,1fr) 120px minmax(140px,1fr) auto" : row.type === "seizure" ? "130px 115px 125px 105px 120px minmax(140px,1fr) auto" : "130px 115px 125px 105px minmax(150px,1fr) auto" }, gap: 1, alignItems: "center", p: 1.25, border: "1px solid", borderLeft: "4px solid", borderColor: eventColors[row.type], bgcolor: eventBackgrounds[row.type], borderRadius: 2.5 }}>
+              <Chip icon={eventIcon(row.type)} label={`${index + 1} · ${eventLabels[row.type]}`} size="small" variant="outlined" sx={{ color: eventColors[row.type], borderColor: eventColors[row.type], "& .MuiChip-icon": { color: "inherit" } }} />
               <TextField label="시각" type="time" size="small" value={row.time} onChange={event => updateRow(row.id, { time: event.target.value })} slotProps={{ inputLabel: { shrink: true } }} />
               <TextField select label="고양이" size="small" value={row.catId} onChange={event => updateRow(row.id, { catId: event.target.value, foodItemId: "" })}>
                 <MenuItem value=""><em>선택</em></MenuItem>
                 {cats.map(cat => <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>)}
               </TextField>
-              <TextField select label="기록" size="small" value={row.type} onChange={event => updateRow(row.id, { type: event.target.value as TimedCareEventType, amount: "", size: "", foodItemId: "", severity: "" })}>
-                {Object.entries(eventLabels).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}
+              <TextField select label="기록 종류" size="small" value={row.type} onChange={event => updateRow(row.id, { type: event.target.value as TimedCareEventType, amount: "", size: "", foodItemId: "", severity: "" })}>
+                {Object.entries(eventLabels).map(([value, label]) => <MenuItem key={value} value={value}><Stack direction="row" spacing={1} alignItems="center" sx={{ color: eventColors[value as TimedCareEventType] }}>{eventIcon(value as TimedCareEventType)}<Typography color="text.primary">{label}</Typography></Stack></MenuItem>)}
               </TextField>
               {(row.type === "meal" || row.type === "seizure") && <TextField label={row.type === "meal" ? "먹은 양(g, 선택)" : "지속시간(초)"} type="number" size="small" value={row.amount} onChange={event => updateRow(row.id, { amount: event.target.value })} slotProps={{ htmlInput: { min: 0, step: 1 } }} />}
               {row.type === "meal" && <TextField select label="사료·간식" size="small" value={row.foodItemId} onChange={event => updateRow(row.id, { foodItemId: event.target.value })}><MenuItem value=""><em>미선택</em></MenuItem>{catFoods.map(item => <MenuItem key={item.id} value={item.id}>{item.brand}{item.productName ? ` · ${item.productName}` : ""}</MenuItem>)}</TextField>}

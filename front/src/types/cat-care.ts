@@ -190,6 +190,7 @@ export interface DailyRecord {
 export interface CareSchedule {
   id: string;
   catId: string;
+  medicationId?: string | null;
   title: string;
   type: CareScheduleType;
   repeat: CareScheduleRepeat;

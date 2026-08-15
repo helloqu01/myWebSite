@@ -159,7 +159,9 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
           .filter(item => Boolean(item.document?.storagePath))
           .map(item => ({ ...item, title: item.title ?? "", notes: item.notes ?? "" }))
       : [],
-    schedules: Array.isArray(input.schedules) ? input.schedules as CareSchedule[] : [],
+    schedules: Array.isArray(input.schedules)
+      ? (input.schedules as CareSchedule[]).map(schedule => ({ ...schedule, medicationId: schedule.medicationId ?? null }))
+      : [],
     labReports: Array.isArray(input.labReports)
       ? (input.labReports as LabReport[]).map(report => ({
           ...report,

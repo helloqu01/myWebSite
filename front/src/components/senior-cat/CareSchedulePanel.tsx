@@ -91,8 +91,8 @@ export default function CareSchedulePanel({
   onDelete,
   onToggle,
 }: CareSchedulePanelProps) {
-  const catSchedules = schedules.filter(schedule => schedule.catId === cat.id);
-  const dueSchedules = schedulesDueOn(schedules, cat.id, date);
+  const catSchedules = schedules.filter(schedule => schedule.catId === cat.id && schedule.type !== "medication");
+  const dueSchedules = schedulesDueOn(schedules, cat.id, date).filter(schedule => schedule.type !== "medication");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CareSchedule | null>(null);
   const [draft, setDraft] = useState<ScheduleDraft>(() => toDraft(null, date));
@@ -127,6 +127,7 @@ export default function CareSchedulePanel({
     onSave({
       id: editing?.id ?? createId("schedule"),
       catId: cat.id,
+      medicationId: null,
       title: draft.title.trim(),
       type: draft.type,
       repeat: draft.repeat,
@@ -146,7 +147,7 @@ export default function CareSchedulePanel({
       <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" gap={2} sx={{ mb: 2 }}>
         <Box>
           <Typography variant="h6" fontWeight={800}>케어 일정</Typography>
-          <Typography variant="body2" color="text.secondary">{date}에 해야 할 투약·측정·병원 일정을 관리합니다.</Typography>
+          <Typography variant="body2" color="text.secondary">{date}에 해야 할 체중 측정·병원·기타 일정을 관리합니다. 투약은 아래 투약 관리에서 설정합니다.</Typography>
         </Box>
         <Button startIcon={<AddAlarmRounded />} onClick={openNew} variant="outlined">일정 추가</Button>
       </Stack>
@@ -222,7 +223,7 @@ export default function CareSchedulePanel({
               <FormControl fullWidth>
                 <InputLabel>종류</InputLabel>
                 <Select label="종류" value={draft.type} onChange={event => update("type", event.target.value as CareScheduleType)}>
-                  {Object.entries(scheduleTypeLabel).map(([value, label]) => <MenuItem value={value} key={value}>{label}</MenuItem>)}
+                  {Object.entries(scheduleTypeLabel).filter(([value]) => value !== "medication").map(([value, label]) => <MenuItem value={value} key={value}>{label}</MenuItem>)}
                 </Select>
               </FormControl>
               <Box sx={{ width: "100%" }}>
