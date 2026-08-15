@@ -5,12 +5,14 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Paper,
@@ -59,8 +61,8 @@ function nowTime(): string {
   return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
 
-function blankLog(cat: CatProfile, date: string, schedules: CareSchedule[]): MedicationAdministration {
-  const medication = cat.medications[0];
+function blankLog(cat: CatProfile, date: string, schedules: CareSchedule[], medicationId?: string): MedicationAdministration {
+  const medication = cat.medications.find(item => item.id === medicationId) ?? cat.medications[0];
   const due = schedulesDueOn(schedules, cat.id, date).find(schedule => schedule.type === "medication"
     && medication
     && (schedule.title.includes(medication.name) || medication.name.includes(schedule.title)));
@@ -149,16 +151,43 @@ export default function MedicationLogPanel({ cat, date, schedules, logs, openReq
     <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, border: "1px solid var(--card-border)", borderRadius: 4 }}>
       <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" gap={2} sx={{ mb: 2 }}>
         <Box>
-          <Stack direction="row" spacing={1} alignItems="center"><MedicationRounded color="primary" /><Typography variant="h6" fontWeight={800}>투약 상세 기록</Typography></Stack>
-          <Typography variant="body2" color="text.secondary">용량·실제 시각·누락·구토·이상 반응을 남기며 완료 시 약 재고를 자동 차감합니다.</Typography>
+          <Stack direction="row" spacing={1} alignItems="center"><MedicationRounded color="primary" /><Typography variant="h6" fontWeight={800}>오늘 투약 체크</Typography></Stack>
+          <Typography variant="body2" color="text.secondary">복용한 약을 체크하면 현재 시각으로 기록되고 재고와 연결 일정도 함께 반영됩니다.</Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddRounded />} onClick={openNew} disabled={!cat.medications.length}>투약 기록</Button>
+        <Button variant="outlined" startIcon={<AddRounded />} onClick={openNew} disabled={!cat.medications.length}>상세 기록 추가</Button>
       </Stack>
 
       {!cat.medications.length ? (
         <Alert severity="info">먼저 고양이 관리 정보에 복용약을 등록해 주세요.</Alert>
-      ) : dayLogs.length ? (
+      ) : (
+        <Paper variant="outlined" sx={{ p: 1.5, mb: dayLogs.length ? 2 : 0, borderRadius: 2.5 }}>
+          <Stack spacing={0.5}>
+            {cat.medications.map(medication => {
+              const completedLog = dayLogs.find(log => log.medicationId === medication.id && (log.status === "given" || log.status === "vomited"));
+              return (
+                <FormControlLabel
+                  key={medication.id}
+                  control={<Checkbox checked={Boolean(completedLog)} onChange={event => {
+                    if (event.target.checked) onSave(blankLog(cat, date, schedules, medication.id));
+                    else if (completedLog) onDelete(completedLog);
+                  }} />}
+                  label={
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0, sm: 1 }} alignItems={{ sm: "center" }}>
+                      <Typography fontWeight={700}>{medication.name}</Typography>
+                      {medication.scheduleNote && <Typography variant="body2" color="text.secondary">{medication.scheduleNote}</Typography>}
+                      {medication.stockCount != null && <Chip size="small" variant="outlined" label={`재고 ${medication.stockCount}${medication.stockUnit}`} />}
+                    </Stack>
+                  }
+                />
+              );
+            })}
+          </Stack>
+        </Paper>
+      )}
+
+      {dayLogs.length ? (
         <Stack spacing={1}>
+          <Typography variant="subtitle2" color="text.secondary">선택한 날짜의 상세 기록</Typography>
           {dayLogs.map(log => {
             const medication = cat.medications.find(item => item.id === log.medicationId);
             return (
@@ -185,7 +214,7 @@ export default function MedicationLogPanel({ cat, date, schedules, logs, openReq
             );
           })}
         </Stack>
-      ) : <Typography color="text.secondary" sx={{ py: 2 }}>선택한 날짜의 투약 상세 기록이 없습니다.</Typography>}
+      ) : cat.medications.length ? <Typography color="text.secondary" sx={{ pt: 2 }}>아직 체크한 투약이 없습니다.</Typography> : null}
 
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>{editing ? "투약 기록 수정" : `${cat.name} 투약 기록`}</DialogTitle>

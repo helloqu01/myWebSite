@@ -38,7 +38,6 @@ import CareCalendar from "@/components/senior-cat/CareCalendar";
 import CareSchedulePanel from "@/components/senior-cat/CareSchedulePanel";
 import CareReminderPanel from "@/components/senior-cat/CareReminderPanel";
 import CloudSyncPanel from "@/components/senior-cat/CloudSyncPanel";
-import DailyRecordForm from "@/components/senior-cat/DailyRecordForm";
 import EmergencyCardPanel from "@/components/senior-cat/EmergencyCardPanel";
 import FoodHistoryPanel from "@/components/senior-cat/FoodHistoryPanel";
 import HealthCheckupPanel from "@/components/senior-cat/HealthCheckupPanel";
@@ -49,7 +48,6 @@ import MedicationLogPanel from "@/components/senior-cat/MedicationLogPanel";
 import MultiCatEventLogger from "@/components/senior-cat/MultiCatEventLogger";
 import ObservationMediaPanel from "@/components/senior-cat/ObservationMediaPanel";
 import QualityOfLifePanel from "@/components/senior-cat/QualityOfLifePanel";
-import QuickRecordDialog from "@/components/senior-cat/QuickRecordDialog";
 import TrendCharts from "@/components/senior-cat/TrendCharts";
 import WeeklyWellnessPanel from "@/components/senior-cat/WeeklyWellnessPanel";
 import type {
@@ -75,6 +73,7 @@ import type {
 import { MAX_CATS } from "@/types/cat-care";
 import {
   EMPTY_CARE_STATE,
+  createId,
   exportCareCsv,
   exportCareJson,
   loadCareState,
@@ -242,8 +241,6 @@ export default function SeniorCatPage() {
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<CatProfile | null>(null);
   const [selectedDate, setSelectedDate] = useState(() => toLocalDateKey(new Date()));
-  const [quickRecordOpen, setQuickRecordOpen] = useState(false);
-  const [quickRecordDate, setQuickRecordDate] = useState(() => toLocalDateKey(new Date()));
   const [range, setRange] = useState<7 | 30>(7);
   const [reportRange, setReportRange] = useState<7 | 30 | 90>(30);
   const [foodDialogRequest, setFoodDialogRequest] = useState(0);
@@ -288,7 +285,6 @@ export default function SeniorCatPage() {
 
   const selectedCat = care.cats.find(cat => cat.id === selectedCatId) ?? null;
   const selectedCatRecords = selectedCat ? recordsForCat(care.records, selectedCat.id) : [];
-  const selectedRecord = selectedCatRecords.find(record => record.date === selectedDate) ?? null;
   const selectedAlerts = selectedCat ? alertsByCat.get(selectedCat.id) ?? [] : [];
   const chartRecords = selectedCat ? getRecordsInRange(care.records, selectedCat.id, range) : [];
 
@@ -367,11 +363,6 @@ export default function SeniorCatPage() {
     setMessage(`${cat.name} 프로필과 관련 건강 데이터를 삭제했습니다.`);
   };
 
-  const saveRecord = (record: DailyRecord) => {
-    saveRecords([record]);
-    setMessage(`${selectedCat?.name ?? "고양이"}의 ${formatDate(record.date)} 기록을 저장했습니다.`);
-  };
-
   const saveRecords = (incoming: DailyRecord[]) => {
     setCare(current => {
       const records = [...current.records];
@@ -409,14 +400,10 @@ export default function SeniorCatPage() {
     });
   };
 
-  const saveQuickRecords = (records: DailyRecord[]) => {
-    saveRecords(records);
-    setMessage(`${formatDate(quickRecordDate)} 기록을 ${records.length}마리에게 저장했습니다.`);
-  };
-
   const saveMultiCatEvents = (records: DailyRecord[], date: string, rowCount: number) => {
     saveRecords(records);
-    setMessage(`${formatDate(date)} 영상 기록 ${rowCount}행을 ${records.length}마리에게 저장했습니다.`);
+    setSelectedDate(date);
+    setMessage(`${formatDate(date)} 통합 하루 기록을 ${records.length}마리에게 저장했습니다${rowCount ? ` · 시간 기록 ${rowCount}건` : ""}.`);
   };
 
   const saveFoodItem = (item: FoodItem) => {
@@ -650,13 +637,58 @@ export default function SeniorCatPage() {
   };
 
   const saveWeeklyCheck = (check: WeeklyWellnessCheck) => {
-    setCare(current => ({
-      ...current,
-      weeklyChecks: current.weeklyChecks.some(item => item.catId === check.catId && item.date === check.date)
+    setCare(current => {
+      const weeklyChecks = current.weeklyChecks.some(item => item.catId === check.catId && item.date === check.date)
         ? current.weeklyChecks.map(item => item.catId === check.catId && item.date === check.date ? { ...check, id: item.id } : item)
-        : [...current.weeklyChecks, check],
-    }));
-    setMessage(`${formatDate(check.date)} 주간 상태 체크를 저장했습니다.`);
+        : [...current.weeklyChecks, check];
+      if (check.weightKg == null) return { ...current, weeklyChecks };
+
+      const existingRecord = current.records.find(record => record.catId === check.catId && record.date === check.date);
+      const cat = current.cats.find(item => item.id === check.catId);
+      const weightRecord: DailyRecord = existingRecord
+        ? { ...existingRecord, weightKg: check.weightKg, updatedAt: check.updatedAt }
+        : {
+            id: createId("record"),
+            catId: check.catId,
+            date: check.date,
+            waterMl: null,
+            urineCount: null,
+            urineSize: null,
+            stoolCount: null,
+            stoolAmount: null,
+            stoolScore: null,
+            appetite: "normal",
+            weightKg: check.weightKg,
+            vomitCount: 0,
+            activity: "normal",
+            measurementConfidence: "high",
+            medicationChecks: Object.fromEntries((cat?.medications ?? []).map(medication => [medication.id, false])),
+            urinationStraining: false,
+            urineNotProduced: false,
+            bloodInUrine: false,
+            breathingDifficulty: false,
+            collapseOrSeizure: false,
+            timedEvents: [],
+            notes: "주간 체중 측정",
+            updatedAt: check.updatedAt,
+          };
+      const records = existingRecord
+        ? current.records.map(record => record.id === existingRecord.id ? weightRecord : record)
+        : [...current.records, weightRecord];
+      const latestWeight = records
+        .filter(record => record.catId === check.catId && record.weightKg != null)
+        .sort((a, b) => b.date.localeCompare(a.date))[0];
+
+      return {
+        ...current,
+        weeklyChecks,
+        records,
+        cats: current.cats.map(item => item.id === check.catId
+          ? { ...item, currentWeightKg: latestWeight?.weightKg ?? item.currentWeightKg, updatedAt: check.updatedAt }
+          : item),
+      };
+    });
+    setMessage(`${formatDate(check.date)} 주간 상태${check.weightKg != null ? `와 체중 ${check.weightKg}kg을` : "를"} 저장했습니다.`);
   };
 
   const saveLitterRecord = (record: HouseholdLitterRecord) => {
@@ -735,7 +767,6 @@ export default function SeniorCatPage() {
     setSelectedCatId(null);
     setEditingProfile(null);
     setProfileDialogOpen(false);
-    setQuickRecordOpen(false);
     setFoodDialogRequest(0);
     setMedicationDialogRequest(0);
     setQualityDialogRequest(0);
@@ -823,11 +854,10 @@ export default function SeniorCatPage() {
                 startIcon={<PlaylistAddCheckRounded />}
                 disabled={!care.cats.length}
                 onClick={() => {
-                  setQuickRecordDate(toLocalDateKey(new Date()));
-                  setQuickRecordOpen(true);
+                  document.getElementById("daily-record-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
               >
-                전체 고양이 빠른 기록
+                네 마리 하루 기록
               </Button>
               <Button
                 variant="outlined"
@@ -1119,17 +1149,6 @@ export default function SeniorCatPage() {
                     />
                   </Box>
 
-                  <Box id="daily-record-section" sx={{ scrollMarginTop: 96 }}>
-                    <DailyRecordForm
-                      cat={selectedCat}
-                      foodItems={care.foodItems.filter(item => item.catId === selectedCat.id)}
-                      date={selectedDate}
-                      record={selectedRecord}
-                      onDateChange={setSelectedDate}
-                      onSave={saveRecord}
-                    />
-                  </Box>
-
                   <Box sx={{ mt: 4 }}>
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
@@ -1285,16 +1304,6 @@ export default function SeniorCatPage() {
         profile={editingProfile}
         onClose={() => setProfileDialogOpen(false)}
         onSave={saveProfile}
-      />
-
-      <QuickRecordDialog
-        open={quickRecordOpen}
-        cats={orderedCats}
-        records={care.records}
-        date={quickRecordDate}
-        onDateChange={setQuickRecordDate}
-        onClose={() => setQuickRecordOpen(false)}
-        onSave={saveQuickRecords}
       />
 
       <Snackbar

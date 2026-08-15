@@ -6,6 +6,7 @@ import WaterDropRounded from "@mui/icons-material/WaterDropRounded";
 import MonitorWeightRounded from "@mui/icons-material/MonitorWeightRounded";
 import WcRounded from "@mui/icons-material/WcRounded";
 import SpaRounded from "@mui/icons-material/SpaRounded";
+import RestaurantRounded from "@mui/icons-material/RestaurantRounded";
 import type { DailyRecord } from "@/types/cat-care";
 
 interface TrendChartsProps {
@@ -124,7 +125,7 @@ export default function TrendCharts({ records }: TrendChartsProps) {
     <Box
       sx={{
         display: "grid",
-        gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" },
+        gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(5, 1fr)" },
         gap: 2,
       }}
     >
@@ -161,7 +162,17 @@ export default function TrendCharts({ records }: TrendChartsProps) {
         records={records}
         value={record => record.stoolCount}
       />
+      <MetricChart
+        title="식사"
+        unit="회"
+        color={theme.palette.warning.main}
+        icon={<RestaurantRounded fontSize="small" />}
+        records={records}
+        value={record => {
+          const count = record.timedEvents.filter(event => event.type === "meal").length;
+          return count > 0 ? count : record.appetite === "none" ? 0 : null;
+        }}
+      />
     </Box>
   );
 }
-

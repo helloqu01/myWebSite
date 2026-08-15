@@ -267,7 +267,7 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
     .sort((a, b) => b.date.localeCompare(a.date))
     .map(check => {
       const behavior = [check.jumpingDifficulty && "점프 어려움", check.stairDifficulty && "계단 어려움", check.limping && "절뚝거림", check.disorientation && "방향 혼란", check.nightVocalizationCount != null && `야간 울음 ${check.nightVocalizationCount}회`, check.hidingHours != null && `숨은 시간 ${check.hidingHours}h`].filter(Boolean).join(", ") || "—";
-      return `<tr><td>${escapeHtml(check.date)}</td><td>${observationText[check.mobility]}</td><td>${observationText[check.grooming]}</td><td>${observationText[check.sleep]}</td><td>${observationText[check.interaction]}</td><td>${observationText[check.litterBoxUse]}</td><td>${observationText[check.painResponse]}</td><td>${escapeHtml(behavior)}</td><td>${check.bodyConditionScore ?? "—"}/${check.muscleConditionScore ?? "—"}</td><td>${check.systolicBloodPressure ?? "—"}${check.diastolicBloodPressure != null ? `/${check.diastolicBloodPressure}` : ""}</td><td>${escapeHtml(check.notes || "—")}</td></tr>`;
+      return `<tr><td>${escapeHtml(check.date)}</td><td>${escapeHtml(displayNumber(check.weightKg, "kg"))}</td><td>${observationText[check.mobility]}</td><td>${observationText[check.grooming]}</td><td>${observationText[check.sleep]}</td><td>${observationText[check.interaction]}</td><td>${observationText[check.litterBoxUse]}</td><td>${observationText[check.painResponse]}</td><td>${escapeHtml(behavior)}</td><td>${check.bodyConditionScore ?? "—"}/${check.muscleConditionScore ?? "—"}</td><td>${check.systolicBloodPressure ?? "—"}${check.diastolicBloodPressure != null ? `/${check.diastolicBloodPressure}` : ""}</td><td>${escapeHtml(check.notes || "—")}</td></tr>`;
     })
     .join("");
 
@@ -336,7 +336,7 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
   <div class="table-wrap"><table><thead><tr><th>검사일</th><th>병원</th><th>항목</th><th>결과</th><th>검사표 기준범위</th><th>표시</th></tr></thead><tbody>${labRows || '<tr><td colspan="6">해당 기간에 저장된 수치형 검사결과가 없습니다.</td></tr>'}</tbody></table></div>
   ${examinationOcrBlocks ? `<h2>검사 문서 OCR 원문</h2>${examinationOcrBlocks}` : ""}
   <h2>주간 노묘 상태 체크</h2>
-  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>이동</th><th>그루밍</th><th>수면</th><th>상호작용</th><th>화장실</th><th>통증</th><th>구체 행동</th><th>BCS/MCS</th><th>혈압</th><th>메모</th></tr></thead><tbody>${weeklyRows || '<tr><td colspan="11">해당 기간에 주간 체크 기록이 없습니다.</td></tr>'}</tbody></table></div>
+  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>체중</th><th>이동</th><th>그루밍</th><th>수면</th><th>상호작용</th><th>화장실</th><th>통증</th><th>구체 행동</th><th>BCS/MCS</th><th>혈압</th><th>메모</th></tr></thead><tbody>${weeklyRows || '<tr><td colspan="12">해당 기간에 주간 체크 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <h2>일별 상세 기록</h2>
   <div class="table-wrap"><table><thead><tr><th>날짜</th><th>음수량</th><th>소변</th><th>대변</th><th>식욕</th><th>체중</th><th>투약</th><th>시간별 음수·식사·배변·발작</th><th>이상 징후</th><th>메모</th></tr></thead><tbody>${recordRows || '<tr><td colspan="10">해당 기간에 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <div class="notice"><strong>안내:</strong> 이 리포트는 보호자가 입력한 관찰 기록을 정리한 자료이며 수의사의 진단을 대신하지 않습니다.</div>

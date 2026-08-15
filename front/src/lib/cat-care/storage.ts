@@ -189,6 +189,7 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
     weeklyChecks: Array.isArray(input.weeklyChecks)
       ? (input.weeklyChecks as WeeklyWellnessCheck[]).map(check => ({
           ...check,
+          weightKg: typeof check.weightKg === "number" ? check.weightKg : null,
           jumpingDifficulty: Boolean(check.jumpingDifficulty),
           stairDifficulty: Boolean(check.stairDifficulty),
           limping: Boolean(check.limping),

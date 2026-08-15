@@ -272,6 +272,7 @@ export interface WeeklyWellnessCheck {
   id: string;
   catId: string;
   date: string;
+  weightKg: number | null;
   mobility: ObservationLevel;
   grooming: ObservationLevel;
   sleep: ObservationLevel;

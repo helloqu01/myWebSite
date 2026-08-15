@@ -53,6 +53,7 @@ function emptyCheck(catId: string): WeeklyWellnessCheck {
     id: createId("weekly"),
     catId,
     date: toLocalDateKey(new Date()),
+    weightKg: null,
     mobility: "usual",
     grooming: "usual",
     sleep: "usual",
@@ -114,6 +115,7 @@ export default function WeeklyWellnessPanel({ cat, checks, openRequestKey = 0, o
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
             <Typography fontWeight={800}>최근 {latest.date}</Typography>
+            {latest.weightKg != null && <Chip label={`체중 ${latest.weightKg}kg`} color="primary" variant="outlined" size="small" />}
             <Chip label={concernCount(latest) ? `변화 ${concernCount(latest)}개` : "모두 평소"} color={concernCount(latest) ? "warning" : "success"} size="small" />
             {latest.bodyConditionScore != null && <Chip label={`BCS ${latest.bodyConditionScore}/9`} variant="outlined" size="small" />}
             {latest.muscleConditionScore != null && <Chip label={`MCS ${latest.muscleConditionScore}/3`} variant="outlined" size="small" />}
@@ -138,8 +140,11 @@ export default function WeeklyWellnessPanel({ cat, checks, openRequestKey = 0, o
         <DialogTitle>{cat.name} 주간 상태 체크</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2.5}>
-            <Alert severity="info">평소와 비교해 기록해 주세요. 이 점수는 진단이 아니라 보호자 관찰을 일정하게 남기기 위한 도구입니다.</Alert>
-            <TextField label="체크 날짜" type="date" value={draft.date} onChange={event => update("date", event.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ maxWidth: 240 }} />
+            <Alert severity="info">일주일에 한 번 같은 시간대·같은 저울로 체중을 재고, 평소와 비교해 상태를 기록해 주세요.</Alert>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <TextField label="체크 날짜" type="date" value={draft.date} onChange={event => update("date", event.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ maxWidth: 240 }} />
+              <TextField label="이번 주 체중(kg)" type="number" value={draft.weightKg ?? ""} onChange={event => update("weightKg", optionalNumber(event.target.value))} slotProps={{ htmlInput: { min: 0.3, max: 30, step: 0.01 } }} helperText="체중 추세에도 자동 반영됩니다." sx={{ minWidth: 220 }} />
+            </Stack>
             {observations.map(item => (
               <Stack key={item.key} direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} gap={1}>
                 <Box><Typography fontWeight={800}>{item.label}</Typography><Typography variant="caption" color="text.secondary">{item.hint}</Typography></Box>

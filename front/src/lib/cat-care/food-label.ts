@@ -77,7 +77,12 @@ export function parseFoodLabelText(rawText: string): ParsedFoodLabel {
   for (const match of text.matchAll(/\[라벨사진\s*\d+\s*·\s*성분표셀\s*(\d+)\]([\s\S]*?)(?=\[라벨사진|$)/gi)) {
     const cellIndex = Number(match[1]) - 1;
     const key = cellOrder[cellIndex];
-    const value = toNumber(match[2].match(/(\d+(?:\.\d+)?)\s*%?/)?.[1]);
+    const normalizedCellText = match[2].replace(/(\d)\s*\.\s*(\d)/g, "$1.$2");
+    const numericMatches = [...normalizedCellText.matchAll(/(\d+(?:\.\d+)?)\s*%?/g)];
+    // Omega labels contain a number (for example, "오메가-6"), so the first
+    // number is often part of the label. The measured percentage is the last
+    // number in each detected table cell.
+    const value = toNumber(numericMatches.at(-1)?.[1]);
     if (key && nutrients[key] == null && value != null) nutrients[key] = value;
   }
 

@@ -162,10 +162,26 @@ async function createTableCellOcrImages(file: File): Promise<Blob[]> {
     const index = (y * source.width + x) * 4;
     return pixels[index] > 235 && pixels[index + 1] > 235 && pixels[index + 2] > 235;
   };
+  const hasVisibleContent = (x: number, y: number) => {
+    const index = (y * source.width + x) * 4;
+    return pixels[index] < 245 || pixels[index + 1] < 245 || pixels[index + 2] < 245;
+  };
+  // Screenshots often include wide white margins. Excluding those margins keeps
+  // them from being mistaken for table cells and makes the thresholds relative
+  // to the label itself rather than the whole screenshot.
+  const contentColumns = Array.from({ length: source.width }, (_, x) => {
+    let visible = 0;
+    for (let y = 0; y < source.height; y += 2) if (hasVisibleContent(x, y)) visible += 1;
+    return visible > source.height * 0.01;
+  });
+  const visibleColumnIndexes = contentColumns.flatMap((active, index) => active ? [index] : []);
+  const contentLeft = visibleColumnIndexes[0] ?? 0;
+  const contentRight = (visibleColumnIndexes.at(-1) ?? (source.width - 1)) + 1;
+  const contentWidth = contentRight - contentLeft;
   const activeRows = Array.from({ length: source.height }, (_, y) => {
     let white = 0;
-    for (let x = 0; x < source.width; x += 2) if (isWhite(x, y)) white += 1;
-    return white > source.width * 0.12;
+    for (let x = contentLeft; x < contentRight; x += 2) if (isWhite(x, y)) white += 1;
+    return white > contentWidth * 0.12;
   });
   const rowRanges = contiguousRanges(activeRows, Math.max(30, Math.floor(source.height * 0.06)));
   const regions: Array<{ x: number; y: number; width: number; height: number }> = [];
@@ -174,11 +190,11 @@ async function createTableCellOcrImages(file: File): Promise<Blob[]> {
     const sampleRows = [top + 4, top + Math.floor(height * 0.24), bottom - 5]
       .map(value => Math.max(top, Math.min(bottom - 1, value)));
     const activeColumns = Array.from(
-      { length: source.width },
-      (_, x) => sampleRows.filter(y => isWhite(x, y)).length >= 2,
+      { length: contentWidth },
+      (_, x) => sampleRows.filter(y => isWhite(contentLeft + x, y)).length >= 2,
     );
-    contiguousRanges(activeColumns, Math.max(35, Math.floor(source.width * 0.05))).forEach(([left, right]) => {
-      regions.push({ x: left, y: top, width: right - left, height });
+    contiguousRanges(activeColumns, Math.max(35, Math.floor(contentWidth * 0.05))).forEach(([left, right]) => {
+      regions.push({ x: contentLeft + left, y: top, width: right - left, height });
     });
   });
   if (regions.length < 5 || regions.length > 20) {

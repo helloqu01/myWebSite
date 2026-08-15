@@ -103,11 +103,11 @@ export function buildCareReminders(care: CareState, now = new Date()): CareRemin
     if (!latest || latest.date < datePlus(now, -7)) {
       reminders.push({
         id: `weekly-${cat.id}-${today}`,
-        title: `${cat.name} 주간 체크 필요`,
-        detail: latest ? `마지막 체크는 ${latest.date}입니다.` : "아직 주간 상태 체크가 없습니다.",
+        title: `${cat.name} 주간 체크·체중 측정 필요`,
+        detail: latest ? `마지막 주간 체크는 ${latest.date}입니다.` : "아직 주간 상태·체중 기록이 없습니다.",
         severity: "info",
         action: "weekly_check",
-        actionLabel: "주간 체크",
+        actionLabel: "체중·상태 기록",
         notifyNow: true,
         catId: cat.id,
         targetDate: today,
