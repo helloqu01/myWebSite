@@ -32,13 +32,22 @@ import {
   ContactPage,
   Summarize,
   Pets,
+  LockRounded,
 } from "@mui/icons-material";
 
 import en from "@/locales/en/common.json";
 import ko from "@/locales/ko/common.json";
 import { useLocale } from "@/context/LocaleContext";
 import { ColorModeContext } from "@/app/context/ColorModeContext";
-import { isResumePublic } from "@/lib/featureFlags";
+import { isPortfolioPublic, isResumePublic } from "@/lib/featureFlags";
+
+interface NavigationItem {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+  isPrivate?: boolean;
+  highlighted?: boolean;
+}
 
 export default function Header() {
   const theme = useTheme();
@@ -51,27 +60,37 @@ export default function Header() {
   const [openDrawer, setOpenDrawer] = useState(false);
 
   const servicesLabel = lang === "en" ? "Services" : "서비스";
+  const portfolioIsPrivate = !isPortfolioPublic;
 
-  const primaryItems = [
-    { label: servicesLabel, href: "#services", icon: <DesignServices fontSize="small" /> },
-    { label: t.nav.projects, href: "#projects", icon: <Code fontSize="small" /> },
-    { label: t.nav.experience, href: "#experience", icon: <Work fontSize="small" /> },
-    { label: t.nav.contact, href: "#contact", icon: <Mail fontSize="small" /> },
-    { label: t.nav.about, href: "#about", icon: <Info fontSize="small" /> },
+  const primaryItems: NavigationItem[] = [
+    { label: servicesLabel, href: "#services", icon: <DesignServices fontSize="small" />, isPrivate: portfolioIsPrivate },
+    { label: t.nav.projects, href: "#projects", icon: <Code fontSize="small" />, isPrivate: portfolioIsPrivate },
+    { label: t.nav.experience, href: "#experience", icon: <Work fontSize="small" />, isPrivate: portfolioIsPrivate },
+    { label: t.nav.contact, href: "#contact", icon: <Mail fontSize="small" />, isPrivate: portfolioIsPrivate },
+    { label: t.nav.about, href: "#about", icon: <Info fontSize="small" />, isPrivate: portfolioIsPrivate },
   ];
 
-  const secondaryItems = [
-    { label: t.nav.metrics, href: "#metrics", icon: <Assessment fontSize="small" /> },
-    { label: t.nav.caseStudies, href: "#case-studies", icon: <Article fontSize="small" /> },
-    { label: t.nav.skills, href: "#skills", icon: <Psychology fontSize="small" /> },
-    { label: t.nav.summary, href: "#summary", icon: <Summarize fontSize="small" /> },
-    { label: lang === "en" ? "Senior cat care" : "노묘 건강관리", href: "/senior-cat", icon: <Pets fontSize="small" /> },
-    { label: t.nav.insights, href: "/insights", icon: <Article fontSize="small" /> },
-    { label: t.nav.faq, href: "/faq", icon: <QuestionAnswer fontSize="small" /> },
+  const seniorCareItems: NavigationItem[] = [
     {
-      label: isResumePublic ? t.nav.resume : `${t.nav.resume} 🔒`,
+      label: lang === "en" ? "Senior cat care" : "노묘케어",
+      href: "/senior-cat",
+      icon: <Pets fontSize="small" />,
+      highlighted: true,
+    },
+  ];
+
+  const secondaryItems: NavigationItem[] = [
+    { label: t.nav.metrics, href: "#metrics", icon: <Assessment fontSize="small" />, isPrivate: portfolioIsPrivate },
+    { label: t.nav.caseStudies, href: "#case-studies", icon: <Article fontSize="small" />, isPrivate: portfolioIsPrivate },
+    { label: t.nav.skills, href: "#skills", icon: <Psychology fontSize="small" />, isPrivate: portfolioIsPrivate },
+    { label: t.nav.summary, href: "#summary", icon: <Summarize fontSize="small" />, isPrivate: portfolioIsPrivate },
+    { label: t.nav.insights, href: "/insights", icon: <Article fontSize="small" />, isPrivate: portfolioIsPrivate },
+    { label: t.nav.faq, href: "/faq", icon: <QuestionAnswer fontSize="small" />, isPrivate: portfolioIsPrivate },
+    {
+      label: t.nav.resume,
       href: "/resume",
       icon: <ContactPage fontSize="small" />,
+      isPrivate: portfolioIsPrivate || !isResumePublic,
     },
   ];
 
@@ -92,27 +111,33 @@ export default function Header() {
     router.push(href);
   };
 
-  const NavItem = ({
-    label,
-    href,
-    icon,
-  }: {
-    label: string;
-    href: string;
-    icon: React.ReactNode;
-  }) => (
+  const NavItem = ({ label, href, icon, isPrivate = false, highlighted = false }: NavigationItem) => (
     <ListItemButton
       onClick={() => handleNavClick(href)}
+      aria-label={`${label}${isPrivate ? (lang === "en" ? ", private" : ", 비공개") : ""}`}
       sx={{
-        px: 3,
+        px: highlighted ? 2 : 3,
         py: 1.1,
         gap: 1.5,
         borderLeft: "2px solid transparent",
+        borderRadius: highlighted ? 2 : 0,
+        mx: highlighted ? 1 : 0,
+        backgroundColor: highlighted
+          ? isDark
+            ? "rgba(34,211,238,0.08)"
+            : "rgba(8,145,178,0.07)"
+          : "transparent",
         transition: "all 0.2s ease",
         "&:hover": {
-          backgroundColor: isDark ? "rgba(139,92,246,0.07)" : "rgba(109,40,217,0.05)",
-          borderLeftColor: "#a78bfa",
-          "& .nav-icon": { color: "#a78bfa" },
+          backgroundColor: highlighted
+            ? isDark
+              ? "rgba(34,211,238,0.14)"
+              : "rgba(8,145,178,0.11)"
+            : isDark
+              ? "rgba(139,92,246,0.07)"
+              : "rgba(109,40,217,0.05)",
+          borderLeftColor: highlighted ? "#22d3ee" : "#a78bfa",
+          "& .nav-icon": { color: highlighted ? "#22d3ee" : "#a78bfa" },
           "& .nav-label": { color: theme.palette.text.primary },
         },
       }}
@@ -120,7 +145,7 @@ export default function Header() {
       <Box
         className="nav-icon"
         sx={{
-          color: theme.palette.text.disabled,
+          color: highlighted ? (isDark ? "#67e8f9" : "#0e7490") : theme.palette.text.disabled,
           display: "flex",
           alignItems: "center",
           transition: "color 0.2s ease",
@@ -138,10 +163,26 @@ export default function Header() {
           color: theme.palette.text.secondary,
           transition: "color 0.2s ease",
           letterSpacing: "0.005em",
+          flex: 1,
         }}
       >
         {label}
       </Typography>
+      {isPrivate && (
+        <Box
+          component="span"
+          title={lang === "en" ? "Private page" : "비공개 페이지"}
+          aria-label={lang === "en" ? "Private page" : "비공개 페이지"}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            color: theme.palette.text.disabled,
+            flexShrink: 0,
+          }}
+        >
+          <LockRounded sx={{ fontSize: 14 }} />
+        </Box>
+      )}
     </ListItemButton>
   );
 
@@ -283,11 +324,45 @@ export default function Header() {
 
         <Divider sx={{ borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)", mx: 3, mb: 1 }} />
 
-        {/* Primary nav */}
+        {/* Navigation */}
         <Box sx={{ flex: 1, overflowY: "auto", pb: 1 }}>
+          <Box sx={{ px: 3, pt: 1.25, pb: 0.5 }}>
+            <Typography
+              sx={{
+                fontSize: "0.62rem",
+                color: isDark ? "#67e8f9" : "#0e7490",
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+              }}
+            >
+              {lang === "en" ? "Cat care" : "고양이 돌봄"}
+            </Typography>
+          </Box>
+          <List disablePadding sx={{ mx: 1.5, mb: 1.5 }}>
+            {seniorCareItems.map(item => (
+              <NavItem key={item.href} {...item} />
+            ))}
+          </List>
+
+          <Divider sx={{ borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)", mx: 3, mb: 1 }} />
+
+          <Box sx={{ px: 3, pt: 1.25, pb: 0.5 }}>
+            <Typography
+              sx={{
+                fontSize: "0.62rem",
+                color: theme.palette.text.disabled,
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+              }}
+            >
+              {lang === "en" ? "Portfolio" : "포트폴리오"}
+            </Typography>
+          </Box>
           <List disablePadding>
-            {primaryItems.map((item, i) => (
-              <NavItem key={i} {...item} />
+            {primaryItems.map(item => (
+              <NavItem key={item.href} {...item} />
             ))}
           </List>
 
@@ -305,8 +380,8 @@ export default function Header() {
             </Typography>
           </Box>
           <List disablePadding>
-            {secondaryItems.map((item, i) => (
-              <NavItem key={i} {...item} />
+            {secondaryItems.map(item => (
+              <NavItem key={item.href} {...item} />
             ))}
           </List>
         </Box>

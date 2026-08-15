@@ -6,7 +6,6 @@ import type {
   EmergencyInfo,
   FoodItem,
   HealthCheckup,
-  HouseholdLitterRecord,
   LabReport,
   Medication,
   MedicationAdministration,
@@ -19,9 +18,11 @@ import type {
 import { EMPTY_FOOD_NUTRIENTS } from "./food-label";
 
 export const CAT_CARE_STORAGE_KEY = "ohj-senior-cat-care-v1";
+export const CAT_CARE_HISTORY_KEY = "ohj-senior-cat-care-history-v1";
+const MAX_LOCAL_SNAPSHOTS = 12;
 
 export const EMPTY_CARE_STATE: CareState = {
-  version: 14,
+  version: 15,
   cats: [],
   records: [],
   foodItems: [],
@@ -33,7 +34,6 @@ export const EMPTY_CARE_STATE: CareState = {
   healthCheckups: [],
   weeklyChecks: [],
   monthlyChecks: [],
-  householdLitterRecords: [],
   emergencyInfo: [],
   notificationSettings: {
     browserEnabled: false,
@@ -65,7 +65,7 @@ function normalizeNotificationSettings(settings?: Partial<NotificationSettings>)
 
 export function normalizeCareState(input: Partial<CareState>): CareState {
   return {
-    version: 14,
+    version: 15,
     cats: Array.isArray(input.cats)
       ? (input.cats as CatProfile[]).map(cat => ({
           ...cat,
@@ -228,9 +228,6 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
           notes: check.notes ?? "",
         }))
       : [],
-    householdLitterRecords: Array.isArray(input.householdLitterRecords)
-      ? input.householdLitterRecords as HouseholdLitterRecord[]
-      : [],
     emergencyInfo: Array.isArray(input.emergencyInfo) ? input.emergencyInfo as EmergencyInfo[] : [],
     notificationSettings: normalizeNotificationSettings(input.notificationSettings),
   };
@@ -262,9 +259,35 @@ export function loadCareState(): CareState {
   }
 }
 
-export function saveCareState(state: CareState): void {
+export function saveCareState(state: CareState, options?: { skipHistory?: boolean }): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(CAT_CARE_STORAGE_KEY, JSON.stringify(state));
+  const next = JSON.stringify(state);
+  const previous = window.localStorage.getItem(CAT_CARE_STORAGE_KEY);
+  if (!options?.skipHistory && previous && previous !== next) {
+    try {
+      const history = JSON.parse(window.localStorage.getItem(CAT_CARE_HISTORY_KEY) ?? "[]") as Array<{ savedAt: string; data: Partial<CareState> }>;
+      const previousData = JSON.parse(previous) as Partial<CareState>;
+      const snapshots = [{ savedAt: new Date().toISOString(), data: previousData }, ...history]
+        .filter((snapshot, index, all) => index === 0 || JSON.stringify(snapshot.data) !== JSON.stringify(all[index - 1].data))
+        .slice(0, MAX_LOCAL_SNAPSHOTS);
+      window.localStorage.setItem(CAT_CARE_HISTORY_KEY, JSON.stringify(snapshots));
+    } catch {
+      // 현재 기록 저장은 기록 이력 저장 실패와 관계없이 계속합니다.
+    }
+  }
+  window.localStorage.setItem(CAT_CARE_STORAGE_KEY, next);
+}
+
+export function popCareSnapshot(): CareState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const history = JSON.parse(window.localStorage.getItem(CAT_CARE_HISTORY_KEY) ?? "[]") as Array<{ savedAt: string; data: Partial<CareState> }>;
+    const snapshot = history.shift();
+    window.localStorage.setItem(CAT_CARE_HISTORY_KEY, JSON.stringify(history));
+    return snapshot ? normalizeCareState(snapshot.data) : null;
+  } catch {
+    return null;
+  }
 }
 
 function downloadText(filename: string, content: string, type: string): void {

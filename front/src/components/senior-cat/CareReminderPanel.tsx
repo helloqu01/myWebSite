@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Box,
@@ -20,6 +20,7 @@ import type { CareState, MedicationAdministration, NotificationSettings } from "
 import { buildCareReminders, type CareReminder } from "@/lib/cat-care/reminders";
 import { schedulesDueOn } from "@/lib/cat-care/schedules";
 import { createId, toLocalDateKey } from "@/lib/cat-care/storage";
+import { completedLogForSchedule } from "@/lib/cat-care/medications";
 
 interface CareReminderPanelProps {
   care: CareState;
@@ -31,7 +32,8 @@ interface CareReminderPanelProps {
 }
 
 export default function CareReminderPanel({ care, onSettingsChange, onMedicationSave, onMedicationDelete, onReminderAction, onMessage }: CareReminderPanelProps) {
-  const reminders = useMemo(() => buildCareReminders(care), [care]);
+  const [clockTick, setClockTick] = useState(() => Date.now());
+  const reminders = useMemo(() => buildCareReminders(care, new Date(clockTick)), [care, clockTick]);
   const settings = care.notificationSettings;
   const today = toLocalDateKey(new Date());
   const dueMedications = care.cats.flatMap(cat => schedulesDueOn(care.schedules, cat.id, today)
@@ -40,12 +42,23 @@ export default function CareReminderPanel({ care, onSettingsChange, onMedication
       const medication = cat.medications.find(item => item.id === schedule.medicationId)
         ?? cat.medications.find(item => schedule.title.includes(item.name) || item.name.includes(schedule.title));
       if (!medication) return [];
-      const completedLog = care.medicationAdministrations.find(log => log.catId === cat.id && log.medicationId === medication.id && log.date === today && (log.status === "given" || log.status === "vomited"));
+      const completedLog = completedLogForSchedule(care.medicationAdministrations, {
+        catId: cat.id,
+        medicationId: medication.id,
+        scheduleId: schedule.id,
+        scheduledTime: schedule.time,
+        date: today,
+      });
       return [{ cat, medication, schedule, completedLog }];
     }));
   const pendingMedications = dueMedications.filter(item => !item.completedLog);
   const completedMedications = dueMedications.filter(item => item.completedLog);
   const visibleReminders = reminders.filter(reminder => reminder.action !== "medication_log");
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockTick(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!settings.browserEnabled || typeof Notification === "undefined" || Notification.permission !== "granted") return;

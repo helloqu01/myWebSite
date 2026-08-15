@@ -8,6 +8,12 @@ describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
+    process.env.SMTP_HOST = 'smtp.example.com';
+    process.env.SMTP_PORT = '587';
+    process.env.SMTP_USER = 'test@example.com';
+    process.env.SMTP_PASS = 'test-password';
+    process.env.EMAIL_FROM = 'test@example.com';
+    process.env.EMAIL_TO = 'owner@example.com';
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();

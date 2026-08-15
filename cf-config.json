@@ -1,41 +1,46 @@
 {
-  "CallerReference": "ohj-myresume-site-20250707-$(date +%s)",
-  "Comment": "Distribution for myresume static site",
+  "CallerReference": "replace-with-unique-deployment-id",
+  "Comment": "Reference configuration; production is updated by scripts/configure-cloudfront.sh",
   "DefaultRootObject": "index.html",
   "Enabled": true,
+  "Aliases": {
+    "Quantity": 1,
+    "Items": ["codingbyohj.com"]
+  },
   "Origins": {
     "Quantity": 1,
     "Items": [
       {
-        "Id": "S3-ohj-myresume-site-20250707",
-        "DomainName": "ohj-myresume-site-20250707.s3.amazonaws.com",
-        "S3OriginConfig": {}
+        "Id": "S3-codingbyohj",
+        "DomainName": "REPLACE_WITH_BUCKET.s3.amazonaws.com",
+        "OriginAccessControlId": "REPLACE_WITH_OAC_ID",
+        "S3OriginConfig": { "OriginAccessIdentity": "" }
       }
     ]
   },
   "DefaultCacheBehavior": {
-    "TargetOriginId": "S3-ohj-myresume-site-20250707",
+    "TargetOriginId": "S3-codingbyohj",
     "ViewerProtocolPolicy": "redirect-to-https",
     "AllowedMethods": {
       "Quantity": 2,
-      "Items": ["GET","HEAD"],
-      "CachedMethods": {
-        "Quantity": 2,
-        "Items": ["GET","HEAD"]
-      }
+      "Items": ["GET", "HEAD"],
+      "CachedMethods": { "Quantity": 2, "Items": ["GET", "HEAD"] }
     },
-    "ForwardedValues": {
-      "QueryString": false,
-      "Cookies": {
-        "Forward": "none"
-      }
+    "ForwardedValues": { "QueryString": false, "Cookies": { "Forward": "none" } },
+    "FunctionAssociations": {
+      "Quantity": 1,
+      "Items": [{ "EventType": "viewer-request", "FunctionARN": "REPLACE_WITH_LIVE_FUNCTION_ARN" }]
     },
+    "ResponseHeadersPolicyId": "REPLACE_WITH_SECURITY_HEADERS_POLICY_ID",
     "MinTTL": 0,
     "DefaultTTL": 86400,
-    "MaxTTL": 31536000
+    "MaxTTL": 31536000,
+    "Compress": true
   },
   "PriceClass": "PriceClass_100",
   "ViewerCertificate": {
-    "CloudFrontDefaultCertificate": true
+    "ACMCertificateArn": "REPLACE_WITH_US_EAST_1_CERTIFICATE_ARN",
+    "SSLSupportMethod": "sni-only",
+    "MinimumProtocolVersion": "TLSv1.2_2021"
   }
 }

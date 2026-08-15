@@ -32,20 +32,29 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ secrets.AWS_REGION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
-          node-version: 18.x
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: front/package-lock.json
 
       - name: Install dependencies (web)
         working-directory: front
         run: npm ci
+
+      - name: Verify web dependencies
+        working-directory: front
+        run: |
+          npm audit --omit=dev --audit-level=high
+          npm run lint
+          npm test
 
       - name: Build (web)
         working-directory: front
@@ -58,6 +67,7 @@ jobs:
           NEXT_PUBLIC_RESUME_ACCESS_HASH: ${{ secrets.RESUME_ACCESS_HASH }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || '/api' }}
         run: npm run build
         
 
@@ -70,6 +80,13 @@ jobs:
         env:
           BUCKET: ${{ secrets.S3_BUCKET_NAME }}
         run: bash scripts/upload-static-route-entries.sh front/out "$BUCKET"
+
+      - name: Configure private S3 and CloudFront routes
+        env:
+          DISTRIBUTION_ID: ${{ secrets.CF_DISTRIBUTION_ID }}
+          BUCKET: ${{ secrets.S3_BUCKET_NAME }}
+          API_ORIGIN_DOMAIN: ${{ secrets.API_ORIGIN_DOMAIN }}
+        run: bash scripts/configure-cloudfront.sh "$DISTRIBUTION_ID" "$BUCKET" "$API_ORIGIN_DOMAIN"
 
       - name: Invalidate CloudFront
         env:
@@ -87,28 +104,34 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ secrets.AWS_REGION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
-          node-version: 18.x
+          node-version: 22.14.0
+          cache: npm
+          cache-dependency-path: back/package-lock.json
 
       - name: Install dependencies (api)
         working-directory: back
         run: npm ci
 
+      - name: Verify API dependencies and tests
+        working-directory: back
+        run: |
+          npm audit --omit=dev --audit-level=high
+          npm run lint
+          npm test -- --runInBand
+
       - name: Build (api)
         working-directory: back
         run: |
-          # 1) Nest 컴파일
-          npm ci
           npm run build
-          # 2) production 의존성 복사
           npm prune --production
           cp -R node_modules dist/
 
@@ -129,4 +152,10 @@ jobs:
             --stack-name ${{ secrets.STACK_NAME }} \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
-            --capabilities CAPABILITY_IAM
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+              AllowedOrigin=https://codingbyohj.com \
+              SmtpUser='${{ secrets.SMTP_USER }}' \
+              SmtpPass='${{ secrets.SMTP_PASS }}' \
+              EmailFrom='${{ secrets.EMAIL_FROM }}' \
+              EmailTo='${{ secrets.EMAIL_TO }}'

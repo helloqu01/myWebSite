@@ -27,10 +27,12 @@ import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import EditRounded from "@mui/icons-material/EditRounded";
 import LocalHospitalRounded from "@mui/icons-material/LocalHospitalRounded";
 import OpenInNewRounded from "@mui/icons-material/OpenInNewRounded";
+import RotateRightRounded from "@mui/icons-material/RotateRightRounded";
 import type { CatProfile, HealthCheckup, HealthCheckupType, LabReport } from "@/types/cat-care";
 import { parseMedicalChartText } from "@/lib/cat-care/medical-chart";
 import { createMedicalDocumentSignedUrl, deleteMedicalDocument, uploadMedicalDocument } from "@/lib/cat-care/medical-documents";
 import { createId, toLocalDateKey } from "@/lib/cat-care/storage";
+import { prepareImageForOcr, type OcrRotation } from "@/lib/cat-care/ocr-image";
 
 interface HealthCheckupPanelProps {
   cat: CatProfile;
@@ -101,6 +103,8 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("");
+  const [rotation, setRotation] = useState<OcrRotation>(0);
+  const [ocrConfidence, setOcrConfidence] = useState<number | null>(null);
 
   const catCheckups = useMemo(
     () => checkups.filter(checkup => checkup.catId === cat.id).sort((a, b) => b.date.localeCompare(a.date)),
@@ -133,6 +137,8 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
     setFile(null);
     setProgress(0);
     setProgressLabel("");
+    setRotation(0);
+    setOcrConfidence(null);
     setDialogOpen(true);
   };
 
@@ -143,6 +149,8 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
     setFile(null);
     setProgress(0);
     setProgressLabel("");
+    setRotation(0);
+    setOcrConfidence(null);
     setDialogOpen(true);
   };
 
@@ -173,7 +181,10 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
           if (log.status) setProgressLabel(log.status);
         },
       });
-      const result = await worker.recognize(file);
+      setProgressLabel("사진 회전·선명화 중");
+      const prepared = await prepareImageForOcr(file, rotation);
+      const result = await worker.recognize(prepared);
+      setOcrConfidence(Math.round(result.data.confidence));
       const text = result.data.text.trim();
       if (!text) {
         setError("차트에서 글자를 찾지 못했습니다. 더 선명한 사진으로 다시 시도해 주세요.");
@@ -335,19 +346,21 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
               hidden
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              onChange={event => setFile(event.target.files?.[0] ?? null)}
+              onChange={event => { setFile(event.target.files?.[0] ?? null); setRotation(0); setOcrConfidence(null); }}
             />
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} alignItems={{ sm: "center" }}>
               <Button variant="outlined" startIcon={<CameraAltRounded />} onClick={() => fileInputRef.current?.click()} disabled={analyzing || uploading}>
                 {file ? "다른 차트 사진 선택" : "병원 차트 사진 선택·촬영"}
               </Button>
               <Typography variant="body2" color="text.secondary">{file?.name ?? (draft.sourceFileName || "JPG, PNG, WebP 지원")}</Typography>
+              {file && <Button size="small" startIcon={<RotateRightRounded />} onClick={() => setRotation(current => ((current + 90) % 360) as OcrRotation)} disabled={analyzing || uploading}>회전 {rotation}°</Button>}
               <Button variant="contained" onClick={analyzeChart} disabled={!file || analyzing || uploading} sx={{ ml: { sm: "auto" } }}>
                 {analyzing ? <><CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />분석 중</> : "차트 내용 자동 분석"}
               </Button>
             </Stack>
             {analyzing && <Box><LinearProgress variant="determinate" value={progress} /><Typography variant="caption" color="text.secondary">{progressLabel} · {progress}%</Typography></Box>}
-            {previewUrl && <Box component="img" src={previewUrl} alt="선택한 병원 차트 사진" sx={{ display: "block", maxWidth: "100%", maxHeight: 360, mx: "auto", borderRadius: 2, objectFit: "contain" }} />}
+            {ocrConfidence != null && <Alert severity={ocrConfidence < 60 ? "warning" : "success"}>OCR 인식 신뢰도 {ocrConfidence}% · {ocrConfidence < 60 ? "흐림·기울어짐을 확인하고 회전 후 다시 분석하거나 원문을 직접 수정해 주세요." : "자동 입력값을 원본 차트와 최종 대조해 주세요."}</Alert>}
+            {previewUrl && <Box component="img" src={previewUrl} alt="선택한 병원 차트 사진" sx={{ display: "block", maxWidth: "100%", maxHeight: 360, mx: "auto", borderRadius: 2, objectFit: "contain", transform: `rotate(${rotation}deg)` }} />}
             {draft.chartDetectedFields.length > 0 && (
               <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
                 <Typography variant="body2" color="text.secondary" sx={{ mr: 0.5 }}>자동 감지:</Typography>

@@ -27,10 +27,12 @@ import CameraAltRounded from "@mui/icons-material/CameraAltRounded";
 import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import OpenInNewRounded from "@mui/icons-material/OpenInNewRounded";
 import ScienceRounded from "@mui/icons-material/ScienceRounded";
+import RotateRightRounded from "@mui/icons-material/RotateRightRounded";
 import type { CatProfile, ExaminationType, LabReport, LabResultItem } from "@/types/cat-care";
 import { createMedicalDocumentSignedUrl, uploadMedicalDocument } from "@/lib/cat-care/medical-documents";
 import { createId, toLocalDateKey } from "@/lib/cat-care/storage";
 import { labMarkerOptions, markerDetails, parseLabText, updateLabFlag } from "@/lib/cat-care/lab-results";
+import { prepareImageForOcr, type OcrRotation } from "@/lib/cat-care/ocr-image";
 
 interface LabReportPanelProps {
   cat: CatProfile;
@@ -114,6 +116,8 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("");
   const [error, setError] = useState("");
+  const [rotation, setRotation] = useState<OcrRotation>(0);
+  const [ocrConfidence, setOcrConfidence] = useState<number | null>(null);
   const markerOptions = labMarkerOptions();
   const catReports = reports
     .filter(report => report.catId === cat.id)
@@ -145,6 +149,8 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
     setProgress(0);
     setProgressLabel("");
     setError("");
+    setRotation(0);
+    setOcrConfidence(null);
   };
 
   const open = () => {
@@ -175,7 +181,10 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
           if (log.status) setProgressLabel(log.status);
         },
       });
-      const result = await worker.recognize(file);
+      setProgressLabel("사진 회전·선명화 중");
+      const prepared = await prepareImageForOcr(file, rotation);
+      const result = await worker.recognize(prepared);
+      setOcrConfidence(Math.round(result.data.confidence));
       const text = result.data.text.trim();
       const parsed = parseLabText(text);
       setRawText(text);
@@ -335,19 +344,21 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
               hidden
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              onChange={event => setFile(event.target.files?.[0] ?? null)}
+              onChange={event => { setFile(event.target.files?.[0] ?? null); setRotation(0); setOcrConfidence(null); }}
             />
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} alignItems={{ sm: "center" }}>
               <Button variant="outlined" startIcon={<CameraAltRounded />} onClick={() => fileInputRef.current?.click()} disabled={analyzing || uploading}>
                 {file ? "다른 사진 선택" : "사진 선택 또는 촬영"}
               </Button>
               <Typography variant="body2" color="text.secondary">{file?.name ?? "JPG, PNG, WebP · 최대 10MB"}</Typography>
+              {file && <Button size="small" startIcon={<RotateRightRounded />} onClick={() => setRotation(current => ((current + 90) % 360) as OcrRotation)} disabled={analyzing || uploading}>회전 {rotation}°</Button>}
               <Button variant="contained" onClick={analyze} disabled={!file || analyzing || uploading} sx={{ ml: { sm: "auto" } }}>
                 {analyzing ? <><CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />분석 중</> : "사진에서 값 읽기"}
               </Button>
             </Stack>
             {analyzing && <Box><LinearProgress variant="determinate" value={progress} /><Typography variant="caption" color="text.secondary">{progressLabel} · {progress}%</Typography></Box>}
-            {previewUrl && <Box component="img" src={previewUrl} alt="선택한 검사결과 사진" sx={{ display: "block", maxWidth: "100%", maxHeight: 360, mx: "auto", borderRadius: 2, objectFit: "contain" }} />}
+            {ocrConfidence != null && <Alert severity={ocrConfidence < 60 ? "warning" : "success"}>OCR 인식 신뢰도 {ocrConfidence}% · {ocrConfidence < 60 ? "회전 후 다시 분석하거나 OCR 원문과 수치를 직접 확인해 주세요." : "추출된 수치와 기준범위를 원본 검사표와 대조해 주세요."}</Alert>}
+            {previewUrl && <Box component="img" src={previewUrl} alt="선택한 검사결과 사진" sx={{ display: "block", maxWidth: "100%", maxHeight: 360, mx: "auto", borderRadius: 2, objectFit: "contain", transform: `rotate(${rotation}deg)` }} />}
             {error && <Alert severity="warning">{error}</Alert>}
 
             <Divider />

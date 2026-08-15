@@ -53,7 +53,8 @@ export default function ContactSection() {
     if (company.trim()) { setStatus('success'); return; }
     setStatus('sending');
     try {
-      const res = await fetch('/api/email', {
+      const apiBase = (process.env.NEXT_PUBLIC_API_URL || '/api').replace(/\/$/, '');
+      const res = await fetch(`${apiBase}/email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, message, company }),

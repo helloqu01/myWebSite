@@ -2,22 +2,43 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: NestJS + Express on Lambda with HTTP API(v2) & CORS
 
+Parameters:
+  AllowedOrigin:
+    Type: String
+    Default: https://codingbyohj.com
+  SmtpHost:
+    Type: String
+    Default: smtp.gmail.com
+  SmtpPort:
+    Type: Number
+    Default: 587
+  SmtpUser:
+    Type: String
+    NoEcho: true
+  SmtpPass:
+    Type: String
+    NoEcho: true
+  EmailFrom:
+    Type: String
+  EmailTo:
+    Type: String
+
 Globals:
   Function:
     Timeout: 10
     MemorySize: 256
 
 Resources:
-  # 1) HTTP API(v2) 정의 & CORS 열기
+  # 문의 API에서 필요한 출처와 메서드만 허용합니다.
   MyRestApi:
     Type: AWS::Serverless::Api
     Properties:
       Name: MyProfileRestApi
       StageName: prod
       Cors:
-        AllowOrigin: "'*'"
-        AllowMethods: "'OPTIONS,GET,POST,PUT,DELETE,PATCH'"
-        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: !Sub "'${AllowedOrigin}'"
+        AllowMethods: "'OPTIONS,POST'"
+        AllowHeaders: "'Content-Type'"
         MaxAge: 600
 
   # 2) Lambda 함수
@@ -27,15 +48,16 @@ Resources:
       FunctionName: my-profile-api
       CodeUri: dist/
       Handler: lambda.handler
-      Runtime: nodejs18.x
+      Runtime: nodejs22.x
       Environment:
         Variables:
-          SMTP_HOST:   "smtp.gmail.com"
-          SMTP_PORT:   "587"
-          SMTP_USER:   "ddaaadd01@gmail.com"
-          SMTP_PASS:   "cccg oert paam gych"
-          EMAIL_FROM:  "Hyunji Oh <ddaaadd01@gmail.com>"
-          EMAIL_TO:    "ddaaadd01@gmail.com"
+          ALLOWED_ORIGIN: !Ref AllowedOrigin
+          SMTP_HOST: !Ref SmtpHost
+          SMTP_PORT: !Ref SmtpPort
+          SMTP_USER: !Ref SmtpUser
+          SMTP_PASS: !Ref SmtpPass
+          EMAIL_FROM: !Ref EmailFrom
+          EMAIL_TO: !Ref EmailTo
       Policies:
         - AWSLambdaBasicExecutionRole
       Events:
@@ -49,4 +71,4 @@ Resources:
 Outputs:
   RestApiInvokeUrl:
     Description: "Invoke URL for REST API"
-    Value: !Sub "https://${MyRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod"     
+    Value: !Sub "https://${MyRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod"

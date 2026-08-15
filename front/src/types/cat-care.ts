@@ -22,7 +22,6 @@ export type ExaminationType =
   | "dental"
   | "other";
 export type ObservationLevel = "usual" | "changed" | "concerning";
-export type LitterRecordType = "urine" | "stool" | "both";
 export type CloudMemberRole = "owner" | "editor" | "viewer";
 export type HealthCheckupType = "routine" | "follow_up" | "symptom" | "emergency" | "vaccination" | "other";
 export type TimedCareEventType = "water" | "meal" | "urine" | "stool" | "seizure";
@@ -313,19 +312,6 @@ export interface MonthlyCareCheck {
   updatedAt: string;
 }
 
-export interface HouseholdLitterRecord {
-  id: string;
-  catId: string | null;
-  date: string;
-  time: string;
-  type: LitterRecordType;
-  urineAmount: SizeLevel | null;
-  stoolAmount: SizeLevel | null;
-  confidence: MeasurementConfidence;
-  notes: string;
-  updatedAt: string;
-}
-
 export interface EmergencyInfo {
   catId: string;
   primaryVetName: string;
@@ -349,7 +335,7 @@ export interface NotificationSettings {
 }
 
 export interface CareState {
-  version: 14;
+  version: 15;
   cats: CatProfile[];
   records: DailyRecord[];
   foodItems: FoodItem[];
@@ -361,7 +347,6 @@ export interface CareState {
   healthCheckups: HealthCheckup[];
   weeklyChecks: WeeklyWellnessCheck[];
   monthlyChecks: MonthlyCareCheck[];
-  householdLitterRecords: HouseholdLitterRecord[];
   emergencyInfo: EmergencyInfo[];
   notificationSettings: NotificationSettings;
 }

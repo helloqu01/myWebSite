@@ -255,6 +255,48 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
     setChangedCatIds(current => [...new Set([...current, ...catIds.filter(Boolean)])]);
   };
 
+  const setAllNormal = () => {
+    setDrafts(current => Object.fromEntries(cats.map(cat => {
+      const draft = current[cat.id] ?? dailyDraft();
+      return [cat.id, {
+        ...draft,
+        appetite: "normal",
+        vomitCount: "0",
+        activity: "normal",
+        confidence: "high",
+        urinationStraining: false,
+        urineNotProduced: false,
+        bloodInUrine: false,
+        breathingDifficulty: false,
+        collapseOrSeizure: false,
+      }];
+    })));
+    markChanged(...cats.map(cat => cat.id));
+    setError("");
+  };
+
+  const copyPreviousDay = () => {
+    const selected = new Date(`${date}T00:00:00`);
+    selected.setDate(selected.getDate() - 1);
+    const previousDate = toLocalDateKey(selected);
+    const previousRecords = records.filter(record => record.date === previousDate);
+    if (!previousRecords.length) {
+      setError(`${previousDate}에 복사할 기록이 없습니다.`);
+      return;
+    }
+    setDrafts(current => Object.fromEntries(cats.map(cat => {
+      const previous = previousRecords.find(record => record.catId === cat.id);
+      return [cat.id, previous ? dailyDraft(previous) : current[cat.id] ?? dailyDraft()];
+    })));
+    const copiedRows = previousRecords.flatMap(record => record.timedEvents.map(event => ({
+      ...rowFromEvent(record, event),
+      id: createId("care-event"),
+    })));
+    setRows(copiedRows.length ? copiedRows.sort((a, b) => a.time.localeCompare(b.time)) : [blankRow()]);
+    markChanged(...previousRecords.map(record => record.catId));
+    setError("");
+  };
+
   const updateDraft = <K extends keyof DailyDraft>(catId: string, key: K, value: DailyDraft[K]) => {
     setDrafts(current => ({ ...current, [catId]: { ...current[catId], [key]: value } }));
     markChanged(catId);
@@ -426,7 +468,7 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
             네 마리의 하루 상태와 영상 속 시간별 행동을 한 화면에서 기록합니다. 저장한 값은 고양이별 건강 추세에 바로 반영됩니다.
           </Typography>
         </Box>
-        <TextField label="기록 날짜" type="date" size="small" value={date} onChange={event => setDate(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 180 }} inputProps={{ "data-testid": "multi-event-date" }} />
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}><Button variant="outlined" startIcon={<ContentCopyRounded />} onClick={copyPreviousDay}>전날 복사</Button><Button variant="outlined" color="success" onClick={setAllNormal}>모두 정상</Button><TextField label="기록 날짜" type="date" size="small" value={date} onChange={event => setDate(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 180 }} inputProps={{ "data-testid": "multi-event-date" }} /></Stack>
       </Stack>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -486,7 +528,7 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
           return (
             <Box key={row.id} data-testid={`multi-event-row-${index}`} sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))", xl: row.type === "meal" ? "130px 150px 125px 110px minmax(150px,1fr) 130px minmax(140px,1fr) auto" : row.type === "seizure" ? "130px 150px 125px 110px 130px minmax(140px,1fr) auto" : "130px 150px 125px 110px minmax(150px,1fr) auto" }, gap: 1, alignItems: "center", p: 1.25, border: "1px solid", borderLeft: "4px solid", borderColor: eventColors[row.type], bgcolor: eventBackgrounds[row.type], borderRadius: 2.5 }}>
               <Chip icon={eventIcon(row.type)} label={`${index + 1} · ${eventLabels[row.type]}`} size="small" variant="outlined" sx={{ color: eventColors[row.type], borderColor: eventColors[row.type], "& .MuiChip-icon": { color: "inherit" } }} />
-              <TextField label="시각" type="time" size="small" value={row.time} onChange={event => updateRow(row.id, { time: event.target.value })} slotProps={{ inputLabel: { shrink: true }, htmlInput: { style: { minWidth: 0 } } }} sx={{ width: "100%", minWidth: 0 }} />
+              <TextField label="시각" type="time" size="small" value={row.time} onChange={event => updateRow(row.id, { time: event.target.value })} slotProps={{ inputLabel: { shrink: true }, htmlInput: { style: { minWidth: 96, paddingRight: 8 } } }} sx={{ width: "100%", minWidth: 145 }} />
               <TextField select label="고양이" size="small" value={row.catId} onChange={event => updateRow(row.id, { catId: event.target.value, foodItemId: "" })}>
                 <MenuItem value=""><em>선택</em></MenuItem>
                 {cats.map(cat => <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>)}

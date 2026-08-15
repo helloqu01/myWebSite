@@ -18,6 +18,9 @@ create table if not exists public.cat_care_households (
   updated_at timestamptz not null default now()
 );
 
+alter table public.cat_care_households
+  add column if not exists revision bigint not null default 0;
+
 create table if not exists public.cat_care_members (
   household_id uuid not null references public.cat_care_households(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -103,8 +106,16 @@ create policy "members read memberships"
 revoke all on table public.cat_care_households from public, anon, authenticated;
 revoke all on table public.cat_care_members from public, anon, authenticated;
 grant select on table public.cat_care_households to authenticated;
-grant update (care_data, updated_at) on table public.cat_care_households to authenticated;
+grant update (care_data, updated_at, revision) on table public.cat_care_households to authenticated;
 grant select on table public.cat_care_members to authenticated;
+
+-- 반환 열이 추가된 기존 함수는 CREATE OR REPLACE로 형태를 바꿀 수 없으므로
+-- 공개 래퍼부터 안전한 순서로 다시 만듭니다.
+drop function if exists public.get_my_cat_care_household();
+drop function if exists public.create_cat_care_household(text, jsonb);
+drop function if exists public.join_cat_care_household(text);
+drop function if exists private.create_cat_care_household_internal(text, jsonb);
+drop function if exists private.join_cat_care_household_internal(text);
 
 create or replace function public.get_my_cat_care_household()
 returns table (
@@ -113,14 +124,15 @@ returns table (
   invite_code text,
   role text,
   care_data jsonb,
-  updated_at timestamptz
+  updated_at timestamptz,
+  revision bigint
 )
 language sql
 stable
 security invoker
 set search_path = ''
 as $$
-  select h.id, h.name, h.invite_code, m.role, h.care_data, h.updated_at
+  select h.id, h.name, h.invite_code, m.role, h.care_data, h.updated_at, h.revision
   from public.cat_care_members as m
   join public.cat_care_households as h on h.id = m.household_id
   where m.user_id = (select auth.uid())
@@ -138,7 +150,8 @@ returns table (
   invite_code text,
   role text,
   care_data jsonb,
-  updated_at timestamptz
+  updated_at timestamptz,
+  revision bigint
 )
 language plpgsql
 security definer
@@ -180,7 +193,7 @@ begin
   values (new_id, (select auth.uid()), 'owner');
 
   return query
-  select h.id, h.name, h.invite_code, 'owner'::text, h.care_data, h.updated_at
+  select h.id, h.name, h.invite_code, 'owner'::text, h.care_data, h.updated_at, h.revision
   from public.cat_care_households as h
   where h.id = new_id;
 end;
@@ -193,7 +206,8 @@ returns table (
   invite_code text,
   role text,
   care_data jsonb,
-  updated_at timestamptz
+  updated_at timestamptz,
+  revision bigint
 )
 language plpgsql
 security definer
@@ -226,7 +240,7 @@ begin
   values (target_id, (select auth.uid()), 'editor');
 
   return query
-  select h.id, h.name, h.invite_code, 'editor'::text, h.care_data, h.updated_at
+  select h.id, h.name, h.invite_code, 'editor'::text, h.care_data, h.updated_at, h.revision
   from public.cat_care_households as h
   where h.id = target_id;
 end;
@@ -251,7 +265,8 @@ returns table (
   invite_code text,
   role text,
   care_data jsonb,
-  updated_at timestamptz
+  updated_at timestamptz,
+  revision bigint
 )
 language sql
 volatile
@@ -269,7 +284,8 @@ returns table (
   invite_code text,
   role text,
   care_data jsonb,
-  updated_at timestamptz
+  updated_at timestamptz,
+  revision bigint
 )
 language sql
 volatile

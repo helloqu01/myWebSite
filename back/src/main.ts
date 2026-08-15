@@ -9,14 +9,17 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
 
-  // ➋ 프론트(예: http://localhost:3000)에서 호출할 수 있도록 CORS 허용
+  const allowedOrigins = [
+    process.env.ALLOWED_ORIGIN,
+    'http://localhost:3000',
+  ].filter(Boolean);
   app.enableCors({
-    origin: 'http://localhost:3000',
-    credentials: true,
+    origin: allowedOrigins,
+    methods: ['POST', 'OPTIONS'],
   });
 
   const port = process.env.PORT ? +process.env.PORT : 3001;
   await app.listen(port);
   console.log(`🚀 Backend running on http://localhost:${port}`);
 }
-bootstrap();
+void bootstrap();

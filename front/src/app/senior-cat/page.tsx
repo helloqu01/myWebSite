@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Avatar,
@@ -15,6 +15,7 @@ import {
   Paper,
   Snackbar,
   Stack,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
@@ -33,6 +34,8 @@ import MonitorHeartRounded from "@mui/icons-material/MonitorHeartRounded";
 import LockRounded from "@mui/icons-material/LockRounded";
 import PlaylistAddCheckRounded from "@mui/icons-material/PlaylistAddCheckRounded";
 import PrintRounded from "@mui/icons-material/PrintRounded";
+import RestoreRounded from "@mui/icons-material/RestoreRounded";
+import LockOpenRounded from "@mui/icons-material/LockOpenRounded";
 import CatProfileDialog from "@/components/senior-cat/CatProfileDialog";
 import CareCalendar from "@/components/senior-cat/CareCalendar";
 import CareSchedulePanel from "@/components/senior-cat/CareSchedulePanel";
@@ -79,6 +82,7 @@ import {
   foodAppliesToCat,
   loadCareState,
   normalizeCareState,
+  popCareSnapshot,
   saveCareState,
   toLocalDateKey,
 } from "@/lib/cat-care/storage";
@@ -106,6 +110,13 @@ const confidenceLabel = {
   medium: "신뢰도 보통",
   low: "신뢰도 낮음",
 };
+
+const DEVICE_PIN_HASH_KEY = "ohj-cat-care-device-pin-hash";
+
+async function hashDevicePin(pin: string): Promise<string> {
+  const digest = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
+  return Array.from(new Uint8Array(digest)).map(value => value.toString(16).padStart(2, "0")).join("");
+}
 
 function formatDate(date: string): string {
   const [, month, day] = date.split("-");
@@ -268,6 +279,11 @@ export default function SeniorCatPage() {
   const [weeklyDialogRequest, setWeeklyDialogRequest] = useState(0);
   const [monthlyDialogRequest, setMonthlyDialogRequest] = useState(0);
   const [message, setMessage] = useState("");
+  const [devicePinHash, setDevicePinHash] = useState("");
+  const [deviceLocked, setDeviceLocked] = useState(false);
+  const [unlockPin, setUnlockPin] = useState("");
+  const [unlockError, setUnlockError] = useState("");
+  const skipHistoryRef = useRef(false);
 
   useEffect(() => {
     const stored = loadCareState();
@@ -275,11 +291,72 @@ export default function SeniorCatPage() {
     const first = [...stored.cats].sort((a, b) => Number(b.focusCare) - Number(a.focusCare))[0];
     setSelectedCatId(first?.id ?? null);
     setReady(true);
+    const savedPinHash = window.localStorage.getItem(DEVICE_PIN_HASH_KEY) ?? "";
+    setDevicePinHash(savedPinHash);
+    setDeviceLocked(Boolean(savedPinHash));
   }, []);
 
   useEffect(() => {
-    if (ready) saveCareState(care);
+    if (ready) {
+      saveCareState(care, { skipHistory: skipHistoryRef.current });
+      skipHistoryRef.current = false;
+    }
   }, [care, ready]);
+
+  const restorePreviousSnapshot = () => {
+    if (!window.confirm("가장 최근 변경 전 상태로 되돌릴까요? 원본 사진·영상 파일 삭제는 되돌릴 수 없습니다.")) return;
+    const snapshot = popCareSnapshot();
+    if (!snapshot) {
+      setMessage("복구할 이전 저장 상태가 없습니다.");
+      return;
+    }
+    skipHistoryRef.current = true;
+    setCare(snapshot);
+    setSelectedCatId(snapshot.cats[0]?.id ?? null);
+    setMessage("이전 저장 상태를 복구했습니다.");
+  };
+
+  const configureDevicePin = async () => {
+    if (devicePinHash) {
+      const currentPin = window.prompt("현재 기기 PIN을 입력해 주세요.");
+      if (!currentPin || await hashDevicePin(currentPin) !== devicePinHash) {
+        setMessage("현재 PIN이 맞지 않습니다.");
+        return;
+      }
+    }
+    const nextPin = window.prompt(devicePinHash ? "새 PIN을 4자리 이상 입력하세요. 비워 두면 잠금을 해제합니다." : "이 기기에서 사용할 PIN을 4자리 이상 입력하세요.");
+    if (nextPin == null) return;
+    if (!nextPin) {
+      window.localStorage.removeItem(DEVICE_PIN_HASH_KEY);
+      setDevicePinHash("");
+      setDeviceLocked(false);
+      setMessage("기기 PIN 잠금을 해제했습니다.");
+      return;
+    }
+    if (nextPin.length < 4) {
+      setMessage("PIN은 4자리 이상이어야 합니다.");
+      return;
+    }
+    const confirmation = window.prompt("같은 PIN을 한 번 더 입력해 주세요.");
+    if (nextPin !== confirmation) {
+      setMessage("PIN이 서로 일치하지 않습니다.");
+      return;
+    }
+    const nextHash = await hashDevicePin(nextPin);
+    window.localStorage.setItem(DEVICE_PIN_HASH_KEY, nextHash);
+    setDevicePinHash(nextHash);
+    setMessage("이 기기의 건강 기록 PIN 잠금을 설정했습니다.");
+  };
+
+  const unlockDevice = async () => {
+    if (await hashDevicePin(unlockPin) !== devicePinHash) {
+      setUnlockError("PIN이 올바르지 않습니다.");
+      return;
+    }
+    setDeviceLocked(false);
+    setUnlockPin("");
+    setUnlockError("");
+  };
 
   const orderedCats = useMemo(
     () => [...care.cats].sort((a, b) => {
@@ -383,7 +460,6 @@ export default function SeniorCatPage() {
       healthCheckups: current.healthCheckups.filter(checkup => checkup.catId !== cat.id),
       weeklyChecks: current.weeklyChecks.filter(check => check.catId !== cat.id),
       monthlyChecks: current.monthlyChecks.filter(check => check.catId !== cat.id),
-      householdLitterRecords: current.householdLitterRecords.map(record => record.catId === cat.id ? { ...record, catId: null, confidence: "low" } : record),
       emergencyInfo: current.emergencyInfo.filter(info => info.catId !== cat.id),
     }));
     const next = orderedCats.find(item => item.id !== cat.id);
@@ -827,6 +903,23 @@ export default function SeniorCatPage() {
     );
   }
 
+  if (deviceLocked) {
+    return (
+      <Container maxWidth="xs" sx={{ py: 12 }}>
+        <Paper elevation={0} sx={{ p: 4, border: "1px solid var(--card-border)", borderRadius: 4 }}>
+          <Stack spacing={2} alignItems="center" textAlign="center">
+            <LockRounded color="primary" sx={{ fontSize: 44 }} />
+            <Typography variant="h4" fontWeight={900}>건강 기록 잠금</Typography>
+            <Typography color="text.secondary">이 기기에 설정한 PIN을 입력해 주세요.</Typography>
+            <TextField label="기기 PIN" type="password" value={unlockPin} onChange={event => { setUnlockPin(event.target.value); setUnlockError(""); }} onKeyDown={event => { if (event.key === "Enter") void unlockDevice(); }} error={Boolean(unlockError)} helperText={unlockError} autoFocus fullWidth />
+            <Button variant="contained" startIcon={<LockOpenRounded />} onClick={unlockDevice} disabled={!unlockPin} fullWidth>잠금 해제</Button>
+            <Typography variant="caption" color="text.secondary">PIN은 이 브라우저에만 저장됩니다. 잊어버린 경우 사이트 저장 데이터를 지우면 로컬 기록도 함께 삭제될 수 있습니다.</Typography>
+          </Stack>
+        </Paper>
+      </Container>
+    );
+  }
+
   return (
     <Box sx={{ minHeight: "100vh", pb: 8, overflow: "hidden" }}>
       <Box
@@ -902,6 +995,23 @@ export default function SeniorCatPage() {
               >
                 CSV 내보내기
               </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                startIcon={<RestoreRounded />}
+                onClick={restorePreviousSnapshot}
+              >
+                이전 상태 복구
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                startIcon={<LockRounded />}
+                onClick={() => devicePinHash ? setDeviceLocked(true) : void configureDevicePin()}
+              >
+                {devicePinHash ? "기기 잠금" : "PIN 잠금 설정"}
+              </Button>
+              {devicePinHash && <Button size="large" color="inherit" onClick={configureDevicePin}>PIN 변경·해제</Button>}
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
               <LockRounded sx={{ fontSize: 16, color: "text.secondary" }} />

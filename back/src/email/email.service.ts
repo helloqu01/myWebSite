@@ -8,17 +8,27 @@ export class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor(private config: ConfigService) {
+    const port = Number(this.config.get('SMTP_PORT') ?? 587);
     this.transporter = nodemailer.createTransport({
-      host: this.config.get('SMTP_HOST'),
-      port: this.config.get<number>('SMTP_PORT'),
+      host: this.config.getOrThrow<string>('SMTP_HOST'),
+      port,
+      secure: port === 465,
       auth: {
-        user: this.config.get('SMTP_USER'),
-        pass: this.config.get('SMTP_PASS'),
+        user: this.config.getOrThrow<string>('SMTP_USER'),
+        pass: this.config.getOrThrow<string>('SMTP_PASS'),
       },
+      tls: { minVersion: 'TLSv1.2' },
     });
   }
 
-  async sendContactMail(name: string, email: string, message: string) {
+  async sendContactMail(
+    name: string,
+    email: string,
+    message: string,
+  ): Promise<void> {
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safeMessage = escapeHtml(message).replace(/\r?\n/g, '<br/>');
     const text = `
 새로운 문의가 도착했습니다.
 
@@ -35,15 +45,15 @@ ${message}
   <table style="width:100%; border-collapse: collapse; margin-bottom: 20px;">
     <tr>
       <td style="padding: 8px; font-weight: bold; background: #f2f2f2; width: 100px;">이름</td>
-      <td style="padding: 8px;">${name}</td>
+      <td style="padding: 8px;">${safeName}</td>
     </tr>
     <tr>
       <td style="padding: 8px; font-weight: bold; background: #fafafa;">이메일</td>
-      <td style="padding: 8px;">${email}</td>
+      <td style="padding: 8px;">${safeEmail}</td>
     </tr>
     <tr>
       <td style="padding: 8px; font-weight: bold; background: #f2f2f2; vertical-align: top;">메시지</td>
-      <td style="padding: 8px;">${message.replace(/\n/g, '<br/>')}</td>
+      <td style="padding: 8px;">${safeMessage}</td>
     </tr>
   </table>
   <p style="font-size: 0.9em; color: #777;">
@@ -52,12 +62,27 @@ ${message}
 </div>
     `;
 
-    return this.transporter.sendMail({
-      from: this.config.get('EMAIL_FROM'),
-      to:   this.config.get('EMAIL_TO'),
-      subject: `[웹사이트 문의] ${name}님`,
+    await this.transporter.sendMail({
+      from: this.config.getOrThrow<string>('EMAIL_FROM'),
+      to: this.config.getOrThrow<string>('EMAIL_TO'),
+      replyTo: email,
+      subject: `[웹사이트 문의] ${name.replace(/[\r\n]/g, ' ')}님`,
       text,
       html,
     });
   }
+}
+
+export function escapeHtml(value: string): string {
+  return value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      })[character] ?? character,
+  );
 }

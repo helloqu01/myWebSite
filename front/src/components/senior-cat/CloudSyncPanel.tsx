@@ -41,6 +41,7 @@ interface HouseholdState {
   role: CloudMemberRole;
   careData: CareState | null;
   updatedAt: string;
+  revision: number;
 }
 
 const AUTO_SYNC_KEY = "ohj-cat-care-cloud-auto";
@@ -67,6 +68,7 @@ function parseHousehold(data: unknown): HouseholdState | null {
     role: (value.role as CloudMemberRole) ?? "viewer",
     careData: value.care_data && typeof value.care_data === "object" ? normalizeCareState(value.care_data as Partial<CareState>) : null,
     updatedAt: String(value.updated_at ?? ""),
+    revision: Number(value.revision ?? 0),
   };
 }
 
@@ -82,7 +84,6 @@ function hasHealthRecords(care: CareState): boolean {
     || care.healthCheckups.length > 0
     || care.weeklyChecks.length > 0
     || care.monthlyChecks.length > 0
-    || care.householdLitterRecords.length > 0
     || care.emergencyInfo.length > 0;
 }
 
@@ -99,6 +100,7 @@ export default function CloudSyncPanel({ care, onRestore, onLogout, onMessage }:
   const [inviteCode, setInviteCode] = useState("");
   const [autoSync, setAutoSync] = useState(false);
   const [error, setError] = useState("");
+  const [remoteConflict, setRemoteConflict] = useState<HouseholdState | null>(null);
   const [confirmationSent, setConfirmationSent] = useState(false);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [passwordResetSent, setPasswordResetSent] = useState(false);
@@ -112,11 +114,13 @@ export default function CloudSyncPanel({ care, onRestore, onLogout, onMessage }:
   const onMessageRef = useRef(onMessage);
   const activeHouseholdId = household?.id ?? "";
   const activeHouseholdRole = household?.role ?? "viewer";
-  careRef.current = care;
-  householdRef.current = household;
-  onRestoreRef.current = onRestore;
-  onLogoutRef.current = onLogout;
-  onMessageRef.current = onMessage;
+  useEffect(() => {
+    careRef.current = care;
+    householdRef.current = household;
+    onRestoreRef.current = onRestore;
+    onLogoutRef.current = onLogout;
+    onMessageRef.current = onMessage;
+  }, [care, household, onLogout, onMessage, onRestore]);
 
   const loadHousehold = useCallback(async () => {
     if (!client) return;
@@ -180,15 +184,42 @@ export default function CloudSyncPanel({ care, onRestore, onLogout, onMessage }:
     setWorking(true);
     const { data, error: pushError } = await client
       .from("cat_care_households")
-      .update({ care_data: careRef.current, updated_at: new Date().toISOString() })
+      .update({
+        care_data: careRef.current,
+        revision: target.revision + 1,
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", target.id)
-      .select("updated_at")
-      .single();
+      .eq("revision", target.revision)
+      .select("updated_at,revision")
+      .maybeSingle();
     setWorking(false);
     if (pushError) { setError(pushError.message); return false; }
+    if (!data) {
+      const { data: latest, error: latestError } = await client
+        .from("cat_care_households")
+        .select("care_data,updated_at,revision")
+        .eq("id", target.id)
+        .single();
+      if (latestError) { setError(latestError.message); return false; }
+      const conflict: HouseholdState = {
+        ...target,
+        careData: normalizeCareState((latest.care_data ?? {}) as Partial<CareState>),
+        updatedAt: String(latest.updated_at),
+        revision: Number(latest.revision ?? target.revision),
+      };
+      householdRef.current = conflict;
+      setHousehold(conflict);
+      setRemoteConflict(conflict);
+      setAutoSync(false);
+      window.localStorage.setItem(AUTO_SYNC_KEY, "false");
+      setError("다른 가족이 먼저 기록을 저장했습니다. 두 기록 중 어떤 내용을 유지할지 선택해 주세요.");
+      return false;
+    }
     const updatedAt = String(data.updated_at);
     window.localStorage.setItem(LAST_SYNC_KEY, updatedAt);
-    setHousehold(previous => previous ? { ...previous, careData: careRef.current, updatedAt } : previous);
+    setRemoteConflict(null);
+    setHousehold(previous => previous ? { ...previous, careData: careRef.current, updatedAt, revision: Number(data.revision) } : previous);
     if (showMessage) onMessageRef.current("고양이별 건강검진·검사결과를 포함한 현재 기록을 클라우드에 백업했습니다.");
     return true;
   }, [client]);
@@ -292,12 +323,17 @@ export default function CloudSyncPanel({ care, onRestore, onLogout, onMessage }:
   const pull = async () => {
     if (!client || !household) return;
     setWorking(true);
-    const { data, error: pullError } = await client.from("cat_care_households").select("care_data,updated_at").eq("id", household.id).single();
+    const { data, error: pullError } = await client.from("cat_care_households").select("care_data,updated_at,revision").eq("id", household.id).single();
     setWorking(false);
     if (pullError) { setError(pullError.message); return; }
     if (!window.confirm("이 기기의 건강 기록을 클라우드 최신 기록으로 교체할까요? 현재 로컬 기록은 JSON 백업 후 진행하는 것을 권장합니다.")) return;
     onRestore(normalizeCareState((data.care_data ?? {}) as Partial<CareState>));
     window.localStorage.setItem(LAST_SYNC_KEY, String(data.updated_at));
+    const nextHousehold = { ...household, careData: normalizeCareState((data.care_data ?? {}) as Partial<CareState>), updatedAt: String(data.updated_at), revision: Number(data.revision ?? household.revision) };
+    householdRef.current = nextHousehold;
+    setHousehold(nextHousehold);
+    setRemoteConflict(null);
+    setError("");
     onMessage("클라우드 최신 기록을 이 기기에 적용했습니다.");
   };
 
@@ -348,11 +384,11 @@ export default function CloudSyncPanel({ care, onRestore, onLogout, onMessage }:
   return (
     <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, border: "1px solid var(--card-border)", borderRadius: 4 }}>
       <Stack direction="row" spacing={1} alignItems="center"><CloudDoneRounded color={session ? "success" : "disabled"} /><Typography variant="h6" fontWeight={800}>클라우드 백업·가족 공유</Typography>{session && <Chip label={session.user.email ?? "로그인됨"} size="small" variant="outlined" />}</Stack>
-      {error && <Alert severity="error" onClose={() => setError("")} sx={{ mt: 1.5 }}>{error}</Alert>}
+      {error && <Alert severity={remoteConflict ? "warning" : "error"} onClose={() => { setError(""); if (!remoteConflict) setRemoteConflict(null); }} sx={{ mt: 1.5 }} action={remoteConflict ? <Stack direction="row" spacing={0.5}><Button color="inherit" size="small" onClick={() => { if (!remoteConflict.careData) return; onRestore(remoteConflict.careData); window.localStorage.setItem(LAST_SYNC_KEY, remoteConflict.updatedAt); setRemoteConflict(null); setError(""); onMessage("클라우드 최신 기록을 적용했습니다."); }}>클라우드 적용</Button><Button color="inherit" size="small" onClick={async () => { if (!window.confirm("다른 가족이 저장한 내용 대신 이 기기 기록을 유지할까요?")) return; setRemoteConflict(null); setError(""); await push(true); }}>이 기기 유지</Button></Stack> : undefined}>{error}</Alert>}
       {passwordRecovery ? <Stack spacing={1.5} sx={{ mt: 2 }}><Alert severity="info">이메일 복구 링크가 확인됐습니다. 앞으로 로그인할 때 사용할 새 비밀번호를 입력해 주세요.</Alert><Stack direction={{ xs: "column", sm: "row" }} spacing={1}><TextField label="새 비밀번호" type="password" size="small" value={newPassword} onChange={event => setNewPassword(event.target.value)} slotProps={{ htmlInput: { autoComplete: "new-password" } }} fullWidth /><TextField label="새 비밀번호 확인" type="password" size="small" value={newPasswordConfirm} onChange={event => setNewPasswordConfirm(event.target.value)} slotProps={{ htmlInput: { autoComplete: "new-password" } }} fullWidth /></Stack><Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap><Button variant="contained" disabled={working || newPassword.length < 6 || newPasswordConfirm.length < 6} onClick={updateRecoveredPassword}>{working ? "저장 중" : "새 비밀번호 저장"}</Button><Button color="inherit" disabled={working} onClick={logout}>취소</Button></Stack></Stack>
       : !session ? <Stack spacing={1.5} sx={{ mt: 2 }}><Typography variant="body2" color="text.secondary">보호자별 이메일 계정으로 로그인합니다. 가족 구성원은 각자 계정을 만든 뒤 공유 코드로 참여합니다.</Typography><Stack direction={{ xs: "column", sm: "row" }} spacing={1}><TextField label="이메일" type="email" size="small" value={email} onChange={event => setEmail(event.target.value)} slotProps={{ htmlInput: { autoComplete: "email" } }} fullWidth /><TextField label="비밀번호" type="password" size="small" value={password} onChange={event => setPassword(event.target.value)} slotProps={{ htmlInput: { autoComplete: "current-password" } }} fullWidth /></Stack><Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap><Button variant="contained" disabled={working || !email || password.length < 6} onClick={() => signIn(false)}>로그인</Button><Button disabled={working || !email || password.length < 6} onClick={() => signIn(true)}>새 계정 만들기</Button><Button color="inherit" disabled={working || !email.trim()} onClick={requestPasswordReset}>비밀번호 재설정</Button><Button color="inherit" disabled={working || !email.trim()} onClick={resendConfirmation}>인증 메일 다시 보내기</Button></Stack>{passwordResetSent && <Alert severity="success">비밀번호 재설정 메일을 요청했습니다. 가장 최근 메일의 링크를 열면 이 페이지에서 새 비밀번호를 저장할 수 있습니다.</Alert>}{confirmationSent && <Alert severity="info">미인증 계정에만 새 확인 메일이 발송됩니다. 이미 인증했다면 로그인하거나 비밀번호 재설정을 이용해 주세요.</Alert>}</Stack>
       : !household ? <Stack spacing={2} sx={{ mt: 2 }}><Typography variant="body2">새 가족 공간을 만들거나 받은 공유 코드로 기존 공간에 참여하세요.</Typography><Stack direction={{ xs: "column", sm: "row" }} spacing={1}><TextField label="가족 공간 이름" size="small" value={householdName} onChange={event => setHouseholdName(event.target.value)} fullWidth /><Button variant="contained" disabled={working} onClick={createHousehold}>새 공간 만들기</Button></Stack><Divider>또는</Divider><Stack direction={{ xs: "column", sm: "row" }} spacing={1}><TextField label="공유 코드" size="small" value={inviteCode} onChange={event => setInviteCode(event.target.value.toUpperCase())} fullWidth /><Button disabled={working || !inviteCode.trim()} onClick={joinHousehold}>가족 공간 참여</Button></Stack><Button color="inherit" startIcon={<LogoutRounded />} disabled={working} onClick={logout} sx={{ alignSelf: "flex-start" }}>로그아웃</Button></Stack>
-      : <Stack spacing={1.5} sx={{ mt: 2 }}><Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" gap={1}><Box><Typography fontWeight={900}>{household.name}</Typography><Typography variant="caption" color="text.secondary">권한: {{ owner: "소유자", editor: "편집자", viewer: "보기 전용" }[household.role]} · 마지막 클라우드 갱신 {household.updatedAt ? new Date(household.updatedAt).toLocaleString("ko-KR") : "없음"}</Typography></Box>{household.inviteCode && <Button startIcon={<ContentCopyRounded />} onClick={async () => { await navigator.clipboard.writeText(household.inviteCode); onMessage("가족 공유 코드를 복사했습니다."); }}>공유 코드 {household.inviteCode}</Button>}</Stack><Typography variant="caption" color="text.secondary">백업 대상: 고양이 {care.cats.length}마리 · 사료·간식 {care.foodItems.length}건 · 투약 {care.medicationAdministrations.length}건 · 삶의 질 {care.qualityOfLifeChecks.length}건 · 월간 점검 {care.monthlyChecks.length}건 · 관찰 미디어 {care.observationMedia.length}건 · 건강검진 {care.healthCheckups.length}건 · 병원 검사결과 {care.labReports.length}건 · 원본 자료 {[...care.healthCheckups, ...care.labReports].filter(record => record.originalDocument).length + care.observationMedia.length}개 · 일별 기록 {care.records.length}건</Typography><FormControlLabel control={<Switch checked={autoSync} disabled={household.role === "viewer"} onChange={event => { setAutoSync(event.target.checked); window.localStorage.setItem(AUTO_SYNC_KEY, String(event.target.checked)); }} />} label="변경 후 자동 클라우드 백업" /><Stack direction={{ xs: "column", sm: "row" }} spacing={1}><Button variant="contained" startIcon={<CloudUploadRounded />} disabled={working || household.role === "viewer"} onClick={() => push(true)}>이 기기 기록 백업</Button><Button variant="outlined" startIcon={<CloudDownloadRounded />} disabled={working} onClick={pull}>클라우드 기록 가져오기</Button><Button color="inherit" startIcon={<LogoutRounded />} disabled={working} onClick={logout}>로그아웃</Button></Stack><Alert severity="info">원본 사진·영상은 비공개 Storage에, 기록과 파일 참조 정보는 가족 백업에 저장됩니다. 가족 편집은 마지막 저장 내용이 우선하므로 다른 기기에서 기록하기 전 ‘가져오기’를 눌러 주세요.</Alert></Stack>}
+      : <Stack spacing={1.5} sx={{ mt: 2 }}><Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" gap={1}><Box><Typography fontWeight={900}>{household.name}</Typography><Typography variant="caption" color="text.secondary">권한: {{ owner: "소유자", editor: "편집자", viewer: "보기 전용" }[household.role]} · 마지막 클라우드 갱신 {household.updatedAt ? new Date(household.updatedAt).toLocaleString("ko-KR") : "없음"}</Typography></Box>{household.inviteCode && <Button startIcon={<ContentCopyRounded />} onClick={async () => { await navigator.clipboard.writeText(household.inviteCode); onMessage("가족 공유 코드를 복사했습니다."); }}>공유 코드 {household.inviteCode}</Button>}</Stack><Typography variant="caption" color="text.secondary">백업 대상: 고양이 {care.cats.length}마리 · 사료·간식 {care.foodItems.length}건 · 투약 {care.medicationAdministrations.length}건 · 삶의 질 {care.qualityOfLifeChecks.length}건 · 월간 점검 {care.monthlyChecks.length}건 · 관찰 미디어 {care.observationMedia.length}건 · 건강검진 {care.healthCheckups.length}건 · 병원 검사결과 {care.labReports.length}건 · 원본 자료 {[...care.healthCheckups, ...care.labReports].filter(record => record.originalDocument).length + care.observationMedia.length}개 · 일별 기록 {care.records.length}건</Typography><FormControlLabel control={<Switch checked={autoSync} disabled={household.role === "viewer" || Boolean(remoteConflict)} onChange={event => { setAutoSync(event.target.checked); window.localStorage.setItem(AUTO_SYNC_KEY, String(event.target.checked)); }} />} label="변경 후 자동 클라우드 백업" /><Stack direction={{ xs: "column", sm: "row" }} spacing={1}><Button variant="contained" startIcon={<CloudUploadRounded />} disabled={working || household.role === "viewer" || Boolean(remoteConflict)} onClick={() => push(true)}>이 기기 기록 백업</Button><Button variant="outlined" startIcon={<CloudDownloadRounded />} disabled={working} onClick={pull}>클라우드 기록 가져오기</Button><Button color="inherit" startIcon={<LogoutRounded />} disabled={working} onClick={logout}>로그아웃</Button></Stack><Alert severity="info">원본 사진·영상은 비공개 Storage에 저장됩니다. 가족이 동시에 수정하면 자동 저장을 멈추고 어느 기록을 유지할지 물어보므로 조용히 덮어쓰지 않습니다.</Alert></Stack>}
     </Paper>
   );
 }

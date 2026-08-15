@@ -151,19 +151,6 @@ export function buildCatAlerts(cat: CatProfile, allRecords: DailyRecord[]): Heal
       );
     }
 
-    const unchecked = cat.medications.filter(medication => !todayRecord.medicationChecks[medication.id]);
-    if (unchecked.length) {
-      addAlert(
-        alerts,
-        cat.id,
-        "watch",
-        "오늘 투약 확인 필요",
-        "처방 지시를 확인하고 투약 여부를 기록해 주세요.",
-        `${unchecked.map(item => item.name).join(", ")} 미체크`,
-        "high",
-      );
-    }
-
     if (todayRecord.appetite === "none") {
       addAlert(
         alerts,
