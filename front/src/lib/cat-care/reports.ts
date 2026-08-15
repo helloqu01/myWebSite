@@ -321,8 +321,6 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
   <div class="table-wrap"><table><thead><tr><th>종류</th><th>브랜드</th><th>제품명</th><th>급여 기간</th><th>하루 목표</th><th>남은 재고</th><th>개봉/유통기한</th><th>보증성분</th><th>사용 원재료</th><th>라벨</th><th>메모</th></tr></thead><tbody>${foodRows || '<tr><td colspan="11">등록된 사료·간식 급여 이력이 없습니다.</td></tr>'}</tbody></table></div>
   <h2>투약 상세 이력</h2>
   <div class="table-wrap"><table><thead><tr><th>날짜</th><th>약</th><th>결과</th><th>예정/실제 시각</th><th>용량</th><th>투약자</th><th>이상 반응</th><th>메모</th></tr></thead><tbody>${medicationRows || '<tr><td colspan="8">해당 기간에 투약 상세 기록이 없습니다.</td></tr>'}</tbody></table></div>
-  <h2>삶의 질 점수</h2>
-  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>총점</th><th>식욕</th><th>편안함</th><th>청결</th><th>이동</th><th>교감</th><th>수면</th><th>메모</th></tr></thead><tbody>${qualityRows || '<tr><td colspan="9">해당 기간에 삶의 질 평가가 없습니다.</td></tr>'}</tbody></table></div>
   <h2>통증·행동·증상 사진/영상</h2>
   ${observationRows || "<p>해당 기간에 저장된 관찰 사진·영상이 없습니다.</p>"}
   <h2>건강검진·진료 이력</h2>
@@ -333,8 +331,11 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
   <h2>검사 수치 상세</h2>
   <div class="table-wrap"><table><thead><tr><th>검사일</th><th>병원</th><th>항목</th><th>결과</th><th>검사표 기준범위</th><th>표시</th></tr></thead><tbody>${labRows || '<tr><td colspan="6">해당 기간에 저장된 수치형 검사결과가 없습니다.</td></tr>'}</tbody></table></div>
   ${examinationOcrBlocks ? `<h2>검사 문서 OCR 원문</h2>${examinationOcrBlocks}` : ""}
-  <h2>주간 노묘 상태 체크</h2>
+  <h2>주간 건강·삶의 질 체크</h2>
+  <h3>체중·생활 상태</h3>
   <div class="table-wrap"><table><thead><tr><th>날짜</th><th>체중</th><th>이동</th><th>그루밍</th><th>수면</th><th>상호작용</th><th>화장실</th><th>통증</th><th>구체 행동</th><th>BCS/MCS</th><th>혈압</th><th>메모</th></tr></thead><tbody>${weeklyRows || '<tr><td colspan="12">해당 기간에 주간 체크 기록이 없습니다.</td></tr>'}</tbody></table></div>
+  <h3>삶의 질 점수</h3>
+  <div class="table-wrap"><table><thead><tr><th>날짜</th><th>총점</th><th>식욕</th><th>편안함</th><th>청결</th><th>이동</th><th>교감</th><th>수면</th><th>메모</th></tr></thead><tbody>${qualityRows || '<tr><td colspan="9">해당 기간에 삶의 질 평가가 없습니다.</td></tr>'}</tbody></table></div>
   <h2>일별 상세 기록</h2>
   <div class="table-wrap"><table><thead><tr><th>날짜</th><th>물 마심</th><th>소변</th><th>대변</th><th>식욕</th><th>체중</th><th>투약</th><th>시간별 물·식사·배변·발작</th><th>이상 징후</th><th>메모</th></tr></thead><tbody>${recordRows || '<tr><td colspan="10">해당 기간에 기록이 없습니다.</td></tr>'}</tbody></table></div>
   <div class="notice"><strong>안내:</strong> 이 리포트는 보호자가 입력한 관찰 기록을 정리한 자료이며 수의사의 진단을 대신하지 않습니다.</div>

@@ -103,11 +103,11 @@ export function buildCareReminders(care: CareState, now = new Date()): CareRemin
     if (!latest || latest.date < datePlus(now, -7)) {
       reminders.push({
         id: `weekly-${cat.id}-${today}`,
-        title: `${cat.name} 주간 체크·체중 측정 필요`,
-        detail: latest ? `마지막 주간 체크는 ${latest.date}입니다.` : "아직 주간 상태·체중 기록이 없습니다.",
+        title: `${cat.name} 주간 건강·삶의 질 체크 필요`,
+        detail: latest ? `마지막 통합 주간 체크는 ${latest.date}입니다.` : "아직 주간 상태·체중·삶의 질 기록이 없습니다.",
         severity: "info",
         action: "weekly_check",
-        actionLabel: "체중·상태 기록",
+        actionLabel: "통합 주간 체크",
         notifyNow: true,
         catId: cat.id,
         targetDate: today,
@@ -116,19 +116,6 @@ export function buildCareReminders(care: CareState, now = new Date()): CareRemin
 
     const qualityChecks = care.qualityOfLifeChecks.filter(check => check.catId === cat.id).sort((a, b) => b.date.localeCompare(a.date));
     const latestQuality = qualityChecks[0];
-    if (!latestQuality || latestQuality.date < datePlus(now, -7)) {
-      reminders.push({
-        id: `quality-due-${cat.id}-${today}`,
-        title: `${cat.name} 삶의 질 평가 필요`,
-        detail: latestQuality ? `마지막 평가는 ${latestQuality.date}입니다.` : "아직 삶의 질 평가 기록이 없습니다.",
-        severity: "info",
-        action: "quality_of_life",
-        actionLabel: "오늘 평가",
-        notifyNow: true,
-        catId: cat.id,
-        targetDate: today,
-      });
-    }
     if (latestQuality) {
       const latestScore = qualityScore(latestQuality);
       const previousScore = qualityChecks[1] ? qualityScore(qualityChecks[1]) : null;
@@ -138,8 +125,8 @@ export function buildCareReminders(care: CareState, now = new Date()): CareRemin
           title: `${cat.name} 삶의 질 점수 변화`,
           detail: `최근 점수 ${latestScore}점${previousScore != null ? ` · 이전 ${previousScore}점` : ""}. 변화 항목을 확인해 주세요.`,
           severity: latestScore < 35 ? "error" : "warning",
-          action: "quality_of_life",
-          actionLabel: "평가 확인",
+          action: "weekly_check",
+          actionLabel: "통합 체크 확인",
           notifyNow: true,
           catId: cat.id,
         });

@@ -46,7 +46,6 @@ interface DailyDraft {
   waterCount: string;
   urineCount: string;
   stoolCount: string;
-  weightKg: string;
   appetite: AppetiteLevel;
   confidence: MeasurementConfidence;
   notes: string;
@@ -115,7 +114,6 @@ function dailyDraft(record?: DailyRecord): DailyDraft {
     waterCount: record?.waterCount?.toString() ?? "",
     urineCount: record?.urineCount?.toString() ?? "",
     stoolCount: record?.stoolCount?.toString() ?? "",
-    weightKg: record?.weightKg?.toString() ?? "",
     appetite: record?.appetite ?? "normal",
     confidence: record?.measurementConfidence ?? "high",
     notes: record?.notes ?? "",
@@ -343,7 +341,6 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
           : Math.max(enteredStoolCount, stoolFromEvents),
         stoolAmount: lastStoolSize || base.stoolAmount,
         appetite: draft.appetite,
-        weightKg: nullableNumber(draft.weightKg),
         measurementConfidence: draft.confidence,
         collapseOrSeizure: base.collapseOrSeizure || events.some(event => event.type === "seizure"),
         timedEvents: events.sort((a, b) => a.time.localeCompare(b.time)),
@@ -389,12 +386,11 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
                 {existing && <Chip size="small" color="success" variant="outlined" label="저장된 기록" />}
                 {changed && <Chip size="small" color="primary" label="수정됨" />}
               </Stack>
-              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" }, gap: 1.25 }}>
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" }, gap: 1.25 }}>
                 <TextField label="물 마심(회)" type="number" size="small" value={draft.waterCount} onChange={event => updateDraft(cat.id, "waterCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} helperText={summary?.eventWaterCount ? `시간 행 ${summary.eventWaterCount}회 반영` : undefined} />
                 <TextField label="식사(회)" type="number" size="small" value={summary?.mealCount ?? 0} slotProps={{ htmlInput: { readOnly: true, min: 0, step: 1 } }} helperText={summary?.mealCount ? "시간 행 자동 집계" : "행에서 자동 집계"} />
                 <TextField label="소변(회)" type="number" size="small" value={draft.urineCount} onChange={event => updateDraft(cat.id, "urineCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} helperText={summary?.eventUrineCount ? `시간 행 ${summary.eventUrineCount}회 반영` : undefined} />
                 <TextField label="대변(회)" type="number" size="small" value={draft.stoolCount} onChange={event => updateDraft(cat.id, "stoolCount", event.target.value)} slotProps={{ htmlInput: { min: 0, step: 1 } }} helperText={summary?.eventStoolCount ? `시간 행 ${summary.eventStoolCount}회 반영` : undefined} />
-                <TextField label="체중(kg)" type="number" size="small" value={draft.weightKg} onChange={event => updateDraft(cat.id, "weightKg", event.target.value)} slotProps={{ htmlInput: { min: 0.3, max: 30, step: 0.01 } }} />
                 <TextField select label="식욕" size="small" value={draft.appetite} onChange={event => updateDraft(cat.id, "appetite", event.target.value as AppetiteLevel)}>{Object.entries(appetiteLabels).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>
                 <TextField select label="기록 신뢰도" size="small" value={draft.confidence} onChange={event => updateDraft(cat.id, "confidence", event.target.value as MeasurementConfidence)}>{Object.entries(confidenceLabels).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>
                 <TextField label="하루 메모" size="small" value={draft.notes} onChange={event => updateDraft(cat.id, "notes", event.target.value)} placeholder="구토, 활동성, 특이사항" multiline minRows={2} sx={{ gridColumn: "1 / -1" }} />

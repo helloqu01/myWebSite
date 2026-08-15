@@ -48,7 +48,6 @@ import MedicationLogPanel from "@/components/senior-cat/MedicationLogPanel";
 import MultiCatEventLogger from "@/components/senior-cat/MultiCatEventLogger";
 import MultiCatHealthDashboard from "@/components/senior-cat/MultiCatHealthDashboard";
 import ObservationMediaPanel from "@/components/senior-cat/ObservationMediaPanel";
-import QualityOfLifePanel from "@/components/senior-cat/QualityOfLifePanel";
 import TrendCharts from "@/components/senior-cat/TrendCharts";
 import WeeklyWellnessPanel from "@/components/senior-cat/WeeklyWellnessPanel";
 import type {
@@ -266,7 +265,6 @@ export default function SeniorCatPage() {
   const [reportRange, setReportRange] = useState<7 | 30 | 90>(30);
   const [foodDialogRequest, setFoodDialogRequest] = useState(0);
   const [medicationDialogRequest, setMedicationDialogRequest] = useState(0);
-  const [qualityDialogRequest, setQualityDialogRequest] = useState(0);
   const [weeklyDialogRequest, setWeeklyDialogRequest] = useState(0);
   const [message, setMessage] = useState("");
 
@@ -543,16 +541,6 @@ export default function SeniorCatPage() {
     setMessage("투약 기록을 삭제하고 재고·일정을 되돌렸습니다.");
   };
 
-  const saveQualityOfLifeCheck = (check: QualityOfLifeCheck) => {
-    setCare(current => ({
-      ...current,
-      qualityOfLifeChecks: current.qualityOfLifeChecks.some(item => item.catId === check.catId && item.date === check.date)
-        ? current.qualityOfLifeChecks.map(item => item.catId === check.catId && item.date === check.date ? { ...check, id: item.id } : item)
-        : [...current.qualityOfLifeChecks, check],
-    }));
-    setMessage(`${formatDate(check.date)} 삶의 질 평가를 저장했습니다.`);
-  };
-
   const saveObservationMedia = (record: ObservationMediaRecord) => {
     setCare(current => ({ ...current, observationMedia: [...current.observationMedia, record] }));
     setMessage("관찰 사진·영상을 비공개 저장했습니다.");
@@ -663,12 +651,15 @@ export default function SeniorCatPage() {
     setMessage("건강검진·진료 기록을 삭제했습니다.");
   };
 
-  const saveWeeklyCheck = (check: WeeklyWellnessCheck) => {
+  const saveWeeklyCheck = (check: WeeklyWellnessCheck, qualityCheck: QualityOfLifeCheck) => {
     setCare(current => {
       const weeklyChecks = current.weeklyChecks.some(item => item.catId === check.catId && item.date === check.date)
         ? current.weeklyChecks.map(item => item.catId === check.catId && item.date === check.date ? { ...check, id: item.id } : item)
         : [...current.weeklyChecks, check];
-      if (check.weightKg == null) return { ...current, weeklyChecks };
+      const qualityOfLifeChecks = current.qualityOfLifeChecks.some(item => item.catId === qualityCheck.catId && item.date === qualityCheck.date)
+        ? current.qualityOfLifeChecks.map(item => item.catId === qualityCheck.catId && item.date === qualityCheck.date ? { ...qualityCheck, id: item.id } : item)
+        : [...current.qualityOfLifeChecks, qualityCheck];
+      if (check.weightKg == null) return { ...current, weeklyChecks, qualityOfLifeChecks };
 
       const existingRecord = current.records.find(record => record.catId === check.catId && record.date === check.date);
       const cat = current.cats.find(item => item.id === check.catId);
@@ -709,13 +700,14 @@ export default function SeniorCatPage() {
       return {
         ...current,
         weeklyChecks,
+        qualityOfLifeChecks,
         records,
         cats: current.cats.map(item => item.id === check.catId
           ? { ...item, currentWeightKg: latestWeight?.weightKg ?? item.currentWeightKg, updatedAt: check.updatedAt }
           : item),
       };
     });
-    setMessage(`${formatDate(check.date)} 주간 상태${check.weightKg != null ? `와 체중 ${check.weightKg}kg을` : "를"} 저장했습니다.`);
+    setMessage(`${formatDate(check.date)} 주간 건강·삶의 질${check.weightKg != null ? `과 체중 ${check.weightKg}kg을` : "을"} 함께 저장했습니다.`);
   };
 
   const saveLitterRecord = (record: HouseholdLitterRecord) => {
@@ -766,7 +758,7 @@ export default function SeniorCatPage() {
       setFoodDialogRequest(current => current + 1);
     }
     if (reminder.action === "medication_log") setMedicationDialogRequest(current => current + 1);
-    if (reminder.action === "quality_of_life") setQualityDialogRequest(current => current + 1);
+    if (reminder.action === "quality_of_life") setWeeklyDialogRequest(current => current + 1);
     if (reminder.action === "weekly_check") setWeeklyDialogRequest(current => current + 1);
 
     const targetId = {
@@ -776,7 +768,7 @@ export default function SeniorCatPage() {
       medication_stock: "medication-stock-section",
       food_history: "food-history-section",
       medication_log: "medication-log-section",
-      quality_of_life: "quality-of-life-section",
+      quality_of_life: "weekly-care-section",
     }[reminder.action];
     window.setTimeout(() => {
       document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -799,7 +791,6 @@ export default function SeniorCatPage() {
     setProfileDialogOpen(false);
     setFoodDialogRequest(0);
     setMedicationDialogRequest(0);
-    setQualityDialogRequest(0);
     setWeeklyDialogRequest(0);
   };
 
@@ -1121,7 +1112,7 @@ export default function SeniorCatPage() {
                     }}
                   >
                     <Box id="weekly-care-section" sx={{ scrollMarginTop: 96 }}>
-                      <WeeklyWellnessPanel cat={selectedCat} checks={care.weeklyChecks} openRequestKey={weeklyDialogRequest} onSave={saveWeeklyCheck} />
+                      <WeeklyWellnessPanel cat={selectedCat} checks={care.weeklyChecks} qualityChecks={care.qualityOfLifeChecks} openRequestKey={weeklyDialogRequest} onSave={saveWeeklyCheck} />
                     </Box>
                     <EmergencyCardPanel
                       cat={selectedCat}
@@ -1132,15 +1123,7 @@ export default function SeniorCatPage() {
                     />
                   </Box>
 
-                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", xl: "repeat(2, minmax(0, 1fr))" }, gap: 3, mb: 3 }}>
-                    <Box id="quality-of-life-section" sx={{ scrollMarginTop: 96 }}>
-                      <QualityOfLifePanel
-                        cat={selectedCat}
-                        checks={care.qualityOfLifeChecks}
-                        openRequestKey={qualityDialogRequest}
-                        onSave={saveQualityOfLifeCheck}
-                      />
-                    </Box>
+                  <Box sx={{ mb: 3 }}>
                     <ObservationMediaPanel
                       cat={selectedCat}
                       records={care.observationMedia}
