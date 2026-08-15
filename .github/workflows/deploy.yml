@@ -110,6 +110,25 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region:            ${{ secrets.AWS_REGION }}
 
+      - name: Validate API deployment secrets
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: |
+          missing=()
+          for secret_name in SMTP_USER SMTP_PASS EMAIL_FROM EMAIL_TO; do
+            if [[ -z "${!secret_name:-}" ]]; then
+              missing+=("$secret_name")
+            fi
+          done
+
+          if (( ${#missing[@]} > 0 )); then
+            printf '::error::Required GitHub Actions secret is missing: %s\n' "${missing[@]}"
+            exit 1
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
@@ -146,6 +165,11 @@ jobs:
 
       - name: Deploy with SAM
         working-directory: back
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
         run: |
           sam deploy \
             --template-file packaged.yaml \
@@ -154,8 +178,8 @@ jobs:
             --no-fail-on-empty-changeset \
             --capabilities CAPABILITY_IAM \
             --parameter-overrides \
-              AllowedOrigin=https://codingbyohj.com \
-              SmtpUser='${{ secrets.SMTP_USER }}' \
-              SmtpPass='${{ secrets.SMTP_PASS }}' \
-              EmailFrom='${{ secrets.EMAIL_FROM }}' \
-              EmailTo='${{ secrets.EMAIL_TO }}'
+              "AllowedOrigin=https://codingbyohj.com" \
+              "SmtpUser=${SMTP_USER}" \
+              "SmtpPass=${SMTP_PASS}" \
+              "EmailFrom=${EMAIL_FROM}" \
+              "EmailTo=${EMAIL_TO}"
