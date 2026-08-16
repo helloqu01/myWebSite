@@ -14,8 +14,18 @@ export interface MedicalImportGroup<T extends MedicalImportFileLike = MedicalImp
   type: ExaminationType;
   title: string;
   files: T[];
+  dateSource: MedicalImportDateSource;
+  detectedTimes: string[];
   needsDateReview: boolean;
   needsTypeReview: boolean;
+}
+
+export type MedicalImportDateSource = "filename" | "folder" | "same_folder" | "ocr" | "manual" | "fallback";
+
+export interface MedicalFileDateDetection {
+  date: string;
+  time: string | null;
+  source: "filename" | "folder";
 }
 
 export interface MedicalImportPlan<T extends MedicalImportFileLike = MedicalImportFileLike> {
@@ -46,17 +56,44 @@ function validDate(year: number, month: number, day: number): string | null {
   return `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
 }
 
-export function detectMedicalFileDate(path: string): string | null {
-  const normalized = path.normalize("NFC");
-  const timestampMatches = normalized.match(/20\d{12}/g) ?? [];
-  for (const timestamp of timestampMatches) {
-    const date = validDate(Number(timestamp.slice(0, 4)), Number(timestamp.slice(4, 6)), Number(timestamp.slice(6, 8)));
-    if (date) return date;
+function dateFromCompactText(text: string): { date: string; time: string | null } | null {
+  const matches = [...text.matchAll(/(?:^|\D)(20\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])(?:([01]\d|2[0-3])([0-5]\d)([0-5]\d))?(?=\D|$)/g)];
+  for (const match of matches) {
+    const date = validDate(Number(match[1]), Number(match[2]), Number(match[3]));
+    if (!date) continue;
+    const time = match[4] ? `${match[4]}:${match[5]}:${match[6]}` : null;
+    return { date, time };
   }
+  return null;
+}
+
+function dateFromSeparatedText(text: string): { date: string; time: string | null } | null {
+  const match = text.match(/(?:^|\D)(20\d{2})[.\/_-](0?[1-9]|1[0-2])[.\/_-](0?[1-9]|[12]\d|3[01])(?:[T_\s-]([01]?\d|2[0-3])[:._-]?([0-5]\d)(?:[:._-]?([0-5]\d))?)?(?=\D|$)/);
+  if (!match) return null;
+  const date = validDate(Number(match[1]), Number(match[2]), Number(match[3]));
+  if (!date) return null;
+  const time = match[4] ? `${match[4].padStart(2, "0")}:${match[5]}:${match[6] ?? "00"}` : null;
+  return { date, time };
+}
+
+export function detectMedicalFileDateInfo(path: string): MedicalFileDateDetection | null {
+  const normalized = path.normalize("NFC");
+  const fileName = normalized.split("/").at(-1) ?? normalized;
+  const fileNameDate = dateFromCompactText(fileName) ?? dateFromSeparatedText(fileName);
+  if (fileNameDate) return { ...fileNameDate, source: "filename" };
+
+  const pathDate = dateFromCompactText(normalized) ?? dateFromSeparatedText(normalized);
+  if (pathDate) return { ...pathDate, source: "folder" };
+
   const korean = normalized.match(/(?:^|[/\s])(\d{2}|20\d{2})년\s*(\d{1,2})월\s*(\d{1,2})일/);
   if (!korean) return null;
   const year = korean[1].length === 2 ? 2000 + Number(korean[1]) : Number(korean[1]);
-  return validDate(year, Number(korean[2]), Number(korean[3]));
+  const date = validDate(year, Number(korean[2]), Number(korean[3]));
+  return date ? { date, time: null, source: "folder" } : null;
+}
+
+export function detectMedicalFileDate(path: string): string | null {
+  return detectMedicalFileDateInfo(path)?.date ?? null;
 }
 
 export function detectMedicalFileType(path: string, mimeType = ""): ExaminationType {
@@ -109,26 +146,29 @@ export function planMedicalImport<T extends MedicalImportFileLike>(
 
   const detectedDirectoryDates = new Map<string, Set<string>>();
   for (const file of supported) {
-    const date = detectMedicalFileDate(filePath(file));
-    if (!date) continue;
+    const detected = detectMedicalFileDateInfo(filePath(file));
+    if (!detected) continue;
     const dates = detectedDirectoryDates.get(directoryOf(file)) ?? new Set<string>();
-    dates.add(date);
+    dates.add(detected.date);
     detectedDirectoryDates.set(directoryOf(file), dates);
   }
 
   const grouped = new Map<string, MedicalImportGroup<T>>();
   for (const file of supported) {
     const path = filePath(file);
-    const directDate = detectMedicalFileDate(path);
+    const direct = detectMedicalFileDateInfo(path);
     const directoryDates = detectedDirectoryDates.get(directoryOf(file));
     const inheritedDate = directoryDates?.size === 1 ? [...directoryDates][0] : null;
-    const date = directDate || inheritedDate || fallbackDate;
+    const date = direct?.date || inheritedDate || fallbackDate;
     const type = detectMedicalFileType(path, file.type);
     const key = `${date}|${type}`;
     const existing = grouped.get(key);
     if (existing) {
       existing.files.push(file);
-      existing.needsDateReview ||= !directDate && !inheritedDate;
+      if (direct?.time && !existing.detectedTimes.includes(direct.time)) existing.detectedTimes.push(direct.time);
+      if (direct?.source === "filename") existing.dateSource = "filename";
+      else if (direct?.source === "folder" && existing.dateSource !== "filename") existing.dateSource = "folder";
+      existing.needsDateReview ||= !direct && !inheritedDate;
       continue;
     }
     grouped.set(key, {
@@ -137,7 +177,9 @@ export function planMedicalImport<T extends MedicalImportFileLike>(
       type,
       title: IMPORT_EXAMINATION_LABELS[type],
       files: [file],
-      needsDateReview: !directDate && !inheritedDate,
+      dateSource: direct?.source ?? (inheritedDate ? "same_folder" : "fallback"),
+      detectedTimes: direct?.time ? [direct.time] : [],
+      needsDateReview: !direct && !inheritedDate,
       needsTypeReview: type === "other",
     });
   }

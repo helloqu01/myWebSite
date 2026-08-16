@@ -104,4 +104,18 @@ describe("analyzeVeterinaryConcerns", () => {
     const analysis = analyzeVeterinaryConcerns(cat, [], [report("2026-08-16", [item("CREA", "normal", 1.2), item("GLU", "normal", 100)])]);
     expect(analysis.concerns).toEqual([]);
   });
+
+  it("analyzes the selected historical date without leaking newer or older values", () => {
+    const reports = [
+      report("2025-06-07", [item("GLU", "high", 220)]),
+      report("2026-08-16", [item("GLU", "normal", 100)]),
+    ];
+
+    const historical = analyzeVeterinaryConcerns(cat, [], reports, "2025-06-07");
+    const latest = analyzeVeterinaryConcerns(cat, [], reports);
+
+    expect(historical).toMatchObject({ labDate: "2025-06-07", reportCount: 1 });
+    expect(historical.concerns.some(value => value.id === "diabetes")).toBe(true);
+    expect(latest).toMatchObject({ labDate: "2026-08-16", reportCount: 1, concerns: [] });
+  });
 });

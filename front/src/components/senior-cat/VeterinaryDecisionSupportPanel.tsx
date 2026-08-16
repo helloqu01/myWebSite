@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Accordion,
   AccordionDetails,
@@ -8,8 +8,12 @@ import {
   Alert,
   Box,
   Chip,
+  FormControl,
+  InputLabel,
   Link,
+  MenuItem,
   Paper,
+  Select,
   Stack,
   Typography,
 } from "@mui/material";
@@ -35,7 +39,22 @@ const levelStyle: Record<VeterinaryConcernLevel, { label: string; color: "defaul
 const confidenceLabel = { low: "근거 제한적", medium: "근거 보통", high: "근거 여러 개" } as const;
 
 export default function VeterinaryDecisionSupportPanel({ cat, records, reports }: VeterinaryDecisionSupportPanelProps) {
-  const analysis = useMemo(() => analyzeVeterinaryConcerns(cat, records, reports), [cat, records, reports]);
+  const analysisDates = useMemo(() => {
+    const counts = new Map<string, number>();
+    reports
+      .filter(report => report.catId === cat.id && (report.items.length > 0 || report.findings.trim() || report.interpretation.trim()))
+      .forEach(report => counts.set(report.date, (counts.get(report.date) ?? 0) + 1));
+    return [...counts.entries()].sort(([a], [b]) => b.localeCompare(a));
+  }, [cat.id, reports]);
+  const latestDate = analysisDates[0]?.[0] ?? "";
+  const [selectedDate, setSelectedDate] = useState(latestDate);
+  const activeDate = analysisDates.some(([date]) => date === selectedDate) ? selectedDate : latestDate;
+
+  useEffect(() => {
+    setSelectedDate(latestDate);
+  }, [cat.id, latestDate]);
+
+  const analysis = useMemo(() => analyzeVeterinaryConcerns(cat, records, reports, activeDate || undefined), [activeDate, cat, records, reports]);
   const urgentCount = analysis.concerns.filter(concern => concern.level === "urgent").length;
 
   return (
@@ -47,11 +66,23 @@ export default function VeterinaryDecisionSupportPanel({ cat, records, reports }
             <Typography variant="h6" fontWeight={900}>수의학적 확인 포인트</Typography>
           </Stack>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            최신 검사 수치와 검사일 전후 7일의 일상 기록을 함께 보고, 주치의에게 확인할 가능성과 예상 증상을 정리합니다.
+            선택한 검사일의 수치와 전후 7일의 일상 기록을 함께 보고, 주치의에게 확인할 가능성과 예상 증상을 정리합니다.
           </Typography>
         </Box>
         <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap alignItems="center">
-          {analysis.labDate && <Chip size="small" variant="outlined" label={`기준 검사일 ${analysis.labDate}`} />}
+          {analysisDates.length > 0 && (
+            <FormControl size="small" sx={{ minWidth: 178 }}>
+              <InputLabel id={`veterinary-analysis-date-${cat.id}`}>분석 검사일</InputLabel>
+              <Select
+                labelId={`veterinary-analysis-date-${cat.id}`}
+                label="분석 검사일"
+                value={activeDate}
+                onChange={event => setSelectedDate(event.target.value)}
+              >
+                {analysisDates.map(([date, count]) => <MenuItem key={date} value={date}>{date} ({count}건)</MenuItem>)}
+              </Select>
+            </FormControl>
+          )}
           <Chip size="small" color={urgentCount ? "error" : analysis.concerns.length ? "warning" : "success"} label={urgentCount ? `응급 신호 ${urgentCount}개` : analysis.concerns.length ? `확인 포인트 ${analysis.concerns.length}개` : "자동 의심 소견 없음"} />
         </Stack>
       </Stack>
@@ -62,10 +93,16 @@ export default function VeterinaryDecisionSupportPanel({ cat, records, reports }
           : "이 결과는 진단이나 처방이 아닙니다. OCR 오류, 검사실별 기준범위, 수분 상태와 병원 스트레스에 따라 달라질 수 있으므로 원본과 주치의 판단이 우선입니다."}
       </Alert>
 
+      {analysis.labDate && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          폴더 가져오기에서 파일명·폴더명으로 확인한 날짜도 검사일 목록에 포함됩니다. 현재 {analysis.labDate} 검사 {analysis.reportCount}건만 수치 분석에 사용하며, 이전 검사는 반복 여부만 확인합니다.
+        </Alert>
+      )}
+
       {!analysis.labDate ? (
         <Typography color="text.secondary" sx={{ py: 3, textAlign: "center" }}>기준범위가 포함된 검사 수치를 저장하면 수의학적 확인 포인트가 표시됩니다.</Typography>
       ) : !analysis.concerns.length ? (
-        <Alert severity="info">최신 검사에서 현재 규칙에 해당하는 조합을 찾지 못했습니다. 질환이 없다는 뜻은 아니며, 판독 소견과 신체검사도 함께 확인해야 합니다.</Alert>
+        <Alert severity="info">선택한 날짜의 검사에서 현재 규칙에 해당하는 조합을 찾지 못했습니다. 질환이 없다는 뜻은 아니며, 판독 소견과 신체검사도 함께 확인해야 합니다.</Alert>
       ) : (
         <Stack spacing={1.25}>
           {analysis.concerns.map((concern, index) => (

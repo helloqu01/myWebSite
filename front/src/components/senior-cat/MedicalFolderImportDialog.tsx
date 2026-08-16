@@ -28,6 +28,7 @@ import type { CatProfile, ExaminationType, LabReport, LabResultItem } from "@/ty
 import {
   IMPORT_EXAMINATION_LABELS,
   planMedicalImport,
+  type MedicalImportDateSource,
   type MedicalImportGroup,
 } from "@/lib/cat-care/medical-import";
 import {
@@ -68,6 +69,22 @@ const EMPTY_ANALYSIS: GroupAnalysis = {
   confirmed: false,
   error: "",
 };
+
+const dateSourceLabels: Record<MedicalImportDateSource, string> = {
+  filename: "파일명 날짜",
+  folder: "폴더명 날짜",
+  same_folder: "같은 폴더 날짜",
+  ocr: "문서 내용 날짜",
+  manual: "직접 확인한 날짜",
+  fallback: "임시 날짜",
+};
+
+function detectedTimeLabel(times: string[]): string {
+  const sorted = [...times].sort();
+  if (!sorted.length) return "";
+  if (sorted.length === 1) return `촬영 시각 ${sorted[0]}`;
+  return `촬영 시각 ${sorted[0]}~${sorted.at(-1)}`;
+}
 
 function bytesLabel(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))}KB`;
@@ -171,7 +188,7 @@ export default function MedicalFolderImportDialog({ cat, reports, onSave }: Medi
       const detectedDate = parseMedicalChartText(rawText).date;
       if (group.needsDateReview && detectedDate) {
         setGroups(current => current.map(candidate => candidate.id === group.id
-          ? { ...candidate, date: detectedDate, needsDateReview: false }
+          ? { ...candidate, date: detectedDate, dateSource: "ocr", needsDateReview: false }
           : candidate));
       }
       setAnalyses(current => ({
@@ -235,6 +252,7 @@ export default function MedicalFolderImportDialog({ cat, reports, onSave }: Medi
           },
         });
         const analysis = analyses[group.id] ?? EMPTY_ANALYSIS;
+        const dateNote = `${dateSourceLabels[group.dateSource]} ${group.date}${group.detectedTimes.length ? ` · ${detectedTimeLabel(group.detectedTimes)}` : ""}`;
         const now = new Date().toISOString();
         onSave({
           id: reportId,
@@ -251,7 +269,7 @@ export default function MedicalFolderImportDialog({ cat, reports, onSave }: Medi
           findings: "",
           interpretation: "",
           recommendations: "",
-          notes: "폴더에서 자동 분류한 기록입니다. 검사일·종류와 병원 판독 내용을 확인해 주세요.",
+          notes: `폴더에서 자동 분류한 기록입니다. ${dateNote}. 검사일·종류와 병원 판독 내용을 확인해 주세요.`,
           createdAt: now,
           updatedAt: now,
         });
@@ -307,7 +325,7 @@ export default function MedicalFolderImportDialog({ cat, reports, onSave }: Medi
                 <Box key={group.id} sx={{ p: 2, border: "1px solid", borderColor: group.needsDateReview || group.needsTypeReview ? "warning.main" : "divider", borderRadius: 3 }}>
                   <Stack direction="row" justifyContent="space-between" gap={1} alignItems="flex-start">
                     <Stack direction={{ xs: "column", md: "row" }} spacing={1.25} sx={{ flex: 1 }}>
-                      <TextField label="검사일" type="date" size="small" value={group.date} onChange={event => { updateGroup(group.id, "date", event.target.value); updateGroup(group.id, "needsDateReview", false); }} slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 160 }} />
+                      <TextField label="검사일" type="date" size="small" value={group.date} onChange={event => { updateGroup(group.id, "date", event.target.value); updateGroup(group.id, "dateSource", "manual"); updateGroup(group.id, "needsDateReview", false); }} slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 160 }} />
                       <TextField select label="검사 종류" size="small" value={group.type} onChange={event => {
                         const nextType = event.target.value as ExaminationType;
                         updateGroup(group.id, "type", nextType);
@@ -322,6 +340,8 @@ export default function MedicalFolderImportDialog({ cat, reports, onSave }: Medi
                   </Stack>
                   <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
                     <Chip size="small" color="primary" variant="outlined" label={`원본 ${group.files.length}개`} />
+                    <Chip size="small" color={group.dateSource === "fallback" ? "warning" : "success"} variant="outlined" label={dateSourceLabels[group.dateSource]} />
+                    {group.detectedTimes.length > 0 && <Chip size="small" variant="outlined" label={detectedTimeLabel(group.detectedTimes)} />}
                     {group.needsDateReview && <Chip size="small" color="warning" label="날짜 확인 필요" />}
                     {group.needsTypeReview && <Chip size="small" color="warning" label="종류 확인 필요" />}
                     {group.files.some(file => file.type === "application/pdf") && <Chip size="small" icon={<PictureAsPdfRounded />} color="error" variant="outlined" label="PDF 포함" />}

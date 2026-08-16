@@ -133,13 +133,21 @@ export function analyzeVeterinaryConcerns(
   cat: CatProfile,
   allRecords: DailyRecord[],
   allReports: LabReport[],
+  requestedDate?: string,
 ): VeterinaryAnalysis {
-  const reports = allReports.filter(report => report.catId === cat.id && report.items.length > 0);
-  const labDate = reports.reduce<string | null>((latest, report) => !latest || report.date > latest ? report.date : latest, null);
+  const reports = allReports.filter(report =>
+    report.catId === cat.id
+    && (report.items.length > 0 || report.findings.trim().length > 0 || report.interpretation.trim().length > 0),
+  );
+  const requestedDateExists = requestedDate && reports.some(report => report.date === requestedDate);
+  const labDate = requestedDateExists
+    ? requestedDate
+    : reports.reduce<string | null>((latest, report) => !latest || report.date > latest ? report.date : latest, null);
   if (!labDate) return { labDate: null, reportCount: 0, concerns: [] };
 
-  const relevantReports = reports.filter(report => report.date <= labDate).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
-  const located = latestItems(relevantReports);
+  const dayReports = reports.filter(report => report.date === labDate);
+  const historicalReports = reports.filter(report => report.date <= labDate).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 16);
+  const located = latestItems(dayReports);
   const context = dailyContext(allRecords.filter(record => record.catId === cat.id), labDate);
   const concerns: VeterinaryConcern[] = [];
 
@@ -147,7 +155,7 @@ export function analyzeVeterinaryConcerns(
   const kidneySupport = [abnormal(located, "USG", "low"), abnormal(located, "UPC", "high"), abnormal(located, "PHOS", "high")].filter((value): value is LocatedItem => value != null);
   if (kidneyHigh.length || kidneySupport.length) {
     const matchedSigns = signs(context.matched, ["물 마시는 횟수 증가", "소변 횟수 증가", "체중 감소", "식욕 저하", "구토", "활동성 감소·무기력"]);
-    const repeated = hasRepeatedFlag(relevantReports, ["CREA", "SDMA", "BUN", "USG", "UPC"], kidneyHigh.length ? "high" : "low");
+    const repeated = hasRepeatedFlag(historicalReports, ["CREA", "SDMA", "BUN", "USG", "UPC"], kidneyHigh.length ? "high" : "low");
     const score = kidneyHigh.length + kidneySupport.length + matchedSigns.length + (repeated ? 2 : 0);
     concerns.push({
       id: "kidney",
@@ -193,7 +201,7 @@ export function analyzeVeterinaryConcerns(
   const t4 = abnormal(located, "T4", "high");
   if (t4) {
     const matchedSigns = signs(context.matched, ["체중 감소", "물 마시는 횟수 증가", "소변 횟수 증가", "구토", "울음 증가", "활동성 감소·무기력"]);
-    const score = 2 + matchedSigns.length + (hasRepeatedFlag(relevantReports, ["T4"], "high") ? 2 : 0);
+    const score = 2 + matchedSigns.length + (hasRepeatedFlag(historicalReports, ["T4"], "high") ? 2 : 0);
     concerns.push({
       id: "thyroid",
       category: "thyroid",
@@ -214,7 +222,7 @@ export function analyzeVeterinaryConcerns(
   const anemiaMarkers = abnormalMany(located, ["HCT", "HGB", "RBC"], "low");
   if (anemiaMarkers.length) {
     const matchedSigns = signs(context.matched, ["활동성 감소·무기력", "호흡 이상", "쓰러짐·경련", "식욕 저하"]);
-    const score = anemiaMarkers.length + matchedSigns.length + (hasRepeatedFlag(relevantReports, ["HCT", "HGB", "RBC"], "low") ? 2 : 0);
+    const score = anemiaMarkers.length + matchedSigns.length + (hasRepeatedFlag(historicalReports, ["HCT", "HGB", "RBC"], "low") ? 2 : 0);
     const urgent = context.urgent && anemiaMarkers.length >= 2;
     concerns.push({
       id: "anemia",
@@ -256,7 +264,7 @@ export function analyzeVeterinaryConcerns(
   }
 
   const fpl = abnormal(located, "FPL", "high");
-  const pancreaticImaging = relevantReports.find(report => /췌장|pancrea/i.test(`${report.findings} ${report.interpretation}`) && /염증|비대|주위|fluid|inflamm/i.test(`${report.findings} ${report.interpretation}`));
+  const pancreaticImaging = dayReports.find(report => /췌장|pancrea/i.test(`${report.findings} ${report.interpretation}`) && /염증|비대|주위|fluid|inflamm/i.test(`${report.findings} ${report.interpretation}`));
   if (fpl || pancreaticImaging) {
     const matchedSigns = signs(context.matched, ["식욕 저하", "구토", "체중 감소", "활동성 감소·무기력"]);
     const score = (fpl ? 2 : 0) + (pancreaticImaging ? 2 : 0) + matchedSigns.length;
@@ -339,7 +347,7 @@ export function analyzeVeterinaryConcerns(
 
   return {
     labDate,
-    reportCount: relevantReports.length,
+    reportCount: dayReports.length,
     concerns: concerns.sort((a, b) => levelRank[b.level] - levelRank[a.level] || confidenceRank[b.confidence] - confidenceRank[a.confidence]),
   };
 }
