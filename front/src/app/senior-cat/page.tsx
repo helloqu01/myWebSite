@@ -46,6 +46,7 @@ import FoodHistoryPanel from "@/components/senior-cat/FoodHistoryPanel";
 import HealthCheckupPanel from "@/components/senior-cat/HealthCheckupPanel";
 import LabReportPanel from "@/components/senior-cat/LabReportPanel";
 import LabTrendCharts from "@/components/senior-cat/LabTrendCharts";
+import VeterinaryDecisionSupportPanel from "@/components/senior-cat/VeterinaryDecisionSupportPanel";
 import MedicationLogPanel from "@/components/senior-cat/MedicationLogPanel";
 import MultiCatEventLogger from "@/components/senior-cat/MultiCatEventLogger";
 import MultiCatHealthDashboard from "@/components/senior-cat/MultiCatHealthDashboard";
@@ -1380,6 +1381,14 @@ export default function SeniorCatPage() {
                       reports={care.labReports}
                       onSave={saveLabReport}
                       onDelete={deleteLabReport}
+                    />
+                  </Box>
+
+                  <Box sx={{ mt: 4 }}>
+                    <VeterinaryDecisionSupportPanel
+                      cat={selectedCat}
+                      records={care.records}
+                      reports={care.labReports}
                     />
                   </Box>
 

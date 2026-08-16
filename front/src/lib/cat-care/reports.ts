@@ -4,6 +4,7 @@ import { getCatAge } from "./insights";
 import { scheduleRepeatLabel, scheduleTypeLabel } from "./schedules";
 import { foodAppliesToCat, toLocalDateKey } from "./storage";
 import { isBehaviorEventType, TIMED_EVENT_LABELS } from "./events";
+import { analyzeVeterinaryConcerns } from "./veterinary-suspicions";
 
 function escapeHtml(value: unknown): string {
   return String(value ?? "")
@@ -67,6 +68,7 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
     ? `${sortedRecords.at(-1)!.date} ~ ${sortedRecords[0].date}`
     : `최근 ${days}일 (기록 없음)`;
   const activeSchedules = schedules.filter(schedule => schedule.catId === cat.id && schedule.enabled);
+  const veterinaryAnalysis = analyzeVeterinaryConcerns(cat, records, labReports);
   const catFoodItems = foodItems
     .filter(item => foodAppliesToCat(item, cat.id))
     .sort((a, b) => b.startDate.localeCompare(a.startDate));
@@ -176,6 +178,19 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
       <li><strong>[${escapeHtml(alertLevelLabel[alert.level])}] ${escapeHtml(alert.title)}</strong><br />
       ${escapeHtml(alert.detail)}<br /><small>근거: ${escapeHtml(alert.evidence)}</small></li>`).join("")
     : "<li>현재 자동 감지된 주의 변화가 없습니다.</li>";
+  const concernLevelLabel = { monitor: "관찰·재확인", appointment: "진료 시 상담", prompt: "빠른 상담 권장", urgent: "즉시 병원 연락" } as const;
+  const veterinaryConcernRows = veterinaryAnalysis.concerns.length
+    ? veterinaryAnalysis.concerns.map(concern => `<article>
+      <h3>[${escapeHtml(concernLevelLabel[concern.level])}] ${escapeHtml(concern.title)}</h3>
+      <p>${escapeHtml(concern.summary)}</p>
+      <p><strong>근거</strong> ${escapeHtml(concern.evidence.join(" · "))}</p>
+      ${concern.matchedSigns.length ? `<p><strong>함께 기록된 증상</strong> ${escapeHtml(concern.matchedSigns.join(" · "))}</p>` : ""}
+      <p><strong>집에서 확인할 증상</strong> ${escapeHtml(concern.possibleSigns.join(" · "))}</p>
+      <p><strong>확인 검사</strong> ${escapeHtml(concern.nextChecks.join(" · "))}</p>
+      <p><small>${escapeHtml(concern.caveat)}</small></p>
+      <p><small>근거 자료: <a href="${escapeHtml(concern.sourceUrl)}" target="_blank" rel="noreferrer">${escapeHtml(concern.sourceLabel)}</a></small></p>
+    </article>`).join("")
+    : "<p>현재 저장된 검사 수치와 일상 기록 조합에서 자동으로 표시할 수의학적 확인 포인트가 없습니다. 질환이 없다는 뜻은 아닙니다.</p>";
 
   const scheduleRows = activeSchedules.length
     ? activeSchedules.map(schedule => `
@@ -349,6 +364,8 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
     <div><span>최근 체중</span><strong>${escapeHtml(displayNumber(latest?.weightKg ?? cat.currentWeightKg, "kg"))}</strong></div>
   </section>
   <h2>자동 감지 요약</h2><ul>${alertRows}</ul>
+  <h2>수의학적 확인 포인트</h2>
+  ${veterinaryConcernRows}
   <h2>현재 케어 일정</h2><ul>${scheduleRows}</ul>
   <h2>사료·간식 급여 이력</h2>
   <div class="table-wrap"><table><thead><tr><th>종류</th><th>브랜드</th><th>제품명</th><th>급여 기간</th><th>하루 목표</th><th>남은 재고</th><th>개봉/유통기한</th><th>보증성분</th><th>사용 원재료</th><th>라벨</th><th>메모</th></tr></thead><tbody>${foodRows || '<tr><td colspan="11">등록된 사료·간식 급여 이력이 없습니다.</td></tr>'}</tbody></table></div>
