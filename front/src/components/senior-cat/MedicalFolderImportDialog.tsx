@@ -359,6 +359,28 @@ export default function MedicalFolderImportDialog({ cat, reports, onSave }: Medi
                       {analysis.items.length > 0 && <FormControlLabel control={<Checkbox checked={analysis.confirmed} onChange={event => setAnalyses(current => ({ ...current, [group.id]: { ...(current[group.id] ?? EMPTY_ANALYSIS), confirmed: event.target.checked } }))} />} label="원본 검사표와 추출 수치·단위·기준범위를 비교해 확인했습니다" />}
                       {analysis.items.length > 0 && <Button size="small" color="inherit" onClick={() => setAnalyses(current => ({ ...current, [group.id]: { ...(current[group.id] ?? EMPTY_ANALYSIS), items: [], confirmed: false } }))} sx={{ alignSelf: "flex-start" }}>자동 추출 수치 제외하고 원본만 저장</Button>}
                       {analysis.rawText && !analysis.items.length && <Alert severity="warning">글자는 읽었지만 수치 항목은 자동 분류하지 못했습니다. 저장 후 원본과 OCR 내용을 대조해 주세요.</Alert>}
+                      {analysis.rawText && (
+                        <TextField
+                          label="OCR 원문 확인·수정"
+                          value={analysis.rawText}
+                          onChange={event => {
+                            const nextText = event.target.value;
+                            setAnalyses(current => ({
+                              ...current,
+                              [group.id]: {
+                                ...(current[group.id] ?? EMPTY_ANALYSIS),
+                                rawText: nextText,
+                                items: parseLabText(nextText),
+                                confirmed: false,
+                              },
+                            }));
+                          }}
+                          helperText="표가 잘못 읽혔다면 항목·참고치·결과를 한 줄로 수정하면 검사값을 다시 분류합니다."
+                          multiline
+                          minRows={4}
+                          fullWidth
+                        />
+                      )}
                       {analysis.confidence != null && <Typography variant="caption" color="text.secondary">OCR 신뢰도 {analysis.confidence}% · 원본 검사표와 반드시 대조하세요.</Typography>}
                       {analysis.error && <Alert severity="warning">{analysis.error}</Alert>}
                     </Stack>

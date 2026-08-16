@@ -73,8 +73,42 @@ function flagFrom(value: number | null, low: number | null, high: number | null,
 }
 
 function extractUnit(text: string): string {
-  const match = text.match(/(?:mg\/dL|mmol\/L|µmol\/L|umol\/L|g\/dL|g\/L|U\/L|IU\/L|mEq\/L|10\^?[369]\/µL|K\/µL|M\/µL|fL|pg|ng\/mL|ng\/dL|µg\/dL|ug\/dL|mmHg|%)/i);
+  const match = text.match(/(?:mg\/dL|mmol\/L|µmol\/L|umol\/L|g\/dL|g\/L|U\/L|IU\/L|mEq\/L|10\^?[369]\/(?:µ|u)L|K\/(?:µ|u)L|M\/(?:µ|u)L|fL|pg|ng\/mL|ng\/dL|µg\/dL|ug\/dL|mmHg|%)/i);
   return match?.[0] ?? "";
+}
+
+function normalizeOcrLabLine(rawLine: string): string {
+  return rawLine
+    .replaceAll("|", " ")
+    .replace(/\bHC\s+T(?=\s*\()/gi, "HCT")
+    .replace(/\bH[@6]B(?=\s*\()/gi, "HGB")
+    .replace(/\bMCW(?=\s*\()/gi, "MCV")
+    .replace(/%MNEU(?=\s*\()/gi, "%NEU")
+    .replace(/%E0S(?=\s*\()/gi, "%EOS")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseNumbersAfterMarker(text: string): { value: number | null; referenceLow: number | null; referenceHigh: number | null } {
+  const numberPattern = "([<>]?\\s*\\d+(?:[.,]\\d+)?)";
+  // 국내 검사표에서 흔한 "참고치 12-130 | 결과 36" 순서를 먼저 처리합니다.
+  // 검사기명 같은 괄호 문구는 허용하되 숫자가 나오기 전까지만 건너뜁니다.
+  const rangeFirst = text.match(new RegExp(`^[^\\d<>]*${numberPattern}\\s*(?:-|~|–|—|to)\\s*${numberPattern}\\s+${numberPattern}`, "i"));
+  if (rangeFirst) {
+    return {
+      referenceLow: toNumber(rangeFirst[1].replace(/[<>\s]/g, "")),
+      referenceHigh: toNumber(rangeFirst[2].replace(/[<>\s]/g, "")),
+      value: toNumber(rangeFirst[3].replace(/[<>\s]/g, "")),
+    };
+  }
+
+  // IDEXX 등에서 사용하는 "결과 | 단위 | 참고치" 순서도 유지합니다.
+  const numberMatches = [...text.matchAll(/[<>]?\s*\d+(?:[.,]\d+)?/g)].map(match => match[0].replace(/[<>\s]/g, ""));
+  return {
+    value: toNumber(numberMatches[0]),
+    referenceLow: toNumber(numberMatches[1]),
+    referenceHigh: toNumber(numberMatches[2]),
+  };
 }
 
 export function labMarkerOptions(): Array<{ code: string; name: string; explanation: string }> {
@@ -98,9 +132,11 @@ export function parseLabText(rawText: string): LabResultItem[] {
   const ignoredGenericCodes = new Set(["DATE", "TIME", "PAGE", "AGE", "ID", "TEL", "PHONE"]);
 
   rawText.split(/\r?\n/).forEach(rawLine => {
-    const line = rawLine.replaceAll("|", " ").replace(/\s+/g, " ").trim();
+    const line = normalizeOcrLabLine(rawLine);
     if (!line) return;
     const upper = line.toUpperCase();
+    // 백혈구 백분율(%NEU 등)을 절대수치(NEU K/µL)로 잘못 저장하지 않습니다.
+    if (/^%\s*(?:NEU|LYM|MONO|EOS|BASO)\b/.test(upper) || /^(?:NEU|LYM|MONO|EOS|BASO)%\b/.test(upper)) return;
     const alias = aliases.find(candidate => new RegExp(`(^|[^A-Z0-9])${candidate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^A-Z0-9]|$)`).test(upper));
     const generic = alias ? null : line.match(/^([A-Za-z][A-Za-z0-9%.-]{1,12})\s+[<>]?\s*(\d+(?:[.,]\d+)?)/);
     if (!alias && !generic) return;
@@ -111,12 +147,8 @@ export function parseLabText(rawText: string): LabResultItem[] {
     const markerIndex = alias ? upper.indexOf(alias) : 0;
     const markerLength = alias?.length ?? generic![1].length;
     const afterMarker = line.slice(markerIndex + markerLength);
-    // 이 화면에서 다루는 기본 혈액·소변 지표는 음수가 아니므로 범위 구분용 '-'를 숫자 부호로 읽지 않습니다.
-    const numberMatches = [...afterMarker.matchAll(/\d+(?:[.,]\d+)?/g)].map(match => match[0]);
-    const value = toNumber(numberMatches[0]);
+    const { value, referenceLow, referenceHigh } = parseNumbersAfterMarker(afterMarker);
     if (value == null) return;
-    const referenceLow = toNumber(numberMatches[1]);
-    const referenceHigh = toNumber(numberMatches[2]);
     const details = markerDetails(code);
     found.set(code, {
       id: createId("lab-item"),
