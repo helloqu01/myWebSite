@@ -33,6 +33,12 @@ import WcRounded from "@mui/icons-material/WcRounded";
 import AirRounded from "@mui/icons-material/AirRounded";
 import DirectionsRunRounded from "@mui/icons-material/DirectionsRunRounded";
 import SickRounded from "@mui/icons-material/SickRounded";
+import AutoAwesomeRounded from "@mui/icons-material/AutoAwesomeRounded";
+import BedtimeRounded from "@mui/icons-material/BedtimeRounded";
+import FavoriteRounded from "@mui/icons-material/FavoriteRounded";
+import RecordVoiceOverRounded from "@mui/icons-material/RecordVoiceOverRounded";
+import SportsEsportsRounded from "@mui/icons-material/SportsEsportsRounded";
+import VisibilityOffRounded from "@mui/icons-material/VisibilityOffRounded";
 import type {
   ActivityLevel,
   AppetiteLevel,
@@ -46,6 +52,7 @@ import type {
   TimedCareEventType,
 } from "@/types/cat-care";
 import { createId, foodAppliesToCat, toLocalDateKey } from "@/lib/cat-care/storage";
+import { BEHAVIOR_EVENT_TYPES, isBehaviorEventType, TIMED_EVENT_LABELS } from "@/lib/cat-care/events";
 
 interface MultiCatEventLoggerProps {
   cats: CatProfile[];
@@ -83,20 +90,18 @@ interface LedgerRow {
   notes: string;
 }
 
-const eventLabels: Record<TimedCareEventType, string> = {
-  water: "물 마심",
-  meal: "식사",
-  urine: "소변",
-  stool: "대변",
-  seizure: "발작",
-};
-
 const eventColors: Record<TimedCareEventType, string> = {
   water: "#0288d1",
   meal: "#ed6c02",
   urine: "#7c3aed",
   stool: "#795548",
   seizure: "#d32f2f",
+  sleep: "#5c6bc0",
+  play: "#2e7d32",
+  grooming: "#00897b",
+  interaction: "#c2185b",
+  hiding: "#546e7a",
+  vocalization: "#8e24aa",
 };
 
 const eventBackgrounds: Record<TimedCareEventType, string> = {
@@ -105,6 +110,12 @@ const eventBackgrounds: Record<TimedCareEventType, string> = {
   urine: "rgba(124,58,237,0.06)",
   stool: "rgba(121,85,72,0.06)",
   seizure: "rgba(211,47,47,0.06)",
+  sleep: "rgba(92,107,192,0.06)",
+  play: "rgba(46,125,50,0.06)",
+  grooming: "rgba(0,137,123,0.06)",
+  interaction: "rgba(194,24,91,0.06)",
+  hiding: "rgba(84,110,122,0.06)",
+  vocalization: "rgba(142,36,170,0.06)",
 };
 
 function eventIcon(type: TimedCareEventType, size: "small" | "inherit" = "small") {
@@ -112,6 +123,12 @@ function eventIcon(type: TimedCareEventType, size: "small" | "inherit" = "small"
   if (type === "meal") return <RestaurantRounded fontSize={size} />;
   if (type === "urine") return <WcRounded fontSize={size} />;
   if (type === "stool") return <FiberManualRecordRounded fontSize={size} />;
+  if (type === "sleep") return <BedtimeRounded fontSize={size} />;
+  if (type === "play") return <SportsEsportsRounded fontSize={size} />;
+  if (type === "grooming") return <AutoAwesomeRounded fontSize={size} />;
+  if (type === "interaction") return <FavoriteRounded fontSize={size} />;
+  if (type === "hiding") return <VisibilityOffRounded fontSize={size} />;
+  if (type === "vocalization") return <RecordVoiceOverRounded fontSize={size} />;
   return <WarningAmberRounded fontSize={size} />;
 }
 
@@ -182,7 +199,9 @@ function rowFromEvent(record: DailyRecord, event: TimedCareEvent): LedgerRow {
         ? event.amountGrams?.toString() ?? ""
         : event.type === "seizure"
           ? event.durationSeconds?.toString() ?? ""
-          : "",
+          : isBehaviorEventType(event.type)
+            ? event.durationMinutes?.toString() ?? ""
+            : "",
     size: event.type === "urine" ? record.urineSize ?? "" : event.type === "stool" ? record.stoolAmount ?? "" : "",
     foodItemId: event.foodItemId ?? "",
     severity: event.severity ?? "",
@@ -335,8 +354,8 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
     setError("");
   };
 
-  const addRow = () => {
-    const next = blankRow(rows.at(-1));
+  const addRow = (type?: TimedCareEventType) => {
+    const next = { ...blankRow(rows.at(-1)), ...(type ? { type } : {}) };
     const nextRows = [...rows, next];
     setRows(nextRows);
     syncDraftCountsWithRows(rows, nextRows, [next.catId]);
@@ -410,6 +429,7 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
         amountMl: null,
         amountGrams: row.type === "meal" ? positiveNumber(row.amount) : null,
         durationSeconds: row.type === "seizure" ? positiveNumber(row.amount) : null,
+        durationMinutes: isBehaviorEventType(row.type) ? positiveNumber(row.amount) : null,
         severity: row.type === "seizure" ? row.severity || null : null,
         foodItemId: row.type === "meal" ? row.foodItemId || null : null,
         notes: row.notes.trim(),
@@ -517,26 +537,46 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
         })}
       </Box>
 
-      <Divider sx={{ my: 3 }}><Chip icon={<OndemandVideoRounded />} label="시간별·영상 기록 (선택)" /></Divider>
+      <Divider sx={{ my: 3 }}><Chip icon={<OndemandVideoRounded />} label="시간별 하루 일과·영상 기록 (선택)" /></Divider>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-        영상에서 확인한 식사·물·배변 시각을 한 줄씩 남기세요. 식사와 물 마심은 한 줄을 각각 1회로 계산합니다.
+        식사·물·배변뿐 아니라 잠, 놀이, 그루밍, 교류, 숨기, 울음 시각을 남기세요. 누적된 기록은 아래 행동 패턴 분석에 자동 반영됩니다.
       </Typography>
+
+      <Paper variant="outlined" sx={{ p: 1.5, mb: 1.5, borderRadius: 2.5, bgcolor: "var(--surface)" }}>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+          <Typography variant="subtitle2" fontWeight={800} sx={{ flexShrink: 0 }}>일과 빠른 추가</Typography>
+          <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+            {BEHAVIOR_EVENT_TYPES.map(type => (
+              <Button
+                key={type}
+                size="small"
+                variant="outlined"
+                startIcon={eventIcon(type)}
+                onClick={() => addRow(type)}
+                sx={{ color: eventColors[type], borderColor: eventColors[type] }}
+              >
+                {TIMED_EVENT_LABELS[type]}
+              </Button>
+            ))}
+          </Stack>
+        </Stack>
+      </Paper>
 
       <Stack spacing={1}>
         {rows.map((row, index) => {
           const catFoods = foodItems.filter(item => foodAppliesToCat(item, row.catId));
           return (
-            <Box key={row.id} data-testid={`multi-event-row-${index}`} sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))", xl: row.type === "meal" ? "130px 150px 125px 110px minmax(150px,1fr) 130px minmax(140px,1fr) auto" : row.type === "seizure" ? "130px 150px 125px 110px 130px minmax(140px,1fr) auto" : "130px 150px 125px 110px minmax(150px,1fr) auto" }, gap: 1, alignItems: "center", p: 1.25, border: "1px solid", borderLeft: "4px solid", borderColor: eventColors[row.type], bgcolor: eventBackgrounds[row.type], borderRadius: 2.5 }}>
-              <Chip icon={eventIcon(row.type)} label={`${index + 1} · ${eventLabels[row.type]}`} size="small" variant="outlined" sx={{ color: eventColors[row.type], borderColor: eventColors[row.type], "& .MuiChip-icon": { color: "inherit" } }} />
+            <Box key={row.id} data-testid={`multi-event-row-${index}`} sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))", xl: row.type === "meal" ? "130px 150px 125px 110px minmax(150px,1fr) 130px minmax(140px,1fr) auto" : row.type === "seizure" || isBehaviorEventType(row.type) ? "130px 150px 125px 110px 130px minmax(140px,1fr) auto" : "130px 150px 125px 110px minmax(150px,1fr) auto" }, gap: 1, alignItems: "center", p: 1.25, border: "1px solid", borderLeft: "4px solid", borderColor: eventColors[row.type], bgcolor: eventBackgrounds[row.type], borderRadius: 2.5 }}>
+              <Chip icon={eventIcon(row.type)} label={`${index + 1} · ${TIMED_EVENT_LABELS[row.type]}`} size="small" variant="outlined" sx={{ color: eventColors[row.type], borderColor: eventColors[row.type], "& .MuiChip-icon": { color: "inherit" } }} />
               <TextField label="시각" type="time" size="small" value={row.time} onChange={event => updateRow(row.id, { time: event.target.value })} slotProps={{ inputLabel: { shrink: true }, htmlInput: { style: { minWidth: 96, paddingRight: 8 } } }} sx={{ width: "100%", minWidth: 145 }} />
               <TextField select label="고양이" size="small" value={row.catId} onChange={event => updateRow(row.id, { catId: event.target.value, foodItemId: "" })}>
                 <MenuItem value=""><em>선택</em></MenuItem>
                 {cats.map(cat => <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>)}
               </TextField>
               <TextField select label="기록 종류" size="small" value={row.type} onChange={event => updateRow(row.id, { type: event.target.value as TimedCareEventType, amount: "", size: "", foodItemId: "", severity: "" })}>
-                {Object.entries(eventLabels).map(([value, label]) => <MenuItem key={value} value={value}><Stack direction="row" spacing={1} alignItems="center" sx={{ color: eventColors[value as TimedCareEventType] }}>{eventIcon(value as TimedCareEventType)}<Typography color="text.primary">{label}</Typography></Stack></MenuItem>)}
+                {Object.entries(TIMED_EVENT_LABELS).map(([value, label]) => <MenuItem key={value} value={value}><Stack direction="row" spacing={1} alignItems="center" sx={{ color: eventColors[value as TimedCareEventType] }}>{eventIcon(value as TimedCareEventType)}<Typography color="text.primary">{label}</Typography></Stack></MenuItem>)}
               </TextField>
-              {(row.type === "meal" || row.type === "seizure") && <TextField label={row.type === "meal" ? "먹은 양(g, 선택)" : "지속시간(초)"} type="number" size="small" value={row.amount} onChange={event => updateRow(row.id, { amount: event.target.value })} slotProps={{ htmlInput: { min: 0, step: 1 } }} />}
+              {(row.type === "meal" || row.type === "seizure" || isBehaviorEventType(row.type)) && <TextField label={row.type === "meal" ? "먹은 양(g, 선택)" : row.type === "seizure" ? "지속시간(초)" : "지속시간(분, 선택)"} type="number" size="small" value={row.amount} onChange={event => updateRow(row.id, { amount: event.target.value })} slotProps={{ htmlInput: { min: 0, step: 1 } }} />}
               {row.type === "meal" && <TextField select label="사료·간식" size="small" value={row.foodItemId} onChange={event => updateRow(row.id, { foodItemId: event.target.value })}><MenuItem value=""><em>미선택</em></MenuItem>{catFoods.map(item => <MenuItem key={item.id} value={item.id}>{item.brand}{item.productName ? ` · ${item.productName}` : ""}</MenuItem>)}</TextField>}
               {(row.type === "urine" || row.type === "stool") && <TextField select label="양" size="small" value={row.size} onChange={event => updateRow(row.id, { size: event.target.value as SizeLevel | "" })}><MenuItem value=""><em>미기록</em></MenuItem>{Object.entries(sizeLabels).map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</TextField>}
               {row.type === "seizure" && <TextField select label="강도" size="small" value={row.severity} onChange={event => updateRow(row.id, { severity: event.target.value as SeizureSeverity | "" })}><MenuItem value=""><em>미기록</em></MenuItem><MenuItem value="mild">경미</MenuItem><MenuItem value="moderate">중간</MenuItem><MenuItem value="severe">심함</MenuItem></TextField>}
@@ -551,7 +591,7 @@ export default function MultiCatEventLogger({ cats, records, foodItems, onSave }
       </Stack>
 
       <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ md: "center" }} gap={2} sx={{ mt: 2 }}>
-        <Button variant="outlined" startIcon={<AddRounded />} onClick={addRow}>시간 기록 행 추가</Button>
+        <Button variant="outlined" startIcon={<AddRounded />} onClick={() => addRow()}>시간 기록 행 추가</Button>
         <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
           {summaries.map(summary => <Chip key={summary.cat.id} color={summary.recorded ? "primary" : "default"} variant="outlined" label={`${summary.cat.name} · 물 ${summary.waterCount}회 · 식사 ${summary.mealCount}회 · 소변 ${summary.urineCount} · 대변 ${summary.stoolCount}`} />)}
         </Stack>

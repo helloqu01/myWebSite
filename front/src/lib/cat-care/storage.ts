@@ -16,13 +16,14 @@ import type {
   WeeklyWellnessCheck,
 } from "@/types/cat-care";
 import { EMPTY_FOOD_NUTRIENTS } from "./food-label";
+import { isBehaviorEventType, TIMED_EVENT_LABELS } from "./events";
 
 export const CAT_CARE_STORAGE_KEY = "ohj-senior-cat-care-v1";
 export const CAT_CARE_HISTORY_KEY = "ohj-senior-cat-care-history-v1";
 const MAX_LOCAL_SNAPSHOTS = 12;
 
 export const EMPTY_CARE_STATE: CareState = {
-  version: 15,
+  version: 16,
   cats: [],
   records: [],
   foodItems: [],
@@ -65,7 +66,7 @@ function normalizeNotificationSettings(settings?: Partial<NotificationSettings>)
 
 export function normalizeCareState(input: Partial<CareState>): CareState {
   return {
-    version: 15,
+    version: 16,
     cats: Array.isArray(input.cats)
       ? (input.cats as CatProfile[]).map(cat => ({
           ...cat,
@@ -76,13 +77,14 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
       ? (input.records as DailyRecord[]).map(record => {
           const timedEvents = Array.isArray(record.timedEvents)
             ? record.timedEvents
-                .filter(event => ["water", "meal", "urine", "stool", "seizure"].includes(event.type))
+                .filter(event => ["water", "meal", "urine", "stool", "seizure", "sleep", "play", "grooming", "interaction", "hiding", "vocalization"].includes(event.type))
                 .map(event => ({
                   ...event,
                   time: typeof event.time === "string" ? event.time : "",
                   amountMl: typeof event.amountMl === "number" ? event.amountMl : null,
                   amountGrams: typeof event.amountGrams === "number" ? event.amountGrams : null,
                   durationSeconds: typeof event.durationSeconds === "number" ? event.durationSeconds : null,
+                  durationMinutes: typeof event.durationMinutes === "number" ? event.durationMinutes : null,
                   severity: event.severity && ["mild", "moderate", "severe"].includes(event.severity) ? event.severity : null,
                   foodItemId: typeof event.foodItemId === "string" ? event.foodItemId : null,
                   notes: event.notes ?? "",
@@ -341,7 +343,7 @@ export function exportCareCsv(state: CareState): void {
     "혈뇨",
     "호흡 곤란",
     "쓰러짐/경련",
-    "시간별 물 마심·식사·배변·발작",
+    "시간별 하루 일과·건강 이벤트",
     "투약 완료 수",
     "메모",
   ];
@@ -375,11 +377,13 @@ export function exportCareCsv(state: CareState): void {
           .slice()
           .sort((a, b) => a.time.localeCompare(b.time))
           .map(event => {
-            const label = { water: "물 마심", meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
+            const label = TIMED_EVENT_LABELS[event.type];
             const details = event.type === "meal" && event.amountGrams != null
                 ? ` ${event.amountGrams}g`
               : event.type === "seizure" && event.durationSeconds != null
                 ? ` ${event.durationSeconds}초`
+              : isBehaviorEventType(event.type) && event.durationMinutes != null
+                ? ` ${event.durationMinutes}분`
                 : "";
             const severity = event.type === "seizure" && event.severity
               ? ` ${{ mild: "경미", moderate: "중간", severe: "심함" }[event.severity]}`

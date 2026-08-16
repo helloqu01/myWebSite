@@ -24,7 +24,9 @@ export type ExaminationType =
 export type ObservationLevel = "usual" | "changed" | "concerning";
 export type CloudMemberRole = "owner" | "editor" | "viewer";
 export type HealthCheckupType = "routine" | "follow_up" | "symptom" | "emergency" | "vaccination" | "other";
-export type TimedCareEventType = "water" | "meal" | "urine" | "stool" | "seizure";
+export type HealthTimedEventType = "water" | "meal" | "urine" | "stool" | "seizure";
+export type BehaviorEventType = "sleep" | "play" | "grooming" | "interaction" | "hiding" | "vocalization";
+export type TimedCareEventType = HealthTimedEventType | BehaviorEventType;
 export type SeizureSeverity = "mild" | "moderate" | "severe";
 export type FoodCategory = "dry" | "wet" | "prescription" | "treat" | "other";
 export type MedicationAdministrationStatus = "given" | "missed" | "failed" | "vomited";
@@ -64,6 +66,7 @@ export interface TimedCareEvent {
   amountMl: number | null;
   amountGrams: number | null;
   durationSeconds: number | null;
+  durationMinutes: number | null;
   severity: SeizureSeverity | null;
   foodItemId: string | null;
   notes: string;
@@ -335,7 +338,7 @@ export interface NotificationSettings {
 }
 
 export interface CareState {
-  version: 15;
+  version: 16;
   cats: CatProfile[];
   records: DailyRecord[];
   foodItems: FoodItem[];

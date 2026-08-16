@@ -49,6 +49,7 @@ import LabTrendCharts from "@/components/senior-cat/LabTrendCharts";
 import MedicationLogPanel from "@/components/senior-cat/MedicationLogPanel";
 import MultiCatEventLogger from "@/components/senior-cat/MultiCatEventLogger";
 import MultiCatHealthDashboard from "@/components/senior-cat/MultiCatHealthDashboard";
+import BehaviorPatternDashboard from "@/components/senior-cat/BehaviorPatternDashboard";
 import MonthlyCarePanel from "@/components/senior-cat/MonthlyCarePanel";
 import ObservationMediaPanel from "@/components/senior-cat/ObservationMediaPanel";
 import TrendCharts from "@/components/senior-cat/TrendCharts";
@@ -87,6 +88,7 @@ import {
   toLocalDateKey,
 } from "@/lib/cat-care/storage";
 import { deleteMedicalDocument, deleteMedicalDocuments } from "@/lib/cat-care/medical-documents";
+import { isBehaviorEventType, TIMED_EVENT_LABELS } from "@/lib/cat-care/events";
 import {
   buildCatAlerts,
   getCatAge,
@@ -129,14 +131,15 @@ function latestValue(record: DailyRecord | undefined, key: "waterCount" | "urine
 }
 
 function timedCareEventText(event: TimedCareEvent, foodItems: FoodItem[]): string {
-  const label = { water: "물 마심", meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
+  const label = TIMED_EVENT_LABELS[event.type];
   const amount = event.type === "meal" && event.amountGrams != null
       ? ` ${event.amountGrams}g`
       : "";
   const duration = event.type === "seizure" && event.durationSeconds != null ? ` ${event.durationSeconds}초` : "";
+  const routineDuration = isBehaviorEventType(event.type) && event.durationMinutes != null ? ` ${event.durationMinutes}분` : "";
   const food = event.foodItemId ? foodItems.find(item => item.id === event.foodItemId) : null;
   const foodName = food ? ` ${food.brand}${food.productName ? ` ${food.productName}` : ""}` : "";
-  return `${event.time || "--:--"} ${label}${amount}${duration}${foodName}`;
+  return `${event.time || "--:--"} ${label}${amount}${duration}${routineDuration}${foodName}`;
 }
 
 interface CatCardProps {
@@ -1129,6 +1132,12 @@ export default function SeniorCatPage() {
                 onSave={saveMultiCatEvents}
               />
 
+              <BehaviorPatternDashboard
+                cats={orderedCats}
+                records={care.records}
+                selectedDate={selectedDate}
+              />
+
               <Box component="section" aria-labelledby="attention-heading">
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
                   <MonitorHeartRounded color="warning" />
@@ -1391,7 +1400,7 @@ export default function SeniorCatPage() {
                         <Box component="table" sx={{ width: "100%", minWidth: 1320, borderCollapse: "collapse" }}>
                           <Box component="thead">
                             <Box component="tr">
-                              {["날짜", "💧 물", "🍚 식욕", "🚽 소변", "💩 대변", "🤮 구토", "🐾 활동", "🫁 호흡", "⚖️ 체중", "⏱️ 시간 기록", "💊 투약", "⚠️ 이상 징후"].map(label => (
+                              {["날짜", "💧 물", "🍚 식욕", "🚽 소변", "💩 대변", "🤮 구토", "🐾 활동", "🫁 호흡", "⚖️ 체중", "⏱️ 일과·시간 기록", "💊 투약", "⚠️ 이상 징후"].map(label => (
                                 <Box component="th" key={label} sx={{ textAlign: "left", py: 1.25, px: 1, color: "text.secondary", fontSize: 13, borderBottom: "1px solid", borderColor: "divider" }}>
                                   {label}
                                 </Box>

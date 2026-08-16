@@ -3,6 +3,7 @@ import { createMedicalDocumentSignedUrl } from "./medical-documents";
 import { getCatAge } from "./insights";
 import { scheduleRepeatLabel, scheduleTypeLabel } from "./schedules";
 import { foodAppliesToCat, toLocalDateKey } from "./storage";
+import { isBehaviorEventType, TIMED_EVENT_LABELS } from "./events";
 
 function escapeHtml(value: unknown): string {
   return String(value ?? "")
@@ -123,17 +124,18 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
     .slice()
     .sort((a, b) => a.time.localeCompare(b.time))
     .map(event => {
-      const label = { water: "물 마심", meal: "식사", urine: "소변", stool: "대변", seizure: "발작" }[event.type];
+      const label = TIMED_EVENT_LABELS[event.type];
       const amount = event.type === "meal" && event.amountGrams != null
           ? ` ${event.amountGrams}g`
           : "";
       const duration = event.type === "seizure" && event.durationSeconds != null ? ` ${event.durationSeconds}초` : "";
+      const routineDuration = isBehaviorEventType(event.type) && event.durationMinutes != null ? ` ${event.durationMinutes}분` : "";
       const severity = event.type === "seizure" && event.severity
         ? ` · ${{ mild: "경미", moderate: "중간", severe: "심함" }[event.severity]}`
         : "";
       const food = event.foodItemId ? foodById.get(event.foodItemId) : null;
       const foodName = food ? ` · ${food.brand}${food.productName ? ` ${food.productName}` : ""}` : "";
-      return `${escapeHtml(event.time || "시각 미기록")} ${escapeHtml(label)}${escapeHtml(amount)}${escapeHtml(duration)}${escapeHtml(severity)}${escapeHtml(foodName)}${event.notes ? `<br /><small>${escapeHtml(event.notes)}</small>` : ""}`;
+      return `${escapeHtml(event.time || "시각 미기록")} ${escapeHtml(label)}${escapeHtml(amount)}${escapeHtml(duration)}${escapeHtml(routineDuration)}${escapeHtml(severity)}${escapeHtml(foodName)}${event.notes ? `<br /><small>${escapeHtml(event.notes)}</small>` : ""}`;
     })
     .join("<br />") || "—";
 

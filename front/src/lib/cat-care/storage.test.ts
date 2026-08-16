@@ -24,4 +24,18 @@ describe("normalizeCareState", () => {
     });
     expect(normalized.medicationAdministrations[0].linkedScheduleId).toBe("evening");
   });
+
+  it("keeps daily routine events and their duration", () => {
+    const normalized = normalizeCareState({
+      cats: [],
+      records: [{
+        id: "record-2",
+        catId: "cat-1",
+        date: "2026-08-16",
+        timedEvents: [{ id: "play-1", type: "play", time: "20:10", durationMinutes: 15, notes: "장난감 놀이" }],
+      }] as never,
+    });
+
+    expect(normalized.records[0].timedEvents[0]).toMatchObject({ type: "play", durationMinutes: 15 });
+  });
 });
