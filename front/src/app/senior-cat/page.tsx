@@ -87,7 +87,7 @@ import {
   saveCareState,
   toLocalDateKey,
 } from "@/lib/cat-care/storage";
-import { deleteMedicalDocument, deleteMedicalDocuments } from "@/lib/cat-care/medical-documents";
+import { deleteMedicalDocument, deleteMedicalDocuments, labReportDocuments } from "@/lib/cat-care/medical-documents";
 import { isBehaviorEventType, TIMED_EVENT_LABELS } from "@/lib/cat-care/events";
 import {
   buildCatAlerts,
@@ -432,7 +432,7 @@ export default function SeniorCatPage() {
     if (!confirmed) return;
 
     const originalDocumentPaths = [
-      ...care.labReports.filter(report => report.catId === cat.id).map(report => report.originalDocument?.storagePath),
+      ...care.labReports.filter(report => report.catId === cat.id).flatMap(report => labReportDocuments(report).map(document => document.storagePath)),
       ...care.healthCheckups.filter(checkup => checkup.catId === cat.id).map(checkup => checkup.originalDocument?.storagePath),
       ...care.observationMedia.filter(record => record.catId === cat.id).map(record => record.document.storagePath),
       ...care.foodItems
@@ -692,7 +692,7 @@ export default function SeniorCatPage() {
   const deleteLabReport = async (report: LabReport) => {
     if (!window.confirm(`${formatDate(report.date)} 검사결과를 삭제할까요?`)) return;
     try {
-      if (report.originalDocument) await deleteMedicalDocument(report.originalDocument.storagePath);
+      await deleteMedicalDocuments(labReportDocuments(report).map(document => document.storagePath));
     } catch (caught) {
       window.alert(caught instanceof Error ? caught.message : "저장된 원본 사진을 삭제하지 못했습니다.");
       return;

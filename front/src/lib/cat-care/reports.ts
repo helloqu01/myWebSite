@@ -1,5 +1,5 @@
 import type { CareSchedule, CatProfile, DailyRecord, EmergencyInfo, FoodItem, HealthAlert, HealthCheckup, LabReport, MedicationAdministration, MonthlyCareCheck, ObservationMediaRecord, QualityOfLifeCheck, WeeklyWellnessCheck } from "@/types/cat-care";
-import { createMedicalDocumentSignedUrl } from "./medical-documents";
+import { createMedicalDocumentSignedUrl, labReportDocuments, medicalDocumentDisplayName } from "./medical-documents";
 import { getCatAge } from "./insights";
 import { scheduleRepeatLabel, scheduleTypeLabel } from "./schedules";
 import { foodAppliesToCat, toLocalDateKey } from "./storage";
@@ -88,6 +88,18 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
   const recentLabReports = labReports
     .filter(report => report.catId === cat.id && report.date >= startKey)
     .sort((a, b) => b.date.localeCompare(a.date));
+  const labDocumentLinks = new Map<string, Array<{ name: string; url: string }>>();
+  await Promise.all(recentLabReports.flatMap(report => labReportDocuments(report).map(async document => {
+    let url = "";
+    try {
+      url = await createMedicalDocumentSignedUrl(document.storagePath);
+    } catch {
+      // The report remains usable when a signed URL cannot be created.
+    }
+    const links = labDocumentLinks.get(report.id) ?? [];
+    links.push({ name: medicalDocumentDisplayName(document.fileName), url });
+    labDocumentLinks.set(report.id, links);
+  })));
   const checkupTypeLabel = {
     routine: "정기 건강검진",
     follow_up: "추적 진료",
@@ -238,15 +250,24 @@ export async function openVetReport({ cat, records, alerts, schedules, foodItems
       <td>${item.referenceLow == null && item.referenceHigh == null ? "—" : `${escapeHtml(item.referenceLow ?? "")}-${escapeHtml(item.referenceHigh ?? "")}`}</td>
       <td>${escapeHtml({ low: "낮음", normal: "기준 내", high: "높음", unknown: "확인 필요" }[item.flag])}</td>
     </tr>`)).join("");
-  const examinationRows = recentLabReports.map(report => `
+  const examinationRows = recentLabReports.map(report => {
+    const documentLinks = labDocumentLinks.get(report.id) ?? [];
+    const sourceLabel = /\.[a-z0-9]+$/i.test(report.sourceFileName)
+      ? medicalDocumentDisplayName(report.sourceFileName)
+      : report.sourceFileName;
+    const documentHtml = documentLinks.length
+      ? `<br /><small>비공개 원본 ${documentLinks.length}개</small>${documentLinks.map(link => link.url ? `<br /><a href="${escapeHtml(link.url)}" target="_blank" rel="noreferrer">${escapeHtml(link.name)}</a>` : `<br /><small>${escapeHtml(link.name)} (열기 주소 생성 실패)</small>`).join("")}`
+      : "";
+    return `
     <tr>
       <td>${escapeHtml(report.date)}<br /><small>${escapeHtml(examinationTypeLabel[report.type])}</small></td>
       <td>${escapeHtml(report.hospital || "—")}</td>
-      <td>${escapeHtml(report.title || examinationTypeLabel[report.type])}${report.sourceFileName ? `<br /><small>자료: ${escapeHtml(report.sourceFileName)}</small>` : ""}${report.originalDocument ? "<br /><small>비공개 원본 사진 저장됨</small>" : ""}</td>
+      <td>${escapeHtml(report.title || examinationTypeLabel[report.type])}${sourceLabel ? `<br /><small>자료: ${escapeHtml(sourceLabel)}</small>` : ""}${documentHtml}</td>
       <td>${escapeHtml(report.findings || "—")}</td>
       <td>${escapeHtml(report.interpretation || "—")}</td>
       <td>${escapeHtml(report.recommendations || "—")}${report.notes ? `<br /><small>메모: ${escapeHtml(report.notes)}</small>` : ""}</td>
-    </tr>`).join("");
+    </tr>`;
+  }).join("");
   const examinationOcrBlocks = recentLabReports
     .filter(report => report.rawText)
     .map(report => `<article><h3>${escapeHtml(report.date)} · ${escapeHtml(report.title || examinationTypeLabel[report.type])}</h3><pre>${escapeHtml(report.rawText)}</pre></article>`)

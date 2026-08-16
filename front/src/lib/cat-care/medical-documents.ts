@@ -6,6 +6,7 @@ export const MEDICAL_DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
 export const OBSERVATION_MEDIA_MAX_BYTES = 30 * 1024 * 1024;
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const ALLOWED_MEDICAL_DOCUMENT_TYPES = new Set([...ALLOWED_IMAGE_TYPES, "application/pdf"]);
 const ALLOWED_OBSERVATION_TYPES = new Set([...ALLOWED_IMAGE_TYPES, "video/mp4", "video/webm", "video/quicktime"]);
 
 type MedicalDocumentKind = "chart" | "examination" | "observation" | "food-label";
@@ -60,15 +61,15 @@ export async function uploadMedicalDocument({
   kind,
 }: UploadMedicalDocumentInput): Promise<MedicalDocumentReference> {
   const observation = kind === "observation";
-  const allowedTypes = observation ? ALLOWED_OBSERVATION_TYPES : ALLOWED_IMAGE_TYPES;
+  const allowedTypes = observation ? ALLOWED_OBSERVATION_TYPES : ALLOWED_MEDICAL_DOCUMENT_TYPES;
   const maxBytes = observation ? OBSERVATION_MEDIA_MAX_BYTES : MEDICAL_DOCUMENT_MAX_BYTES;
   if (!allowedTypes.has(file.type)) {
     throw uploadError(observation
       ? "관찰 자료는 JPG, PNG, WebP, MP4, WebM, MOV 형식만 저장할 수 있습니다."
-      : "원본 사진은 JPG, PNG, WebP 형식만 저장할 수 있습니다.");
+      : "원본 자료는 JPG, PNG, WebP, PDF 형식만 저장할 수 있습니다.");
   }
   if (file.size > maxBytes) {
-    throw uploadError(observation ? "관찰 사진·영상은 파일당 30MB 이하여야 합니다." : "원본 사진은 한 장당 10MB 이하여야 합니다.");
+    throw uploadError(observation ? "관찰 사진·영상은 파일당 30MB 이하여야 합니다." : "원본 자료는 파일당 10MB 이하여야 합니다.");
   }
 
   const { client, household } = await getUploadContext();
@@ -96,6 +97,57 @@ export async function uploadMedicalDocument({
     sizeBytes: file.size,
     uploadedAt: new Date().toISOString(),
   };
+}
+
+export async function uploadMedicalDocuments({
+  files,
+  catId,
+  recordId,
+  kind,
+  onProgress,
+}: Omit<UploadMedicalDocumentInput, "file"> & {
+  files: File[];
+  onProgress?: (completed: number, total: number) => void;
+}): Promise<MedicalDocumentReference[]> {
+  const documents: MedicalDocumentReference[] = [];
+  try {
+    for (const file of files) {
+      documents.push(await uploadMedicalDocument({ file, catId, recordId, kind }));
+      onProgress?.(documents.length, files.length);
+    }
+    return documents;
+  } catch (caught) {
+    if (documents.length) {
+      try {
+        await deleteMedicalDocuments(documents.map(document => document.storagePath));
+      } catch (rollbackError) {
+        console.error("Failed to roll back partially uploaded medical documents", rollbackError);
+      }
+    }
+    throw caught;
+  }
+}
+
+export function labReportDocuments(report: {
+  originalDocuments?: MedicalDocumentReference[];
+  originalDocument?: MedicalDocumentReference | null;
+}): MedicalDocumentReference[] {
+  return [
+    ...(Array.isArray(report.originalDocuments) ? report.originalDocuments : []),
+    ...(report.originalDocument?.storagePath ? [report.originalDocument] : []),
+  ].filter((document, index, documents) => Boolean(document?.storagePath)
+    && documents.findIndex(candidate => candidate.storagePath === document.storagePath) === index);
+}
+
+export function medicalDocumentDisplayName(fileName: string): string {
+  const normalized = fileName.normalize("NFC");
+  const extension = normalized.match(/\.[a-z0-9]+$/i)?.[0] ?? "";
+  if (/혈액검사/i.test(normalized)) return `혈액검사${extension}`;
+  const kind = normalized.match(/\((US|DX)\)/i)?.[1]?.toUpperCase();
+  const timestamp = normalized.match(/\((20\d{12})\)/)?.[1];
+  const sequence = normalized.match(/(\d{3})(?=\.[a-z0-9]+$)/i)?.[1];
+  if (kind) return `${kind}${timestamp ? ` ${timestamp.slice(0, 8)}` : ""}${sequence ? ` #${sequence}` : ""}${extension}`;
+  return `검사 원본${extension}`;
 }
 
 export async function createMedicalDocumentSignedUrl(storagePath: string): Promise<string> {

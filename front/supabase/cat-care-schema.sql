@@ -319,7 +319,7 @@ values (
   'cat-medical-documents',
   false,
   31457280,
-  array['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime']
+  array['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'video/mp4', 'video/webm', 'video/quicktime']
 )
 on conflict (id) do update
 set public = excluded.public,

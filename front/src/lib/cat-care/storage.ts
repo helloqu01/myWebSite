@@ -23,7 +23,7 @@ export const CAT_CARE_HISTORY_KEY = "ohj-senior-cat-care-history-v1";
 const MAX_LOCAL_SNAPSHOTS = 12;
 
 export const EMPTY_CARE_STATE: CareState = {
-  version: 16,
+  version: 17,
   cats: [],
   records: [],
   foodItems: [],
@@ -66,7 +66,7 @@ function normalizeNotificationSettings(settings?: Partial<NotificationSettings>)
 
 export function normalizeCareState(input: Partial<CareState>): CareState {
   return {
-    version: 16,
+    version: 17,
     cats: Array.isArray(input.cats)
       ? (input.cats as CatProfile[]).map(cat => ({
           ...cat,
@@ -175,19 +175,27 @@ export function normalizeCareState(input: Partial<CareState>): CareState {
       ? (input.schedules as CareSchedule[]).map(schedule => ({ ...schedule, medicationId: schedule.medicationId ?? null }))
       : [],
     labReports: Array.isArray(input.labReports)
-      ? (input.labReports as LabReport[]).map(report => ({
-          ...report,
-          type: report.type ?? "blood",
-          title: report.title ?? "",
-          sourceFileName: report.sourceFileName ?? "",
-          rawText: report.rawText ?? "",
-          originalDocument: report.originalDocument?.storagePath ? report.originalDocument : null,
-          items: Array.isArray(report.items) ? report.items : [],
-          findings: report.findings ?? "",
-          interpretation: report.interpretation ?? "",
-          recommendations: report.recommendations ?? "",
-          notes: report.notes ?? "",
-        }))
+      ? (input.labReports as LabReport[]).map(report => {
+          const originalDocuments = [
+            ...(Array.isArray(report.originalDocuments) ? report.originalDocuments : []),
+            ...(report.originalDocument?.storagePath ? [report.originalDocument] : []),
+          ].filter((document, index, documents) => Boolean(document?.storagePath)
+            && documents.findIndex(candidate => candidate.storagePath === document.storagePath) === index);
+          return {
+            ...report,
+            type: report.type ?? "blood",
+            title: report.title ?? "",
+            sourceFileName: report.sourceFileName ?? "",
+            rawText: report.rawText ?? "",
+            originalDocuments,
+            originalDocument: originalDocuments[0] ?? null,
+            items: Array.isArray(report.items) ? report.items : [],
+            findings: report.findings ?? "",
+            interpretation: report.interpretation ?? "",
+            recommendations: report.recommendations ?? "",
+            notes: report.notes ?? "",
+          };
+        })
       : [],
     healthCheckups: Array.isArray(input.healthCheckups)
       ? (input.healthCheckups as HealthCheckup[]).map(checkup => ({

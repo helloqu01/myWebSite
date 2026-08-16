@@ -235,6 +235,8 @@ export interface LabReport {
   hospital: string;
   sourceFileName: string;
   rawText: string;
+  originalDocuments: MedicalDocumentReference[];
+  /** @deprecated 이전 버전 단일 첨부 호환용. 새 화면에서는 originalDocuments를 사용합니다. */
   originalDocument: MedicalDocumentReference | null;
   items: LabResultItem[];
   findings: string;
@@ -338,7 +340,7 @@ export interface NotificationSettings {
 }
 
 export interface CareState {
-  version: 16;
+  version: 17;
   cats: CatProfile[];
   records: DailyRecord[];
   foodItems: FoodItem[];

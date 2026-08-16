@@ -38,4 +38,23 @@ describe("normalizeCareState", () => {
 
     expect(normalized.records[0].timedEvents[0]).toMatchObject({ type: "play", durationMinutes: 15 });
   });
+
+  it("migrates a legacy single lab document into the multi-document list", () => {
+    const legacyDocument = {
+      storagePath: "household/cat/examination/report/legacy.jpg",
+      fileName: "legacy.jpg",
+      mimeType: "image/jpeg",
+      sizeBytes: 123,
+      uploadedAt: "2026-08-16T00:00:00.000Z",
+    };
+    const normalized = normalizeCareState({
+      cats: [],
+      records: [],
+      labReports: [{ originalDocument: legacyDocument, items: [] }] as never,
+    });
+
+    expect(normalized.version).toBe(17);
+    expect(normalized.labReports[0].originalDocuments).toEqual([legacyDocument]);
+    expect(normalized.labReports[0].originalDocument).toEqual(legacyDocument);
+  });
 });

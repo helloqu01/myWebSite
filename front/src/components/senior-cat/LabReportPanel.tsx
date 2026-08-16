@@ -29,10 +29,12 @@ import OpenInNewRounded from "@mui/icons-material/OpenInNewRounded";
 import ScienceRounded from "@mui/icons-material/ScienceRounded";
 import RotateRightRounded from "@mui/icons-material/RotateRightRounded";
 import type { CatProfile, ExaminationType, LabReport, LabResultItem } from "@/types/cat-care";
-import { createMedicalDocumentSignedUrl, uploadMedicalDocument } from "@/lib/cat-care/medical-documents";
+import { createMedicalDocumentSignedUrl, labReportDocuments, medicalDocumentDisplayName, uploadMedicalDocument } from "@/lib/cat-care/medical-documents";
 import { createId, toLocalDateKey } from "@/lib/cat-care/storage";
 import { labMarkerOptions, markerDetails, parseLabText, updateLabFlag } from "@/lib/cat-care/lab-results";
-import { prepareImageForOcr, type OcrRotation } from "@/lib/cat-care/ocr-image";
+import type { OcrRotation } from "@/lib/cat-care/ocr-image";
+import { recognizeMedicalDocument } from "@/lib/cat-care/medical-ocr";
+import MedicalFolderImportDialog from "./MedicalFolderImportDialog";
 
 interface LabReportPanelProps {
   cat: CatProfile;
@@ -172,20 +174,13 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
     setError("");
     setProgress(0);
     setProgressLabel("OCR 엔진 준비 중");
-    let worker: Awaited<ReturnType<typeof import("tesseract.js")["createWorker"]>> | null = null;
     try {
-      const { createWorker } = await import("tesseract.js");
-      worker = await createWorker(["eng", "kor"], 1, {
-        logger: log => {
-          if (typeof log.progress === "number") setProgress(Math.round(log.progress * 100));
-          if (log.status) setProgressLabel(log.status);
-        },
+      const result = await recognizeMedicalDocument(file, rotation, current => {
+        setProgress(current.percent);
+        setProgressLabel(current.label);
       });
-      setProgressLabel("사진 회전·선명화 중");
-      const prepared = await prepareImageForOcr(file, rotation);
-      const result = await worker.recognize(prepared);
-      setOcrConfidence(Math.round(result.data.confidence));
-      const text = result.data.text.trim();
+      setOcrConfidence(result.confidence);
+      const text = result.text.trim();
       const parsed = parseLabText(text);
       setRawText(text);
       setItems(parsed);
@@ -199,7 +194,6 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
       console.error(caught);
       setError("사진 글자를 읽지 못했습니다. 네트워크 연결과 사진 선명도를 확인한 뒤 다시 시도해 주세요.");
     } finally {
-      await worker?.terminate();
       setAnalyzing(false);
       setProgressLabel("");
     }
@@ -250,8 +244,9 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
         type,
         title: title.trim() || examinationTypeLabels[type],
         hospital: hospital.trim(),
-        sourceFileName: file?.name ?? "직접 입력",
+        sourceFileName: file ? medicalDocumentDisplayName(file.name) : "직접 입력",
         rawText: rawText.trim(),
+        originalDocuments: originalDocument ? [originalDocument] : [],
         originalDocument,
         items: validItems,
         findings: findings.trim(),
@@ -281,13 +276,17 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
             피검사부터 소변·분변·엑스레이·초음파·병리검사까지 수치와 판독 내용, 원본 사진을 고양이별로 저장합니다.
           </Typography>
         </Box>
-        <Button variant="contained" startIcon={<CameraAltRounded />} onClick={open}>검사 기록 추가·사진 분석</Button>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+          <MedicalFolderImportDialog cat={cat} reports={reports} onSave={onSave} />
+          <Button variant="contained" startIcon={<CameraAltRounded />} onClick={open}>검사 기록 추가·사진 분석</Button>
+        </Stack>
       </Stack>
 
       {catReports.length ? (
         <Stack spacing={1.25}>
-          {catReports.map(report => (
-            <Box key={report.id} sx={{ p: 1.5, border: "1px solid", borderColor: "divider", borderRadius: 2.5 }}>
+          {catReports.map(report => {
+            const documents = labReportDocuments(report);
+            return <Box key={report.id} sx={{ p: 1.5, border: "1px solid", borderColor: "divider", borderRadius: 2.5 }}>
               <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={1}>
                 <Box>
                   <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap alignItems="center">
@@ -295,7 +294,7 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
                     <Chip size="small" label={examinationTypeLabels[report.type]} color="primary" variant="outlined" />
                     {report.title && report.title !== examinationTypeLabels[report.type] && <Chip size="small" label={report.title} variant="outlined" />}
                     {report.rawText && <Chip size="small" label="OCR 원문 저장됨" color="secondary" variant="outlined" />}
-                    {report.originalDocument && <Chip size="small" label="원본 사진 비공개 저장됨" color="success" variant="outlined" />}
+                    {documents.length > 0 && <Chip size="small" label={`비공개 원본 ${documents.length}개 저장됨`} color="success" variant="outlined" />}
                   </Stack>
                   <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
                     {report.items.slice(0, 8).map(item => (
@@ -311,14 +310,14 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
                   </Stack>
                   {report.findings && <Typography variant="body2" sx={{ mt: 1, whiteSpace: "pre-wrap" }}><strong>판독 소견:</strong> {report.findings}</Typography>}
                   {report.interpretation && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}><strong>결론:</strong> {report.interpretation}</Typography>}
-                  {report.originalDocument && <Button size="small" startIcon={<OpenInNewRounded />} onClick={() => viewOriginalDocument(report.originalDocument!.storagePath)} sx={{ mt: 1 }}>원본 사진 보기</Button>}
+                  {documents.length > 0 && <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>{documents.map((document, index) => <Button key={document.storagePath} size="small" startIcon={<OpenInNewRounded />} onClick={() => viewOriginalDocument(document.storagePath)}>{medicalDocumentDisplayName(document.fileName) || `원본 ${index + 1}`}</Button>)}</Stack>}
                 </Box>
                 <Tooltip title="검사 기록 삭제">
                   <IconButton size="small" color="error" onClick={() => onDelete(report)}><DeleteOutlineRounded fontSize="small" /></IconButton>
                 </Tooltip>
               </Stack>
-            </Box>
-          ))}
+            </Box>;
+          })}
         </Stack>
       ) : (
         <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>아직 저장된 검사결과가 없습니다.</Typography>
@@ -343,22 +342,23 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
               ref={fileInputRef}
               hidden
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
               onChange={event => { setFile(event.target.files?.[0] ?? null); setRotation(0); setOcrConfidence(null); }}
             />
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} alignItems={{ sm: "center" }}>
               <Button variant="outlined" startIcon={<CameraAltRounded />} onClick={() => fileInputRef.current?.click()} disabled={analyzing || uploading}>
                 {file ? "다른 사진 선택" : "사진 선택 또는 촬영"}
               </Button>
-              <Typography variant="body2" color="text.secondary">{file?.name ?? "JPG, PNG, WebP · 최대 10MB"}</Typography>
-              {file && <Button size="small" startIcon={<RotateRightRounded />} onClick={() => setRotation(current => ((current + 90) % 360) as OcrRotation)} disabled={analyzing || uploading}>회전 {rotation}°</Button>}
+              <Typography variant="body2" color="text.secondary">{file ? medicalDocumentDisplayName(file.name) : "JPG, PNG, WebP, PDF · 최대 10MB"}</Typography>
+              {file && file.type !== "application/pdf" && <Button size="small" startIcon={<RotateRightRounded />} onClick={() => setRotation(current => ((current + 90) % 360) as OcrRotation)} disabled={analyzing || uploading}>회전 {rotation}°</Button>}
               <Button variant="contained" onClick={analyze} disabled={!file || analyzing || uploading} sx={{ ml: { sm: "auto" } }}>
                 {analyzing ? <><CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />분석 중</> : "사진에서 값 읽기"}
               </Button>
             </Stack>
             {analyzing && <Box><LinearProgress variant="determinate" value={progress} /><Typography variant="caption" color="text.secondary">{progressLabel} · {progress}%</Typography></Box>}
             {ocrConfidence != null && <Alert severity={ocrConfidence < 60 ? "warning" : "success"}>OCR 인식 신뢰도 {ocrConfidence}% · {ocrConfidence < 60 ? "회전 후 다시 분석하거나 OCR 원문과 수치를 직접 확인해 주세요." : "추출된 수치와 기준범위를 원본 검사표와 대조해 주세요."}</Alert>}
-            {previewUrl && <Box component="img" src={previewUrl} alt="선택한 검사결과 사진" sx={{ display: "block", maxWidth: "100%", maxHeight: 360, mx: "auto", borderRadius: 2, objectFit: "contain", transform: `rotate(${rotation}deg)` }} />}
+            {previewUrl && file?.type !== "application/pdf" && <Box component="img" src={previewUrl} alt="선택한 검사결과 사진" sx={{ display: "block", maxWidth: "100%", maxHeight: 360, mx: "auto", borderRadius: 2, objectFit: "contain", transform: `rotate(${rotation}deg)` }} />}
+            {file?.type === "application/pdf" && <Alert severity="info">PDF의 각 페이지에서 텍스트를 읽고, 스캔 페이지는 OCR로 분석합니다. 최대 10쪽까지 분석합니다.</Alert>}
             {error && <Alert severity="warning">{error}</Alert>}
 
             <Divider />
