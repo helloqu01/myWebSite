@@ -15,6 +15,8 @@ import {
   Paper,
   Snackbar,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -115,6 +117,8 @@ const confidenceLabel = {
 };
 
 const DEVICE_PIN_HASH_KEY = "ohj-cat-care-device-pin-hash";
+
+type DashboardTab = "overview" | "records" | "behavior" | "care" | "health" | "settings";
 
 async function hashDevicePin(pin: string): Promise<string> {
   const digest = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(pin));
@@ -278,6 +282,7 @@ export default function SeniorCatPage() {
   const [selectedDate, setSelectedDate] = useState(() => toLocalDateKey(new Date()));
   const [range, setRange] = useState<7 | 30>(7);
   const [reportRange, setReportRange] = useState<7 | 30 | 90>(30);
+  const [dashboardTab, setDashboardTab] = useState<DashboardTab>("overview");
   const [foodDialogRequest, setFoodDialogRequest] = useState(0);
   const [medicationDialogRequest, setMedicationDialogRequest] = useState(0);
   const [weeklyDialogRequest, setWeeklyDialogRequest] = useState(0);
@@ -841,6 +846,19 @@ export default function SeniorCatPage() {
     if (reminder.action === "weekly_check") setWeeklyDialogRequest(current => current + 1);
     if (reminder.action === "monthly_check") setMonthlyDialogRequest(current => current + 1);
 
+    const targetTab: Record<CareReminder["action"], DashboardTab> = {
+      daily_record: "records",
+      schedule: "care",
+      weekly_check: "care",
+      monthly_check: "care",
+      health_checkup: "health",
+      medication_stock: "care",
+      food_history: "care",
+      medication_log: "care",
+      quality_of_life: "care",
+    };
+    setDashboardTab(targetTab[reminder.action]);
+
     const targetId = {
       daily_record: "daily-record-section",
       schedule: "schedule-care-section",
@@ -897,6 +915,22 @@ export default function SeniorCatPage() {
     });
     if (!opened) setMessage("팝업이 차단되었습니다. 이 사이트의 팝업을 허용한 뒤 다시 시도해 주세요.");
   };
+
+  const syncAndReminderTools = (
+    <Box component="section" aria-label="백업과 알림 도구">
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", xl: "minmax(0, 0.85fr) minmax(0, 1.15fr)" }, gap: 3 }}>
+        <CloudSyncPanel care={care} onRestore={restoreCloudCare} onLogout={clearLocalCareAfterLogout} onMessage={setMessage} />
+        <CareReminderPanel
+          care={care}
+          onSettingsChange={updateNotificationSettings}
+          onMedicationSave={saveMedicationAdministration}
+          onMedicationDelete={deleteMedicationAdministration}
+          onReminderAction={handleReminderAction}
+          onMessage={setMessage}
+        />
+      </Box>
+    </Box>
+  );
 
   if (!ready) {
     return (
@@ -976,7 +1010,8 @@ export default function SeniorCatPage() {
                 startIcon={<PlaylistAddCheckRounded />}
                 disabled={!care.cats.length}
                 onClick={() => {
-                  document.getElementById("daily-record-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  setDashboardTab("records");
+                  window.setTimeout(() => document.getElementById("daily-record-section")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
                 }}
               >
                 네 마리 하루 기록
@@ -1029,19 +1064,7 @@ export default function SeniorCatPage() {
 
       <Container maxWidth="xl" sx={{ mt: { xs: 4, md: 6 } }}>
         <Stack spacing={5}>
-          <Box component="section" aria-label="백업과 알림 도구">
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", xl: "minmax(0, 0.85fr) minmax(0, 1.15fr)" }, gap: 3 }}>
-              <CloudSyncPanel care={care} onRestore={restoreCloudCare} onLogout={clearLocalCareAfterLogout} onMessage={setMessage} />
-              <CareReminderPanel
-                care={care}
-                onSettingsChange={updateNotificationSettings}
-                onMedicationSave={saveMedicationAdministration}
-                onMedicationDelete={deleteMedicationAdministration}
-                onReminderAction={handleReminderAction}
-                onMessage={setMessage}
-              />
-            </Box>
-          </Box>
+          {care.cats.length === 0 && syncAndReminderTools}
 
           {care.cats.length === 0 ? (
             <Paper
@@ -1069,7 +1092,54 @@ export default function SeniorCatPage() {
             </Paper>
           ) : (
             <>
-              <Box component="section" aria-labelledby="cats-heading">
+              <Paper
+                component="nav"
+                aria-label="건강 대시보드 메뉴"
+                elevation={0}
+                sx={{ p: 0.75, border: "1px solid var(--card-border)", borderRadius: 3.5, overflow: "hidden" }}
+              >
+                <Tabs
+                  value={dashboardTab}
+                  onChange={(_, value: DashboardTab) => setDashboardTab(value)}
+                  variant="scrollable"
+                  scrollButtons="auto"
+                  allowScrollButtonsMobile
+                  sx={{
+                    minHeight: 48,
+                    "& .MuiTab-root": { minHeight: 48, minWidth: { xs: 112, sm: 132 }, fontWeight: 800, borderRadius: 2.5 },
+                    "& .Mui-selected": { bgcolor: "var(--surface)" },
+                  }}
+                >
+                  <Tab value="overview" label="전체 현황" />
+                  <Tab value="records" label="하루 기록" />
+                  <Tab value="behavior" label="행동 분석" />
+                  <Tab value="care" label="고양이 케어" />
+                  <Tab value="health" label="병원·통계" />
+                  <Tab value="settings" label="알림·설정" />
+                </Tabs>
+              </Paper>
+
+              {dashboardTab === "settings" && syncAndReminderTools}
+
+              {(dashboardTab === "care" || dashboardTab === "health") && (
+                <Paper elevation={0} sx={{ p: 1.25, border: "1px solid var(--card-border)", borderRadius: 3 }}>
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                    <Typography variant="body2" fontWeight={800} sx={{ mr: 0.5 }}>고양이 선택</Typography>
+                    {orderedCats.map(cat => (
+                      <Chip
+                        key={cat.id}
+                        icon={<PetsRounded />}
+                        label={cat.name}
+                        color={cat.id === selectedCatId ? "primary" : "default"}
+                        variant={cat.id === selectedCatId ? "filled" : "outlined"}
+                        onClick={() => setSelectedCatId(cat.id)}
+                      />
+                    ))}
+                  </Stack>
+                </Paper>
+              )}
+
+              {dashboardTab === "overview" && <Box component="section" aria-labelledby="cats-heading">
                 <Stack
                   direction={{ xs: "column", sm: "row" }}
                   justifyContent="space-between"
@@ -1105,41 +1175,42 @@ export default function SeniorCatPage() {
                     />
                   ))}
                 </Box>
-              </Box>
+              </Box>}
 
-              <MultiCatHealthDashboard
+              {dashboardTab === "overview" && <MultiCatHealthDashboard
                 cats={orderedCats}
                 records={care.records}
                 schedules={care.schedules}
                 selectedDate={selectedDate}
                 onSelectCat={catId => {
                   setSelectedCatId(catId);
+                  setDashboardTab("care");
                   window.setTimeout(() => document.getElementById("selected-cat-detail")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
                 }}
-              />
+              />}
 
-              <CareCalendar
+              {dashboardTab === "records" && <CareCalendar
                 cats={orderedCats}
                 records={care.records}
                 schedules={care.schedules}
                 selectedDate={selectedDate}
                 onSelectDate={setSelectedDate}
-              />
+              />}
 
-              <MultiCatEventLogger
+              {dashboardTab === "records" && <MultiCatEventLogger
                 cats={orderedCats}
                 records={care.records}
                 foodItems={care.foodItems}
                 onSave={saveMultiCatEvents}
-              />
+              />}
 
-              <BehaviorPatternDashboard
+              {dashboardTab === "behavior" && <BehaviorPatternDashboard
                 cats={orderedCats}
                 records={care.records}
                 selectedDate={selectedDate}
-              />
+              />}
 
-              <Box component="section" aria-labelledby="attention-heading">
+              {dashboardTab === "overview" && <Box component="section" aria-labelledby="attention-heading">
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
                   <MonitorHeartRounded color="warning" />
                   <Typography id="attention-heading" variant="h5" fontWeight={800}>지금 확인할 내용</Typography>
@@ -1155,9 +1226,9 @@ export default function SeniorCatPage() {
                     현재 저장된 기록에서 주의가 필요한 변화는 발견되지 않았습니다.
                   </Alert>
                 )}
-              </Box>
+              </Box>}
 
-              {selectedCat && (
+              {selectedCat && (dashboardTab === "care" || dashboardTab === "health") && (
                 <Box id="selected-cat-detail" component="section" aria-labelledby="selected-cat-heading" sx={{ scrollMarginTop: 96 }}>
                   <Paper
                     elevation={0}
@@ -1221,6 +1292,7 @@ export default function SeniorCatPage() {
                     </Stack>
                   )}
 
+                  {dashboardTab === "care" && <>
                   <Box
                     sx={{
                       display: "grid",
@@ -1305,7 +1377,9 @@ export default function SeniorCatPage() {
                       onDelete={deleteFoodItem}
                     />
                   </Box>
+                  </>}
 
+                  {dashboardTab === "health" && <>
                   <Box id="health-checkup-section" sx={{ mt: 4, scrollMarginTop: 96 }}>
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
@@ -1453,6 +1527,7 @@ export default function SeniorCatPage() {
                       <Typography color="text.secondary">아직 저장된 기록이 없습니다.</Typography>
                     )}
                   </Paper>
+                  </>}
                 </Box>
               )}
             </>
