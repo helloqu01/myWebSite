@@ -28,6 +28,7 @@ import DeleteOutlineRounded from "@mui/icons-material/DeleteOutlineRounded";
 import OpenInNewRounded from "@mui/icons-material/OpenInNewRounded";
 import ScienceRounded from "@mui/icons-material/ScienceRounded";
 import RotateRightRounded from "@mui/icons-material/RotateRightRounded";
+import HealthAndSafetyRounded from "@mui/icons-material/HealthAndSafetyRounded";
 import type { CatProfile, ExaminationType, LabReport, LabResultItem } from "@/types/cat-care";
 import { createMedicalDocumentSignedUrl, labReportDocuments, medicalDocumentDisplayName, uploadMedicalDocument } from "@/lib/cat-care/medical-documents";
 import { createId, toLocalDateKey } from "@/lib/cat-care/storage";
@@ -41,6 +42,7 @@ interface LabReportPanelProps {
   reports: LabReport[];
   onSave: (report: LabReport) => void;
   onDelete: (report: LabReport) => void;
+  onAnalyze: (report: LabReport) => void;
 }
 
 const flagStyle = {
@@ -97,7 +99,7 @@ function blankItem(): LabResultItem {
   };
 }
 
-export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabReportPanelProps) {
+export default function LabReportPanel({ cat, reports, onSave, onDelete, onAnalyze }: LabReportPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [reportId, setReportId] = useState(() => createId("lab-report"));
@@ -310,6 +312,10 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete }: LabRe
                   </Stack>
                   {report.findings && <Typography variant="body2" sx={{ mt: 1, whiteSpace: "pre-wrap" }}><strong>판독 소견:</strong> {report.findings}</Typography>}
                   {report.interpretation && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}><strong>결론:</strong> {report.interpretation}</Typography>}
+                  {report.recommendations && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}><strong>추적 권고:</strong> {report.recommendations}</Typography>}
+                  <Button size="small" startIcon={<HealthAndSafetyRounded />} onClick={() => onAnalyze(report)} sx={{ mt: 1 }}>
+                    이 날짜 분석 보기
+                  </Button>
                   {documents.length > 0 && <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>{documents.map((document, index) => <Button key={document.storagePath} size="small" startIcon={<OpenInNewRounded />} onClick={() => viewOriginalDocument(document.storagePath)}>{medicalDocumentDisplayName(document.fileName) || `원본 ${index + 1}`}</Button>)}</Stack>}
                 </Box>
                 <Tooltip title="검사 기록 삭제">

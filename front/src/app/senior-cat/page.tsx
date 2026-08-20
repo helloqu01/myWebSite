@@ -283,6 +283,7 @@ export default function SeniorCatPage() {
   const [range, setRange] = useState<7 | 30>(7);
   const [reportRange, setReportRange] = useState<7 | 30 | 90>(30);
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("overview");
+  const [labAnalysisDate, setLabAnalysisDate] = useState("");
   const [foodDialogRequest, setFoodDialogRequest] = useState(0);
   const [medicationDialogRequest, setMedicationDialogRequest] = useState(0);
   const [weeklyDialogRequest, setWeeklyDialogRequest] = useState(0);
@@ -692,7 +693,18 @@ export default function SeniorCatPage() {
 
   const saveLabReport = (report: LabReport) => {
     setCare(current => ({ ...current, labReports: [...current.labReports, report] }));
-    setMessage(`${formatDate(report.date)} 검사결과 ${report.items.length}개를 저장했습니다.`);
+    setSelectedCatId(report.catId);
+    setDashboardTab("health");
+    setLabAnalysisDate(report.date);
+    setMessage(`${formatDate(report.date)} 검사결과 ${report.items.length}개를 저장하고 분석 화면을 열었습니다.`);
+    window.setTimeout(() => document.getElementById("veterinary-analysis-section")?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+  };
+
+  const showLabAnalysis = (report: LabReport) => {
+    setSelectedCatId(report.catId);
+    setDashboardTab("health");
+    setLabAnalysisDate(report.date);
+    window.setTimeout(() => document.getElementById("veterinary-analysis-section")?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   };
 
   const deleteLabReport = async (report: LabReport) => {
@@ -1455,14 +1467,16 @@ export default function SeniorCatPage() {
                       reports={care.labReports}
                       onSave={saveLabReport}
                       onDelete={deleteLabReport}
+                      onAnalyze={showLabAnalysis}
                     />
                   </Box>
 
-                  <Box sx={{ mt: 4 }}>
+                  <Box id="veterinary-analysis-section" sx={{ mt: 4, scrollMarginTop: 96 }}>
                     <VeterinaryDecisionSupportPanel
                       cat={selectedCat}
                       records={care.records}
                       reports={care.labReports}
+                      focusDate={labAnalysisDate}
                     />
                   </Box>
 

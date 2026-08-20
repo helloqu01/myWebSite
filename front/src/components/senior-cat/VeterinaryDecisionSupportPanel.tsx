@@ -27,6 +27,7 @@ interface VeterinaryDecisionSupportPanelProps {
   cat: CatProfile;
   records: DailyRecord[];
   reports: LabReport[];
+  focusDate?: string;
 }
 
 const levelStyle: Record<VeterinaryConcernLevel, { label: string; color: "default" | "info" | "warning" | "error" }> = {
@@ -38,7 +39,7 @@ const levelStyle: Record<VeterinaryConcernLevel, { label: string; color: "defaul
 
 const confidenceLabel = { low: "근거 제한적", medium: "근거 보통", high: "근거 여러 개" } as const;
 
-export default function VeterinaryDecisionSupportPanel({ cat, records, reports }: VeterinaryDecisionSupportPanelProps) {
+export default function VeterinaryDecisionSupportPanel({ cat, records, reports, focusDate }: VeterinaryDecisionSupportPanelProps) {
   const analysisDates = useMemo(() => {
     const counts = new Map<string, number>();
     reports
@@ -51,10 +52,14 @@ export default function VeterinaryDecisionSupportPanel({ cat, records, reports }
   const activeDate = analysisDates.some(([date]) => date === selectedDate) ? selectedDate : latestDate;
 
   useEffect(() => {
-    setSelectedDate(latestDate);
-  }, [cat.id, latestDate]);
+    setSelectedDate(focusDate && analysisDates.some(([date]) => date === focusDate) ? focusDate : latestDate);
+  }, [analysisDates, cat.id, focusDate, latestDate]);
 
   const analysis = useMemo(() => analyzeVeterinaryConcerns(cat, records, reports, activeDate || undefined), [activeDate, cat, records, reports]);
+  const selectedReports = useMemo(
+    () => reports.filter(report => report.catId === cat.id && report.date === activeDate),
+    [activeDate, cat.id, reports],
+  );
   const urgentCount = analysis.concerns.filter(concern => concern.level === "urgent").length;
 
   return (
@@ -97,6 +102,37 @@ export default function VeterinaryDecisionSupportPanel({ cat, records, reports }
         <Alert severity="info" sx={{ mb: 2 }}>
           폴더 가져오기에서 파일명·폴더명으로 확인한 날짜도 검사일 목록에 포함됩니다. 현재 {analysis.labDate} 검사 {analysis.reportCount}건만 수치 분석에 사용하며, 이전 검사는 반복 여부만 확인합니다.
         </Alert>
+      )}
+
+      {selectedReports.length > 0 && (
+        <Box sx={{ mb: 2, p: { xs: 1.5, sm: 2 }, border: "1px solid", borderColor: "divider", borderRadius: 3 }}>
+          <Typography fontWeight={900} sx={{ mb: 1 }}>저장된 검사 내용</Typography>
+          <Stack spacing={1.5}>
+            {selectedReports.map(report => (
+              <Box key={report.id}>
+                <Typography variant="body2" fontWeight={800}>
+                  {report.title}{report.hospital ? ` · ${report.hospital}` : ""}
+                </Typography>
+                {report.items.length > 0 && (
+                  <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 0.75 }}>
+                    {report.items.map(item => (
+                      <Chip
+                        key={item.id}
+                        size="small"
+                        color={item.flag === "high" ? "error" : item.flag === "low" ? "info" : item.flag === "normal" ? "success" : "default"}
+                        variant={item.flag === "unknown" ? "outlined" : "filled"}
+                        label={`${item.code} ${item.value ?? "—"}${item.unit ? ` ${item.unit}` : ""}`}
+                      />
+                    ))}
+                  </Stack>
+                )}
+                {report.findings && <Typography variant="body2" sx={{ mt: 0.75, whiteSpace: "pre-wrap" }}><strong>판독 소견:</strong> {report.findings}</Typography>}
+                {report.interpretation && <Typography variant="body2" sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}><strong>결론:</strong> {report.interpretation}</Typography>}
+                {report.recommendations && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}><strong>추적 권고:</strong> {report.recommendations}</Typography>}
+              </Box>
+            ))}
+          </Stack>
+        </Box>
       )}
 
       {!analysis.labDate ? (
