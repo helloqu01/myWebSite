@@ -1,4 +1,9 @@
 import { prepareImageForOcr, type OcrRotation } from "./ocr-image";
+import {
+  getLocalTesseractOptions,
+  tesseractStatusLabel,
+  withOcrInitializationTimeout,
+} from "./tesseract-local";
 
 export interface MedicalOcrProgress {
   percent: number;
@@ -136,13 +141,14 @@ export async function recognizeMedicalDocument(
   const recognizeBlob = async (blob: Blob, pageIndex: number): Promise<void> => {
     if (!workerRef.current) {
       const { createWorker, PSM } = await import("tesseract.js");
-      workerRef.current = await createWorker(profile.languages, 1, {
+      workerRef.current = await withOcrInitializationTimeout(createWorker(profile.languages, 1, {
+        ...getLocalTesseractOptions(),
         logger: log => {
           if (typeof log.progress !== "number") return;
           const percent = Math.round(((currentPage + log.progress) / totalPages) * 100);
-          onProgress?.({ percent, label: log.status || `페이지 ${currentPage + 1} 분석 중` });
+          onProgress?.({ percent, label: tesseractStatusLabel(log.status, `페이지 ${currentPage + 1} 분석 중`) });
         },
-      });
+      }));
       await workerRef.current.setParameters({
         tessedit_pageseg_mode: PSM.SPARSE_TEXT,
         preserve_interword_spaces: "1",

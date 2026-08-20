@@ -41,6 +41,7 @@ import {
   uploadMedicalDocument,
 } from "@/lib/cat-care/medical-documents";
 import { createId, toLocalDateKey } from "@/lib/cat-care/storage";
+import { getLocalTesseractOptions, tesseractStatusLabel, withOcrInitializationTimeout } from "@/lib/cat-care/tesseract-local";
 
 interface FoodHistoryPanelProps {
   cat: CatProfile;
@@ -367,12 +368,13 @@ export default function FoodHistoryPanel({ cat, cats, items, records, openReques
       })));
       let passIndex = 0;
       const totalPasses = sourceGroups.reduce((sum, group) => sum + group.base.length + group.cells.length, 0);
-      worker = await createWorker(["eng", "kor"], 1, {
+      worker = await withOcrInitializationTimeout(createWorker(["eng", "kor"], 1, {
+        ...getLocalTesseractOptions(),
         logger: log => {
           if (typeof log.progress === "number") setProgress(Math.round(((passIndex + log.progress) / totalPasses) * 100));
-          if (log.status) setProgressLabel(`${Math.min(passIndex + 1, totalPasses)}/${totalPasses} · ${log.status}`);
+          if (log.status) setProgressLabel(`${Math.min(passIndex + 1, totalPasses)}/${totalPasses} · ${tesseractStatusLabel(log.status)}`);
         },
-      });
+      }));
       await worker.setParameters({ tessedit_pageseg_mode: PSM.AUTO, preserve_interword_spaces: "1" });
       const texts: string[] = [];
       for (let fileIndex = 0; fileIndex < sourceGroups.length; fileIndex += 1) {
@@ -415,7 +417,7 @@ export default function FoodHistoryPanel({ cat, cats, items, records, openReques
       if (!parsed.detectedFieldCount) setError("글자는 읽었지만 항목을 분류하지 못했습니다. OCR 원문을 보고 직접 입력해 주세요.");
     } catch (caught) {
       console.error(caught);
-      setError("사료 라벨을 읽지 못했습니다. 네트워크 연결과 사진 선명도를 확인해 주세요.");
+      setError(caught instanceof Error ? caught.message : "사료 라벨을 읽지 못했습니다. 사진 선명도를 확인해 주세요.");
     } finally {
       await worker?.terminate();
       setAnalyzing(false);

@@ -33,6 +33,7 @@ import { parseMedicalChartText } from "@/lib/cat-care/medical-chart";
 import { createMedicalDocumentSignedUrl, deleteMedicalDocument, uploadMedicalDocument } from "@/lib/cat-care/medical-documents";
 import { createId, toLocalDateKey } from "@/lib/cat-care/storage";
 import { prepareImageForOcr, type OcrRotation } from "@/lib/cat-care/ocr-image";
+import { getLocalTesseractOptions, tesseractStatusLabel, withOcrInitializationTimeout } from "@/lib/cat-care/tesseract-local";
 
 interface HealthCheckupPanelProps {
   cat: CatProfile;
@@ -175,12 +176,13 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
     let worker: Awaited<ReturnType<typeof import("tesseract.js")["createWorker"]>> | null = null;
     try {
       const { createWorker } = await import("tesseract.js");
-      worker = await createWorker(["eng", "kor"], 1, {
+      worker = await withOcrInitializationTimeout(createWorker(["eng", "kor"], 1, {
+        ...getLocalTesseractOptions(),
         logger: log => {
           if (typeof log.progress === "number") setProgress(Math.round(log.progress * 100));
-          if (log.status) setProgressLabel(log.status);
+          if (log.status) setProgressLabel(tesseractStatusLabel(log.status));
         },
-      });
+      }));
       setProgressLabel("사진 회전·선명화 중");
       const prepared = await prepareImageForOcr(file, rotation);
       const result = await worker.recognize(prepared);
@@ -211,7 +213,7 @@ export default function HealthCheckupPanel({ cat, checkups, labReports, onSave, 
       }
     } catch (caught) {
       console.error(caught);
-      setError("병원 차트 사진을 읽지 못했습니다. 네트워크 연결과 사진 선명도를 확인해 주세요.");
+      setError(caught instanceof Error ? caught.message : "병원 차트 사진을 읽지 못했습니다. 사진 선명도를 확인해 주세요.");
     } finally {
       await worker?.terminate();
       setAnalyzing(false);

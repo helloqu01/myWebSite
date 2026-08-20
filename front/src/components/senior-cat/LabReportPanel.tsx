@@ -205,7 +205,7 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete, onAnaly
       }
     } catch (caught) {
       console.error(caught);
-      setError("사진 글자를 읽지 못했습니다. 네트워크 연결과 사진 선명도를 확인한 뒤 다시 시도해 주세요.");
+      setError(caught instanceof Error ? caught.message : "사진 글자를 읽지 못했습니다. 사진 선명도를 확인한 뒤 다시 시도해 주세요.");
     } finally {
       setAnalyzing(false);
       setProgressLabel("");
