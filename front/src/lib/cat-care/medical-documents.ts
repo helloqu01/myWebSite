@@ -163,6 +163,25 @@ export async function createMedicalDocumentSignedUrl(storagePath: string): Promi
   return data.signedUrl;
 }
 
+/** 로그인한 가족 구성원이 비공개 원본을 다시 OCR할 때 사용하는 인증 다운로드입니다. */
+export async function downloadMedicalDocument(document: MedicalDocumentReference): Promise<File> {
+  const client = getCloudClient();
+  if (!client) throw uploadError("클라우드 연결 설정이 필요합니다.");
+  const { data: userData, error: userError } = await client.auth.getUser();
+  if (userError || !userData.user) throw uploadError("저장된 원본을 분석하려면 먼저 로그인해 주세요.");
+
+  const { data, error } = await client.storage
+    .from(MEDICAL_DOCUMENT_BUCKET)
+    .download(document.storagePath);
+  if (error || !data) throw uploadError(`저장된 원본을 가져오지 못했습니다: ${error?.message ?? "다운로드 실패"}`);
+
+  const uploadedAt = Date.parse(document.uploadedAt);
+  return new File([data], document.fileName || "medical-document", {
+    type: document.mimeType || data.type || "application/octet-stream",
+    lastModified: Number.isFinite(uploadedAt) ? uploadedAt : Date.now(),
+  });
+}
+
 export async function deleteMedicalDocument(storagePath: string): Promise<void> {
   await deleteMedicalDocuments([storagePath]);
 }

@@ -30,7 +30,7 @@ import ScienceRounded from "@mui/icons-material/ScienceRounded";
 import RotateRightRounded from "@mui/icons-material/RotateRightRounded";
 import HealthAndSafetyRounded from "@mui/icons-material/HealthAndSafetyRounded";
 import type { CatProfile, ExaminationType, LabReport, LabResultItem } from "@/types/cat-care";
-import { createMedicalDocumentSignedUrl, labReportDocuments, medicalDocumentDisplayName, uploadMedicalDocument } from "@/lib/cat-care/medical-documents";
+import { createMedicalDocumentSignedUrl, downloadMedicalDocument, labReportDocuments, medicalDocumentDisplayName, uploadMedicalDocument } from "@/lib/cat-care/medical-documents";
 import { createId, toLocalDateKey } from "@/lib/cat-care/storage";
 import { labMarkerOptions, markerDetails, parseLabText, updateLabFlag } from "@/lib/cat-care/lab-results";
 import type { OcrRotation } from "@/lib/cat-care/ocr-image";
@@ -65,6 +65,8 @@ const examinationTypeLabels: Record<ExaminationType, string> = {
   dental: "치과검사",
   other: "기타 검사",
 };
+
+const storedOcrTypes = new Set<ExaminationType>(["blood", "urine", "stool", "blood_pressure", "thyroid", "pathology", "other"]);
 
 function detectExaminationType(text: string): ExaminationType {
   if (/초음파|ultrasound|sonograph/i.test(text)) return "ultrasound";
@@ -122,10 +124,19 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete, onAnaly
   const [error, setError] = useState("");
   const [rotation, setRotation] = useState<OcrRotation>(0);
   const [ocrConfidence, setOcrConfidence] = useState<number | null>(null);
+  const [storedAnalysisId, setStoredAnalysisId] = useState("");
+  const [storedAnalysisProgress, setStoredAnalysisProgress] = useState(0);
+  const [storedAnalysisMessage, setStoredAnalysisMessage] = useState("");
+  const [storedAnalysisError, setStoredAnalysisError] = useState("");
   const markerOptions = labMarkerOptions();
   const catReports = reports
     .filter(report => report.catId === cat.id)
     .sort((a, b) => b.date.localeCompare(a.date));
+  const pendingStoredReports = catReports.filter(report =>
+    storedOcrTypes.has(report.type)
+    && report.items.length === 0
+    && labReportDocuments(report).length > 0,
+  );
 
   useEffect(() => {
     if (!file) {
@@ -226,6 +237,70 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete, onAnaly
     }
   };
 
+  const readStoredReport = async (report: LabReport, progressOffset = 0, progressScale = 1): Promise<LabReport> => {
+    const documents = labReportDocuments(report);
+    if (!documents.length) throw new Error("저장된 원본이 없습니다.");
+    if (!storedOcrTypes.has(report.type)) throw new Error("엑스레이·초음파 원본은 자동 영상 판독 대상이 아닙니다. 병원 판독 소견을 입력해 주세요.");
+
+    const texts: string[] = [];
+    for (let index = 0; index < documents.length; index += 1) {
+      const document = documents[index];
+      setStoredAnalysisMessage(`${report.date} 원본 ${index + 1}/${documents.length} 가져오는 중`);
+      const storedFile = await downloadMedicalDocument(document);
+      const result = await recognizeMedicalDocument(storedFile, 0, progress => {
+        const documentProgress = (index + progress.percent / 100) / documents.length;
+        setStoredAnalysisProgress(Math.round((progressOffset + documentProgress * progressScale) * 100));
+        setStoredAnalysisMessage(`${report.date} · ${progress.label}`);
+      });
+      if (result.text.trim()) texts.push(result.text.trim());
+    }
+
+    const nextRawText = texts.join("\n\n=== 다음 저장 원본 ===\n\n");
+    if (!nextRawText) throw new Error("저장된 원본에서 글자를 찾지 못했습니다. 원본 파일의 선명도와 방향을 확인해 주세요.");
+    const parsedItems = parseLabText(nextRawText);
+    return {
+      ...report,
+      rawText: nextRawText,
+      items: parsedItems.length ? parsedItems : report.items,
+      updatedAt: new Date().toISOString(),
+    };
+  };
+
+  const analyzeStoredReport = async (report: LabReport) => {
+    setStoredAnalysisId(report.id);
+    setStoredAnalysisProgress(0);
+    setStoredAnalysisError("");
+    try {
+      const updated = await readStoredReport(report);
+      onSave(updated);
+      setStoredAnalysisMessage(updated.items.length
+        ? `${updated.date} 저장 원본에서 검사값 ${updated.items.length}개를 읽었습니다.`
+        : `${updated.date} OCR 원문을 저장했지만 검사 수치는 분류하지 못했습니다.`);
+    } catch (caught) {
+      setStoredAnalysisError(caught instanceof Error ? caught.message : "저장된 원본을 분석하지 못했습니다.");
+    } finally {
+      setStoredAnalysisId("");
+    }
+  };
+
+  const analyzeAllStoredReports = async () => {
+    if (!pendingStoredReports.length) return;
+    setStoredAnalysisId("all");
+    setStoredAnalysisProgress(0);
+    setStoredAnalysisError("");
+    try {
+      for (let index = 0; index < pendingStoredReports.length; index += 1) {
+        const updated = await readStoredReport(pendingStoredReports[index], index / pendingStoredReports.length, 1 / pendingStoredReports.length);
+        onSave(updated);
+      }
+      setStoredAnalysisMessage(`저장된 검사표 ${pendingStoredReports.length}건을 다시 읽어 분석에 반영했습니다.`);
+    } catch (caught) {
+      setStoredAnalysisError(caught instanceof Error ? caught.message : "저장된 원본을 분석하지 못했습니다.");
+    } finally {
+      setStoredAnalysisId("");
+    }
+  };
+
   const save = async () => {
     const validItems = items.filter(item => item.code.trim() && item.value != null);
     if (!validItems.length && !rawText.trim() && !findings.trim() && !interpretation.trim() && !file) {
@@ -279,15 +354,35 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete, onAnaly
           </Typography>
         </Box>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+          {pendingStoredReports.length > 0 && (
+            <Button
+              variant="outlined"
+              color="secondary"
+              startIcon={storedAnalysisId === "all" ? <CircularProgress size={16} color="inherit" /> : <HealthAndSafetyRounded />}
+              onClick={analyzeAllStoredReports}
+              disabled={Boolean(storedAnalysisId)}
+            >
+              저장된 검사표 {pendingStoredReports.length}건 분석
+            </Button>
+          )}
           <MedicalFolderImportDialog cat={cat} reports={reports} onSave={onSave} />
           <Button variant="contained" startIcon={<CameraAltRounded />} onClick={open}>검사 기록 추가·사진 분석</Button>
         </Stack>
       </Stack>
 
+      {storedAnalysisId && <Box sx={{ mb: 2 }}><LinearProgress variant="determinate" value={storedAnalysisProgress} /><Typography variant="caption" color="text.secondary">{storedAnalysisMessage} · {storedAnalysisProgress}%</Typography></Box>}
+      {storedAnalysisError && <Alert severity="error" sx={{ mb: 2 }}>{storedAnalysisError}</Alert>}
+      {!storedAnalysisId && storedAnalysisMessage && !storedAnalysisError && <Alert severity="success" sx={{ mb: 2 }}>{storedAnalysisMessage}</Alert>}
+      <Alert severity="info" sx={{ mb: 2 }}>
+        저장된 혈액·소변 검사표와 문서 원본은 다시 OCR해 수치를 분석할 수 있습니다. 엑스레이·초음파 영상은 원본만으로 자동 진단하지 않으며 병원 판독 소견을 기준으로 확인합니다.
+      </Alert>
+
       {catReports.length ? (
         <Stack spacing={1.25}>
           {catReports.map(report => {
             const documents = labReportDocuments(report);
+            const canAnalyzeStored = documents.length > 0 && storedOcrTypes.has(report.type);
+            const needsStoredAnalysis = canAnalyzeStored && report.items.length === 0;
             return <Box key={report.id} sx={{ p: 1.5, border: "1px solid", borderColor: "divider", borderRadius: 2.5 }}>
               <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={1}>
                 <Box>
@@ -313,9 +408,27 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete, onAnaly
                   {report.findings && <Typography variant="body2" sx={{ mt: 1, whiteSpace: "pre-wrap" }}><strong>판독 소견:</strong> {report.findings}</Typography>}
                   {report.interpretation && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}><strong>결론:</strong> {report.interpretation}</Typography>}
                   {report.recommendations && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, whiteSpace: "pre-wrap" }}><strong>추적 권고:</strong> {report.recommendations}</Typography>}
-                  <Button size="small" startIcon={<HealthAndSafetyRounded />} onClick={() => onAnalyze(report)} sx={{ mt: 1 }}>
-                    이 날짜 분석 보기
+                  <Button
+                    size="small"
+                    startIcon={storedAnalysisId === report.id ? <CircularProgress size={15} color="inherit" /> : <HealthAndSafetyRounded />}
+                    onClick={() => needsStoredAnalysis ? analyzeStoredReport(report) : onAnalyze(report)}
+                    disabled={Boolean(storedAnalysisId)}
+                    sx={{ mt: 1 }}
+                  >
+                    {needsStoredAnalysis ? "저장된 원본 분석하기" : "이 날짜 분석 보기"}
                   </Button>
+                  {canAnalyzeStored && report.items.length > 0 && (
+                    <Button
+                      size="small"
+                      color="secondary"
+                      startIcon={storedAnalysisId === report.id ? <CircularProgress size={15} color="inherit" /> : <ScienceRounded />}
+                      onClick={() => analyzeStoredReport(report)}
+                      disabled={Boolean(storedAnalysisId)}
+                      sx={{ mt: 1, ml: 0.5 }}
+                    >
+                      저장된 원본 다시 분석
+                    </Button>
+                  )}
                   {documents.length > 0 && <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>{documents.map((document, index) => <Button key={document.storagePath} size="small" startIcon={<OpenInNewRounded />} onClick={() => viewOriginalDocument(document.storagePath)}>{medicalDocumentDisplayName(document.fileName) || `원본 ${index + 1}`}</Button>)}</Stack>}
                 </Box>
                 <Tooltip title="검사 기록 삭제">

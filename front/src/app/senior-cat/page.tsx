@@ -692,7 +692,12 @@ export default function SeniorCatPage() {
   };
 
   const saveLabReport = (report: LabReport) => {
-    setCare(current => ({ ...current, labReports: [...current.labReports, report] }));
+    setCare(current => ({
+      ...current,
+      labReports: current.labReports.some(item => item.id === report.id)
+        ? current.labReports.map(item => item.id === report.id ? report : item)
+        : [...current.labReports, report],
+    }));
     setSelectedCatId(report.catId);
     setDashboardTab("health");
     setLabAnalysisDate(report.date);
