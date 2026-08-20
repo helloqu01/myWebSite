@@ -46,7 +46,7 @@ if [[ -z "$oac_id" || "$oac_id" == "None" ]]; then
   oac_id="$(aws cloudfront create-origin-access-control --origin-access-control-config file://"$task_tmp_dir/oac.json" --query 'OriginAccessControl.Id' --output text)"
 fi
 
-content_security_policy="default-src 'self'; script-src 'self' 'unsafe-inline' https: blob:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss: blob:; worker-src 'self' blob:; media-src 'self' blob: https://*.supabase.co; frame-src https://*.google.com https://*.doubleclick.net https://*.googlesyndication.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+content_security_policy="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https: blob:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: wss: blob:; worker-src 'self' blob:; media-src 'self' blob: https://*.supabase.co; frame-src https://*.google.com https://*.doubleclick.net https://*.googlesyndication.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
 jq -n \
   --arg name "$headers_policy_name" \
   --arg csp "$content_security_policy" \
