@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseLabText } from "./lab-results";
+import { parseDatedLabText, parseLabText } from "./lab-results";
 
 describe("parseLabText", () => {
   it("parses Korean hospital tables where the reference range comes before the result", () => {
@@ -31,5 +31,50 @@ describe("parseLabText", () => {
     expect(items.find(item => item.code === "MCV")).toMatchObject({ value: 45.1, flag: "normal" });
     expect(items.filter(item => item.code === "NEU")).toHaveLength(1);
     expect(items.find(item => item.code === "NEU")).toMatchObject({ value: 6.23, unit: "K/uL" });
+  });
+
+  it("normalizes the marker names and urine rows used by the uploaded hospital reports", () => {
+    const items = parseLabText([
+      "T.Bilirubin 0.0-0.9 0.2 mg/dl",
+      "T.Protein 57-89 8.5 g/dl",
+      "Globulin 285.1 5.6 g/dL",
+      "Creatinine 0.8-2.4 1.5 mg/dl",
+      "Phosphorus 3.1-7.5 5.2 mg/dl",
+      "Blood 0-7 100",
+      "Protein(L) 0-29 30",
+      "Glucose(ARC) 0-50 0 mg/dl",
+      "S.G.(U) 1.035-1.065 1.039",
+      "WBC(U) 0-0.5 100 HPF",
+    ].join("\n"));
+
+    expect(items.find(item => item.code === "TBIL")?.value).toBe(0.2);
+    expect(items.find(item => item.code === "TP")).toMatchObject({ value: 8.5, referenceLow: 5.7, referenceHigh: 8.9 });
+    expect(items.find(item => item.code === "GLOB")).toMatchObject({ value: 5.6, referenceLow: 2.8, referenceHigh: 5.1, flag: "high" });
+    expect(items.find(item => item.code === "CREA")?.value).toBe(1.5);
+    expect(items.find(item => item.code === "PHOS")?.value).toBe(5.2);
+    expect(items.find(item => item.code === "UBLOOD")?.value).toBe(100);
+    expect(items.find(item => item.code === "UPRO")?.value).toBe(30);
+    expect(items.find(item => item.code === "UGLU")?.value).toBe(0);
+    expect(items.find(item => item.code === "USG")?.value).toBe(1.039);
+    expect(items.find(item => item.code === "UWBC")?.value).toBe(100);
+  });
+});
+
+describe("parseDatedLabText", () => {
+  it("splits a multi-visit PDF and ignores its export footer date", () => {
+    const groups = parseDatedLabText([
+      "검사일 : 2025-06-07",
+      "CREA 0.8-2.4 1.2 mg/dl",
+      "2026-08-16 오후 04:08 Page: 1",
+      "BUN 16-36 30 mg/dl",
+      "검사일 : 2026-02-18",
+      "CREA 0.8-2.4 1.4 mg/dl",
+      "검사일 : 2026-02-19",
+      "fPL 0-3.5 6.3 ng/ml",
+    ].join("\n"), "2026-08-20").filter(group => group.items.length > 0);
+
+    expect(groups.map(group => group.date)).toEqual(["2025-06-07", "2026-02-18", "2026-02-19"]);
+    expect(groups[0].items.find(item => item.code === "BUN")?.value).toBe(30);
+    expect(groups[2].items.find(item => item.code === "FPL")?.value).toBe(6.3);
   });
 });

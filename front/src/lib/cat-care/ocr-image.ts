@@ -1,10 +1,21 @@
 export type OcrRotation = 0 | 90 | 180 | 270;
 
+interface PrepareImageForOcrOptions {
+  targetLongestEdge?: number;
+  allowDownscale?: boolean;
+}
+
 /** 브라우저에서만 실행되는 OCR 전처리입니다. 원본 파일은 변경하지 않습니다. */
-export async function prepareImageForOcr(file: File, rotation: OcrRotation = 0): Promise<Blob> {
+export async function prepareImageForOcr(
+  file: File,
+  rotation: OcrRotation = 0,
+  options: PrepareImageForOcrOptions = {},
+): Promise<Blob> {
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
   const longest = Math.max(bitmap.width, bitmap.height);
-  const scale = Math.min(2, Math.max(1, 2200 / longest));
+  const targetLongestEdge = options.targetLongestEdge ?? 2200;
+  const targetScale = targetLongestEdge / longest;
+  const scale = Math.min(2, options.allowDownscale ? targetScale : Math.max(1, targetScale));
   const sourceWidth = Math.round(bitmap.width * scale);
   const sourceHeight = Math.round(bitmap.height * scale);
   const rotated = rotation === 90 || rotation === 270;

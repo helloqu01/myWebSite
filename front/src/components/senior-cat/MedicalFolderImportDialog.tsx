@@ -37,7 +37,7 @@ import {
   MEDICAL_DOCUMENT_MAX_BYTES,
   uploadMedicalDocuments,
 } from "@/lib/cat-care/medical-documents";
-import { parseLabText } from "@/lib/cat-care/lab-results";
+import { parseDatedLabText, type DatedLabResultGroup } from "@/lib/cat-care/lab-results";
 import { parseMedicalChartText } from "@/lib/cat-care/medical-chart";
 import { recognizeMedicalDocument } from "@/lib/cat-care/medical-ocr";
 import { createId, toLocalDateKey } from "@/lib/cat-care/storage";
@@ -54,6 +54,7 @@ interface GroupAnalysis {
   label: string;
   rawText: string;
   items: LabResultItem[];
+  visits: DatedLabResultGroup[];
   confidence: number | null;
   confirmed: boolean;
   error: string;
@@ -65,6 +66,7 @@ const EMPTY_ANALYSIS: GroupAnalysis = {
   label: "",
   rawText: "",
   items: [],
+  visits: [],
   confidence: null,
   confirmed: false,
   error: "",
@@ -89,6 +91,10 @@ function detectedTimeLabel(times: string[]): string {
 function bytesLabel(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))}KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+}
+
+function analyzedVisits(rawText: string, fallbackDate: string): DatedLabResultGroup[] {
+  return parseDatedLabText(rawText, fallbackDate).filter(visit => visit.items.length > 0);
 }
 
 export default function MedicalFolderImportDialog({ cat, reports, onSave }: MedicalFolderImportDialogProps) {
@@ -118,6 +124,7 @@ export default function MedicalFolderImportDialog({ cat, reports, onSave }: Medi
 
   const totalFiles = groups.reduce((sum, group) => sum + group.files.length, 0);
   const totalBytes = groups.reduce((sum, group) => sum + group.files.reduce((fileSum, file) => fileSum + file.size, 0), 0);
+  const totalRecords = groups.reduce((sum, group) => sum + Math.max(1, analyses[group.id]?.visits.length ?? 0), 0);
 
   const reset = () => {
     setGroups([]);
@@ -179,13 +186,14 @@ export default function MedicalFolderImportDialog({ cat, reports, onSave }: Medi
             ...current,
             [group.id]: { ...(current[group.id] ?? EMPTY_ANALYSIS), working: true, progress: combined, label: progress.label },
           }));
-        });
+        }, { mode: "lab-fast" });
         if (result.text) texts.push(result.text);
         if (result.confidence != null) confidenceValues.push(result.confidence);
       }
       const rawText = texts.join("\n\n=== 다음 원본 ===\n\n");
-      const items = parseLabText(rawText);
-      const detectedDate = parseMedicalChartText(rawText).date;
+      const visits = analyzedVisits(rawText, group.date);
+      const items = visits.flatMap(visit => visit.items);
+      const detectedDate = visits[0]?.date || parseMedicalChartText(rawText).date;
       if (group.needsDateReview && detectedDate) {
         setGroups(current => current.map(candidate => candidate.id === group.id
           ? { ...candidate, date: detectedDate, dateSource: "ocr", needsDateReview: false }
@@ -199,6 +207,7 @@ export default function MedicalFolderImportDialog({ cat, reports, onSave }: Medi
           label: "분석 완료",
           rawText,
           items,
+          visits,
           confidence: confidenceValues.length
             ? Math.round(confidenceValues.reduce((sum, value) => sum + value, 0) / confidenceValues.length)
             : null,
@@ -240,38 +249,44 @@ export default function MedicalFolderImportDialog({ cat, reports, onSave }: Medi
     try {
       for (let index = 0; index < groups.length; index += 1) {
         const group = groups[index];
-        const reportId = createId("lab-report");
+        const sourceRecordId = createId("lab-source");
         setSaveLabel(`${group.date} ${IMPORT_EXAMINATION_LABELS[group.type]} 저장 중`);
         const originalDocuments = await uploadMedicalDocuments({
           files: group.files,
           catId: cat.id,
-          recordId: reportId,
+          recordId: sourceRecordId,
           kind: "examination",
           onProgress: done => {
             setSaveProgress(Math.round(((completedFiles + done) / totalFiles) * 100));
           },
         });
         const analysis = analyses[group.id] ?? EMPTY_ANALYSIS;
-        const dateNote = `${dateSourceLabels[group.dateSource]} ${group.date}${group.detectedTimes.length ? ` · ${detectedTimeLabel(group.detectedTimes)}` : ""}`;
         const now = new Date().toISOString();
-        onSave({
-          id: reportId,
-          catId: cat.id,
-          date: group.date,
-          type: group.type,
-          title: group.title.trim() || IMPORT_EXAMINATION_LABELS[group.type],
-          hospital: "",
-          sourceFileName: `${group.files.length}개 원본 일괄 가져오기`,
-          rawText: analysis.rawText,
-          originalDocuments,
-          originalDocument: originalDocuments[0] ?? null,
-          items: analysis.items,
-          findings: "",
-          interpretation: "",
-          recommendations: "",
-          notes: `폴더에서 자동 분류한 기록입니다. ${dateNote}. 검사일·종류와 병원 판독 내용을 확인해 주세요.`,
-          createdAt: now,
-          updatedAt: now,
+        const reportParts = analysis.visits.length
+          ? analysis.visits
+          : [{ date: group.date, rawText: analysis.rawText, items: analysis.items }];
+        reportParts.forEach(part => {
+          const source = analysis.visits.length ? "ocr" : group.dateSource;
+          const dateNote = `${dateSourceLabels[source]} ${part.date}${group.detectedTimes.length ? ` · ${detectedTimeLabel(group.detectedTimes)}` : ""}`;
+          onSave({
+            id: createId("lab-report"),
+            catId: cat.id,
+            date: part.date,
+            type: group.type,
+            title: group.title.trim() || IMPORT_EXAMINATION_LABELS[group.type],
+            hospital: "",
+            sourceFileName: `${group.files.length}개 원본 일괄 가져오기`,
+            rawText: part.rawText,
+            originalDocuments,
+            originalDocument: originalDocuments[0] ?? null,
+            items: part.items,
+            findings: "",
+            interpretation: "",
+            recommendations: "",
+            notes: `폴더에서 자동 분류한 기록입니다. ${dateNote}. 검사일·종류와 병원 판독 내용을 확인해 주세요.`,
+            createdAt: now,
+            updatedAt: now,
+          });
         });
         completedFiles += group.files.length;
         setSaveProgress(Math.round((completedFiles / totalFiles) * 100));
@@ -310,7 +325,7 @@ export default function MedicalFolderImportDialog({ cat, reports, onSave }: Medi
               <Button variant="contained" startIcon={<DriveFolderUploadRounded />} onClick={selectFolder} disabled={saving}>
                 {groups.length ? "다른 폴더 선택" : "고양이 폴더 선택"}
               </Button>
-              {groups.length > 0 && <Typography variant="body2" color="text.secondary">검사 {groups.length}건 · 원본 {totalFiles}개 · {bytesLabel(totalBytes)}</Typography>}
+              {groups.length > 0 && <Typography variant="body2" color="text.secondary">저장될 기록 {totalRecords}건 · 원본 {totalFiles}개 · {bytesLabel(totalBytes)}</Typography>}
             </Stack>
             {folderWarning && <Alert severity="warning">{folderWarning}</Alert>}
             {(duplicateCount > 0 || unsupportedCount > 0) && (
@@ -355,9 +370,10 @@ export default function MedicalFolderImportDialog({ cat, reports, onSave }: Medi
                         {analysis.working ? "검사값 읽는 중" : analysis.rawText ? "검사값 다시 읽기" : "PDF·혈액검사 값 읽기"}
                       </Button>
                       {analysis.working && <Box><LinearProgress variant="determinate" value={analysis.progress} /><Typography variant="caption" color="text.secondary">{analysis.label} · {analysis.progress}%</Typography></Box>}
+                      {analysis.visits.length > 1 && <Alert severity="info">이 PDF에서 검사일 {analysis.visits.length}개를 찾았습니다. {analysis.visits.map(visit => visit.date).join(" · ")} 기록으로 나누어 저장합니다.</Alert>}
                       {analysis.items.length > 0 && <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>{analysis.items.slice(0, 8).map(item => <Chip key={item.id} size="small" color="success" variant="outlined" label={`${item.code} ${item.value ?? "—"}${item.unit ? ` ${item.unit}` : ""}`} />)}{analysis.items.length > 8 && <Chip size="small" label={`+${analysis.items.length - 8}`} />}</Stack>}
                       {analysis.items.length > 0 && <FormControlLabel control={<Checkbox checked={analysis.confirmed} onChange={event => setAnalyses(current => ({ ...current, [group.id]: { ...(current[group.id] ?? EMPTY_ANALYSIS), confirmed: event.target.checked } }))} />} label="원본 검사표와 추출 수치·단위·기준범위를 비교해 확인했습니다" />}
-                      {analysis.items.length > 0 && <Button size="small" color="inherit" onClick={() => setAnalyses(current => ({ ...current, [group.id]: { ...(current[group.id] ?? EMPTY_ANALYSIS), items: [], confirmed: false } }))} sx={{ alignSelf: "flex-start" }}>자동 추출 수치 제외하고 원본만 저장</Button>}
+                      {analysis.items.length > 0 && <Button size="small" color="inherit" onClick={() => setAnalyses(current => ({ ...current, [group.id]: { ...(current[group.id] ?? EMPTY_ANALYSIS), items: [], visits: [], confirmed: false } }))} sx={{ alignSelf: "flex-start" }}>자동 추출 수치 제외하고 원본만 저장</Button>}
                       {analysis.rawText && !analysis.items.length && <Alert severity="warning">글자는 읽었지만 수치 항목은 자동 분류하지 못했습니다. 저장 후 원본과 OCR 내용을 대조해 주세요.</Alert>}
                       {analysis.rawText && (
                         <TextField
@@ -365,12 +381,14 @@ export default function MedicalFolderImportDialog({ cat, reports, onSave }: Medi
                           value={analysis.rawText}
                           onChange={event => {
                             const nextText = event.target.value;
+                            const visits = analyzedVisits(nextText, group.date);
                             setAnalyses(current => ({
                               ...current,
                               [group.id]: {
                                 ...(current[group.id] ?? EMPTY_ANALYSIS),
                                 rawText: nextText,
-                                items: parseLabText(nextText),
+                                items: visits.flatMap(visit => visit.items),
+                                visits,
                                 confirmed: false,
                               },
                             }));
@@ -395,7 +413,7 @@ export default function MedicalFolderImportDialog({ cat, reports, onSave }: Medi
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
           <Button color="inherit" onClick={() => setOpen(false)} disabled={saving}>취소</Button>
-          <Button variant="contained" onClick={save} disabled={saving || !groups.length}>{saving ? "비공개 원본 저장 중" : `${groups.length}건 저장`}</Button>
+          <Button variant="contained" onClick={save} disabled={saving || !groups.length}>{saving ? "비공개 원본 저장 중" : `${totalRecords}건 저장`}</Button>
         </DialogActions>
       </Dialog>
     </>

@@ -12,6 +12,38 @@ export interface MedicalOcrResult {
   truncated: boolean;
 }
 
+export type MedicalOcrMode = "document" | "lab-fast";
+
+export interface MedicalOcrOptions {
+  maxPdfPages?: number;
+  mode?: MedicalOcrMode;
+}
+
+interface MedicalOcrProfile {
+  languages: string[];
+  pdfScale: number;
+  imageLongestEdge: number;
+  allowImageDownscale: boolean;
+}
+
+/** 검사 수치 전용 모드는 영문 코드·숫자 판독에 필요한 해상도만 유지합니다. */
+export function getMedicalOcrProfile(mode: MedicalOcrMode): MedicalOcrProfile {
+  if (mode === "lab-fast") {
+    return {
+      languages: ["eng"],
+      pdfScale: 2.4,
+      imageLongestEdge: 2200,
+      allowImageDownscale: true,
+    };
+  }
+  return {
+    languages: ["eng", "kor"],
+    pdfScale: 3,
+    imageLongestEdge: 2200,
+    allowImageDownscale: false,
+  };
+}
+
 type ProgressHandler = (progress: MedicalOcrProgress) => void;
 
 interface PositionedOcrWord {
@@ -89,8 +121,11 @@ export async function recognizeMedicalDocument(
   file: File,
   rotation: OcrRotation = 0,
   onProgress?: ProgressHandler,
-  maxPdfPages = 10,
+  options: MedicalOcrOptions = {},
 ): Promise<MedicalOcrResult> {
+  const mode = options.mode ?? "document";
+  const maxPdfPages = options.maxPdfPages ?? 10;
+  const profile = getMedicalOcrProfile(mode);
   type TesseractWorker = Awaited<ReturnType<typeof import("tesseract.js")["createWorker"]>>;
   const workerRef: { current: TesseractWorker | null } = { current: null };
   let currentPage = 0;
@@ -101,7 +136,7 @@ export async function recognizeMedicalDocument(
   const recognizeBlob = async (blob: Blob, pageIndex: number): Promise<void> => {
     if (!workerRef.current) {
       const { createWorker, PSM } = await import("tesseract.js");
-      workerRef.current = await createWorker(["eng", "kor"], 1, {
+      workerRef.current = await createWorker(profile.languages, 1, {
         logger: log => {
           if (typeof log.progress !== "number") return;
           const percent = Math.round(((currentPage + log.progress) / totalPages) * 100);
@@ -117,14 +152,19 @@ export async function recognizeMedicalDocument(
     currentPage = pageIndex;
     const result = await workerRef.current.recognize(blob, {}, { text: true, blocks: true });
     const tableRows = reconstructOcrTableRows(result.data.blocks);
-    texts.push([tableRows, result.data.text.trim()].filter(Boolean).join("\n\n--- OCR 기본 배열 ---\n\n"));
+    texts.push(mode === "lab-fast" && tableRows
+      ? tableRows
+      : [tableRows, result.data.text.trim()].filter(Boolean).join("\n\n--- OCR 기본 배열 ---\n\n"));
     confidences.push(result.data.confidence);
   };
 
   try {
     if (file.type !== "application/pdf") {
       onProgress?.({ percent: 0, label: "사진 회전·선명화 중" });
-      const prepared = await prepareImageForOcr(file, rotation);
+      const prepared = await prepareImageForOcr(file, rotation, {
+        targetLongestEdge: profile.imageLongestEdge,
+        allowDownscale: profile.allowImageDownscale,
+      });
       await recognizeBlob(prepared, 0);
       return {
         text: texts.filter(Boolean).join("\n\n"),
@@ -152,7 +192,7 @@ export async function recognizeMedicalDocument(
         if (text.replace(/\s/g, "").length >= 40) {
           texts.push(text);
         } else {
-          const viewport = page.getViewport({ scale: 3, rotation });
+          const viewport = page.getViewport({ scale: profile.pdfScale, rotation });
           const canvas = document.createElement("canvas");
           canvas.width = Math.ceil(viewport.width);
           canvas.height = Math.ceil(viewport.height);

@@ -32,7 +32,7 @@ import HealthAndSafetyRounded from "@mui/icons-material/HealthAndSafetyRounded";
 import type { CatProfile, ExaminationType, LabReport, LabResultItem } from "@/types/cat-care";
 import { createMedicalDocumentSignedUrl, downloadMedicalDocument, labReportDocuments, medicalDocumentDisplayName, uploadMedicalDocument } from "@/lib/cat-care/medical-documents";
 import { createId, toLocalDateKey } from "@/lib/cat-care/storage";
-import { labMarkerOptions, markerDetails, parseLabText, updateLabFlag } from "@/lib/cat-care/lab-results";
+import { labMarkerOptions, markerDetails, parseDatedLabText, parseLabText, updateLabFlag } from "@/lib/cat-care/lab-results";
 import type { OcrRotation } from "@/lib/cat-care/ocr-image";
 import { recognizeMedicalDocument } from "@/lib/cat-care/medical-ocr";
 import MedicalFolderImportDialog from "./MedicalFolderImportDialog";
@@ -237,7 +237,7 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete, onAnaly
     }
   };
 
-  const readStoredReport = async (report: LabReport, progressOffset = 0, progressScale = 1): Promise<LabReport> => {
+  const readStoredReport = async (report: LabReport, progressOffset = 0, progressScale = 1): Promise<LabReport[]> => {
     const documents = labReportDocuments(report);
     if (!documents.length) throw new Error("저장된 원본이 없습니다.");
     if (!storedOcrTypes.has(report.type)) throw new Error("엑스레이·초음파 원본은 자동 영상 판독 대상이 아닙니다. 병원 판독 소견을 입력해 주세요.");
@@ -251,19 +251,48 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete, onAnaly
         const documentProgress = (index + progress.percent / 100) / documents.length;
         setStoredAnalysisProgress(Math.round((progressOffset + documentProgress * progressScale) * 100));
         setStoredAnalysisMessage(`${report.date} · ${progress.label}`);
-      });
+      }, { mode: "lab-fast" });
       if (result.text.trim()) texts.push(result.text.trim());
     }
 
     const nextRawText = texts.join("\n\n=== 다음 저장 원본 ===\n\n");
     if (!nextRawText) throw new Error("저장된 원본에서 글자를 찾지 못했습니다. 원본 파일의 선명도와 방향을 확인해 주세요.");
-    const parsedItems = parseLabText(nextRawText);
-    return {
-      ...report,
-      rawText: nextRawText,
-      items: parsedItems.length ? parsedItems : report.items,
-      updatedAt: new Date().toISOString(),
-    };
+    const visits = parseDatedLabText(nextRawText, report.date).filter(visit => visit.items.length > 0);
+    if (visits.length <= 1) {
+      const visit = visits[0];
+      return [{
+        ...report,
+        date: visit?.date ?? report.date,
+        rawText: visit?.rawText ?? nextRawText,
+        items: visit?.items.length ? visit.items : report.items,
+        updatedAt: new Date().toISOString(),
+      }];
+    }
+
+    const documentPaths = new Set(documents.map(document => document.storagePath));
+    const relatedReports = reports.filter(candidate => candidate.catId === report.catId
+      && labReportDocuments(candidate).some(document => documentPaths.has(document.storagePath)));
+    const originalDateIsDetected = visits.some(visit => visit.date === report.date);
+    let usedOriginalAsFallback = originalDateIsDetected;
+    const now = new Date().toISOString();
+
+    return visits.map(visit => {
+      const sameDate = relatedReports.find(candidate => candidate.date === visit.date);
+      const base = sameDate ?? (!usedOriginalAsFallback ? report : null);
+      if (!sameDate && !usedOriginalAsFallback) usedOriginalAsFallback = true;
+      const existingNotes = base?.notes ?? report.notes;
+      const splitNote = "여러 검사일이 포함된 PDF를 검사일별로 나눈 기록입니다.";
+      return {
+        ...(base ?? report),
+        id: base?.id ?? createId("lab-report"),
+        date: visit.date,
+        rawText: visit.rawText,
+        items: visit.items,
+        notes: existingNotes.includes(splitNote) ? existingNotes : `${existingNotes}${existingNotes ? " " : ""}${splitNote}`,
+        createdAt: base?.createdAt ?? now,
+        updatedAt: now,
+      };
+    });
   };
 
   const analyzeStoredReport = async (report: LabReport) => {
@@ -272,10 +301,11 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete, onAnaly
     setStoredAnalysisError("");
     try {
       const updated = await readStoredReport(report);
-      onSave(updated);
-      setStoredAnalysisMessage(updated.items.length
-        ? `${updated.date} 저장 원본에서 검사값 ${updated.items.length}개를 읽었습니다.`
-        : `${updated.date} OCR 원문을 저장했지만 검사 수치는 분류하지 못했습니다.`);
+      updated.forEach(onSave);
+      const itemCount = updated.reduce((sum, candidate) => sum + candidate.items.length, 0);
+      setStoredAnalysisMessage(itemCount
+        ? `저장 원본에서 검사일 ${updated.length}건과 검사값 ${itemCount}개를 읽었습니다.`
+        : `${report.date} OCR 원문을 저장했지만 검사 수치는 분류하지 못했습니다.`);
     } catch (caught) {
       setStoredAnalysisError(caught instanceof Error ? caught.message : "저장된 원본을 분석하지 못했습니다.");
     } finally {
@@ -289,11 +319,13 @@ export default function LabReportPanel({ cat, reports, onSave, onDelete, onAnaly
     setStoredAnalysisProgress(0);
     setStoredAnalysisError("");
     try {
+      let updatedCount = 0;
       for (let index = 0; index < pendingStoredReports.length; index += 1) {
         const updated = await readStoredReport(pendingStoredReports[index], index / pendingStoredReports.length, 1 / pendingStoredReports.length);
-        onSave(updated);
+        updated.forEach(onSave);
+        updatedCount += updated.length;
       }
-      setStoredAnalysisMessage(`저장된 검사표 ${pendingStoredReports.length}건을 다시 읽어 분석에 반영했습니다.`);
+      setStoredAnalysisMessage(`저장된 검사표를 다시 읽어 날짜별 기록 ${updatedCount}건으로 분석에 반영했습니다.`);
     } catch (caught) {
       setStoredAnalysisError(caught instanceof Error ? caught.message : "저장된 원본을 분석하지 못했습니다.");
     } finally {

@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { reconstructOcrTableRows } from "./medical-ocr";
+import { getMedicalOcrProfile, reconstructOcrTableRows } from "./medical-ocr";
+
+describe("getMedicalOcrProfile", () => {
+  it("uses a lighter English-only profile for lab values", () => {
+    const full = getMedicalOcrProfile("document");
+    const fast = getMedicalOcrProfile("lab-fast");
+
+    expect(fast.languages).toEqual(["eng"]);
+    expect(fast.pdfScale).toBeLessThan(full.pdfScale);
+    expect(fast.allowImageDownscale).toBe(true);
+  });
+});
 
 describe("reconstructOcrTableRows", () => {
   it("reassembles words from separately detected table columns into rows", () => {

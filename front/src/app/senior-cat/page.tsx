@@ -715,7 +715,13 @@ export default function SeniorCatPage() {
   const deleteLabReport = async (report: LabReport) => {
     if (!window.confirm(`${formatDate(report.date)} 검사결과를 삭제할까요?`)) return;
     try {
-      await deleteMedicalDocuments(labReportDocuments(report).map(document => document.storagePath));
+      const pathsInOtherReports = new Set(care.labReports
+        .filter(item => item.id !== report.id)
+        .flatMap(item => labReportDocuments(item).map(document => document.storagePath)));
+      const unsharedPaths = labReportDocuments(report)
+        .map(document => document.storagePath)
+        .filter(path => !pathsInOtherReports.has(path));
+      await deleteMedicalDocuments(unsharedPaths);
     } catch (caught) {
       window.alert(caught instanceof Error ? caught.message : "저장된 원본 사진을 삭제하지 못했습니다.");
       return;
